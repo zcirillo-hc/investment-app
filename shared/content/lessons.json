@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "note": "Plan v2 section 8.8 and 9.6. Eight lessons. L3 and L4 are the v2 rewrites; the other six carry over from v1, with L8 reworded only where it named a deleted feature. Terms are marked [[key]] or [[key|display]] and must exist in tooltips.json.",
+  "lessons": [
+    {
+      "id": "L1",
+      "title": "Where the 65 cents went",
+      "body": "Your coffee was $4.35, so 65 cents went into the [[jar]]. That is not a rounding error, it is the whole trick. Little amounts you never notice add up to money you definitely will.",
+      "unlockHint": "Unlocks with your first [[roundUp|round-up]]."
+    },
+    {
+      "id": "L2",
+      "title": "Keeping 5% before it's gone",
+      "body": "Money that lands in your account tends to leave by Friday. Taking a small slice the moment it arrives means you never feel it go. Five percent of a summer paycheck is a couple of nights out, and it is now yours for years.",
+      "unlockHint": "Unlocks with your first paycheck [[catch]]."
+    },
+    {
+      "id": "L3",
+      "title": "The coffee you didn't buy",
+      "body": "You skipped one stop, and the money you were about to spend is sitting in your jar instead. Nothing was taken out of your account, because it never left it. That is the whole idea: the cheapest money to keep is the money you have not spent yet.",
+      "unlockHint": "Unlocks with your first [[skip]]."
+    },
+    {
+      "id": "L4",
+      "title": "Why a dip isn't a loss",
+      "body": "Prices go up and down every single day, and today they went down. A [[dip]] only becomes a loss if you sell during it. If you keep adding while things are cheaper, you end up buying more for the same money. You will notice this app never shows you a number going down. That is on purpose. It does not watch prices at all, so it cannot panic you with one bad week, and it cannot pretend to know what your money is doing today.",
+      "unlockHint": "Unlocks with your first [[ledgerEntry|ledger entry]]."
+    },
+    {
+      "id": "L5",
+      "title": "One month in",
+      "body": "Thirty days in. You did not have to remember anything, and the [[jar]] kept working anyway. Look at the total kept, then imagine it running through every semester and every summer job.",
+      "unlockHint": "Unlocks after 30 days."
+    },
+    {
+      "id": "L6",
+      "title": "What happens if I need the money for rent",
+      "body": "This is your money and you can take it out. Getting money back out of a real investment takes a few days, so keep a little in checking for rent and let this grow behind it. Nothing here is locked, it is just out of sight.",
+      "unlockHint": "Unlocks along the way."
+    },
+    {
+      "id": "L7",
+      "title": "Why $20 a week beats $500 later",
+      "body": "Twenty dollars a week is about $1,000 a year. Started now and left alone, the early money has decades to grow, and time is the part you cannot buy later. Waiting for a big amount usually means waiting forever.",
+      "unlockHint": "Unlocks along the way."
+    },
+    {
+      "id": "L8",
+      "title": "You can't really mess this up",
+      "body": "There is nothing here to time and nothing to pick. You keep a little, you decide where it goes, and you write down where it went. The main way people lose here is by stopping.",
+      "unlockHint": "Unlocks along the way."
+    }
+  ]
+}

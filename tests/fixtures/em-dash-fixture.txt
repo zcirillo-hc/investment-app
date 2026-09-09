@@ -1,0 +1,2 @@
+This fixture contains an em dash — written literally on the next line so the lint catches it.
+Bad copy — with an em dash.

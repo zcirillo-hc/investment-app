@@ -1,0 +1,118 @@
+{
+  "version": 2,
+  "note": "Plan v2 section 1.1 content table, plus the reversal in 9.8b. Six terms carried over from v1 (roundUp, catch, jar, dip, sevenPercent, contributions), seven added for the v2 loop, four restored for the Learn library (stock, bond, etf, indexFund) and eleven new for it. The v1 terms about holdings, growth, risk profiles, fees, thresholds, sweeps and allocation are gone with the feature. Every definition must satisfy R15: it says what a thing is, never whether it is good, and never what it will do.",
+  "tooltips": {
+    "roundUp": {
+      "label": "round-up",
+      "definition": "The spare change between what you paid and the next whole dollar. A $4.35 coffee has a 65 cent round-up."
+    },
+    "catch": {
+      "label": "catch",
+      "definition": "A small slice of a paycheck that you keep the moment it lands, before it gets spent."
+    },
+    "jar": {
+      "label": "jar",
+      "definition": "Where your round-ups, catches and skips collect. It is a running total of money you kept, and nothing moves it out unless you say so."
+    },
+    "place": {
+      "label": "place",
+      "definition": "Somewhere your spending says you go. The app works places out from your own purchases, on this device."
+    },
+    "habit": {
+      "label": "habit",
+      "definition": "A place you went at least 3 times in the last 14 days, at roughly the same time each visit."
+    },
+    "usualTime": {
+      "label": "usual time",
+      "definition": "The middle of the times you have gone to a place recently. The app asks about skipping 20 minutes before it."
+    },
+    "skip": {
+      "label": "skip",
+      "definition": "Saying no to a stop you usually make. What you would have spent goes in your jar instead."
+    },
+    "estimate": {
+      "label": "estimate",
+      "definition": "An average of what you spent on your last few visits to a place. It is a guess about a normal visit, not a fact about today."
+    },
+    "quietHours": {
+      "label": "quiet hours",
+      "definition": "The app only ever asks between 6am and 9pm. Outside that, it stays silent and says nothing later."
+    },
+    "ledgerEntry": {
+      "label": "ledger entry",
+      "definition": "A line you wrote down saying you moved money into something real. The app records it and never checks it against a price."
+    },
+    "dip": {
+      "label": "dip",
+      "definition": "A stretch where prices are lower than they were. It only becomes a loss if you sell during it."
+    },
+    "sevenPercent": {
+      "label": "7%",
+      "definition": "We assume 7% a year, which is roughly the long-run average of a stock-heavy mix. Real years are all over the place."
+    },
+    "contributions": {
+      "label": "moved into investments",
+      "definition": "The total of every amount you told us you put into something real. We record what you type and never work out what it is worth."
+    },
+    "stock": {
+      "label": "stock",
+      "definition": "A slice of ownership in a company, which makes you one of the people it belongs to."
+    },
+    "bond": {
+      "label": "bond",
+      "definition": "A loan you made to a government or a company, paid back with interest over a set period."
+    },
+    "etf": {
+      "label": "ETF",
+      "definition": "A fund you can buy and sell during the trading day the same way you buy a single share."
+    },
+    "indexFund": {
+      "label": "index fund",
+      "definition": "A fund that holds everything on a published list, in the proportions that list gives, with nobody choosing."
+    },
+    "brokerage": {
+      "label": "brokerage",
+      "definition": "A firm that holds investments for you and carries out the buy and sell instructions you give it."
+    },
+    "taxableAccount": {
+      "label": "taxable account",
+      "definition": "A plain investment account with no special tax treatment and no rules about when you take money out."
+    },
+    "ira": {
+      "label": "IRA",
+      "definition": "A retirement account you open yourself, with its own tax treatment and its own rules about taking money out early."
+    },
+    "fourOhOneK": {
+      "label": "401(k)",
+      "definition": "A retirement account offered through an employer, with its own tax treatment and its own rules about taking money out early."
+    },
+    "expenseRatio": {
+      "label": "expense ratio",
+      "definition": "The yearly slice a fund takes out of itself to cover running it, which is why it never arrives as a separate bill."
+    },
+    "dollarCostAveraging": {
+      "label": "dollar cost averaging",
+      "definition": "The name for putting in a fixed amount on a fixed schedule instead of deciding an amount each time."
+    },
+    "bondMarket": {
+      "label": "bond market",
+      "definition": "Where loans to governments and large companies are bought and sold, which is also where borrowing rates end up being set."
+    },
+    "commodity": {
+      "label": "commodity",
+      "definition": "A raw physical good traded in bulk, like oil, wheat or copper."
+    },
+    "volatility": {
+      "label": "volatility",
+      "definition": "How much a price moves up and down over time, which is what people usually mean when they call something risky."
+    },
+    "feeOnly": {
+      "label": "fee only",
+      "definition": "An advisor paid only by the person they advise, rather than by a commission on whatever they sell."
+    },
+    "ticker": {
+      "label": "ticker",
+      "definition": "The short code a market uses to name one traded thing, the way a nickname names a person."
+    }
+  }
+}

@@ -1,0 +1,356 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --c-ground: 240 248 242;
+  --c-card: 255 255 255;
+  --c-ink: 24 38 30;
+  /* C4-4: darkened from 96 112 102 so muted text clears 4.5:1 on the tinted leaf-soft cards
+     and on the `bg-line` locked-lesson pill, not just on the page ground. */
+  --c-muted: 85 101 91;
+  --c-line: 210 226 216;
+  /* C4-4: darkened from 46 158 106. White-on-leaf was 3.37:1 on every primary button,
+     leaf-on-ground 3.12:1 on every link and leaf-on-leaf-soft 4.11:1 on the summer card's
+     growth line. All three now clear 4.5:1 (axe color-contrast). */
+  --c-leaf: 22 112 63;
+  --c-leaf-soft: 210 240 224;
+  --c-coral: 240 113 90;
+  /* C4-8: coral as *text* (form errors, a negative growth figure) was 2.69:1 on the ground
+     and 2.37:1 on its own tint. Same split the amber pair already uses: the bright coral
+     stays the fill and illustration accent, coral text uses this darker pair (5.5:1). */
+  --c-coral-ink: 184 51 15;
+  --c-coral-soft: 253 226 220;
+  /* Illustration accent only (one lesson SVG); never used as text. */
+  --c-sky: 74 158 224;
+  --c-amber: 222 152 32;
+  /* C4-4: amber as *text* was 2.08:1 on the amber-soft warning card. The bright amber stays
+     the accent (backgrounds, illustrations); amber text uses this darker pair. */
+  --c-amber-ink: 143 92 0;
+  --c-amber-soft: 252 236 200;
+  /*
+   * C4-8. Text that sits ON a filled brand colour needs its own token, because the fill
+   * itself flips lightness between themes: `--c-leaf` is a dark green here and a light green
+   * in `.dark`, so a single hard-coded label colour cannot clear 4.5:1 in both. Every
+   * `bg-leaf` / `bg-coral` / `bg-amber` surface takes `text-on-leaf` / `text-on-coral` /
+   * `text-on-amber` instead of `text-white` or `text-ink`.
+   */
+  --c-on-leaf: 255 255 255;
+  --c-on-coral: 24 38 30;
+  --c-on-amber: 24 38 30;
+  /*
+   * The five ticker colours in `config.ts` are fixed hex, identical in both themes, so the
+   * label on an allocation segment is theme-independent too. `.dark` deliberately does not
+   * override this. Worst pair is VTI green at 4.97:1.
+   */
+  --c-on-fill: 20 32 26;
+  /*
+   * D20. The pause switch used to build its track and knob out of stacked Tailwind variants
+   * (`checked:bg-leaf` plus `dark:bg-muted`), which have equal specificity, so Tailwind's
+   * emission order silently killed the checked colour in dark mode. The colours live here
+   * instead, behind `.switch-track` (see the rules below): `:checked` outranks the base rule
+   * on specificity, so no emission order can turn a state colour off again. Light mode's
+   * values are unchanged from what shipped: off track 210 226 216, on track --c-leaf.
+   */
+  --c-switch-off: 210 226 216;
+  --c-switch-knob-off: 255 255 255;
+  --c-switch-knob-on: 255 255 255;
+  /*
+   * Visual polish pass, 2026-09-09. Elevation lives in tokens rather than in Tailwind's
+   * shadow scale, because the two themes need different physics: on a light ground a shadow
+   * is a soft shadow, and on a dark ground the same shadow is invisible, so dark leans on a
+   * deeper ambient blur plus the hairline ring the components already carry.
+   *
+   * Deliberately NOT a gradient anywhere behind text. axe computes contrast by walking the
+   * stack under a text node, and a background-image in that stack turns a passing check into
+   * an "incomplete" one. So depth here is elevation, radius and a hairline, and every
+   * gradient in this build lives inside an illustration (the jar, the tree, a track badge,
+   * the milestone canvas) where no text sits on top of it.
+   */
+  --sh-1: 0 1px 2px rgb(20 44 32 / 0.05), 0 6px 16px -10px rgb(20 44 32 / 0.16);
+  --sh-2: 0 2px 6px rgb(20 44 32 / 0.06), 0 18px 34px -20px rgb(20 44 32 / 0.26);
+  --sh-3: 0 4px 10px rgb(20 44 32 / 0.08), 0 30px 60px -28px rgb(20 44 32 / 0.34);
+  color-scheme: light;
+}
+
+.dark {
+  --c-ground: 18 28 23;
+  --c-card: 28 40 34;
+  --c-ink: 236 244 238;
+  --c-muted: 160 180 168;
+  --c-line: 52 70 60;
+  --c-leaf: 88 200 140;
+  --c-leaf-soft: 34 70 52;
+  --c-coral: 250 140 118;
+  /* The dark coral is already 7.54:1 on the ground, so text and fill share one value here. */
+  --c-coral-ink: 250 140 118;
+  --c-coral-soft: 92 46 40;
+  --c-sky: 110 180 240;
+  --c-amber: 240 180 70;
+  --c-amber-ink: 240 180 70;
+  --c-amber-soft: 80 60 24;
+  /* C4-8: the dark fills are all light, so their labels are near-black (leaf 8.04:1,
+     coral 7.25:1, amber 9.05:1). Before this, white on leaf measured 2.08:1 and
+     `--c-ink` on amber 1.65:1, the two worst pairs in the tester's dark scan (D14, D15). */
+  --c-on-leaf: 20 32 26;
+  --c-on-coral: 20 32 26;
+  --c-on-amber: 20 32 26;
+  /*
+   * D20. Dark needs the knob to flip with the state, not just the track: the two tracks are
+   * 4.82:1 apart (`--c-line` off, `--c-leaf` on, matching light's own 4.56:1 state contrast),
+   * and no single knob colour can clear 3:1 against both ends of that range. So the off knob
+   * is near-white on the dark track (8.99:1) and the on knob is near-black on the light green
+   * (8.04:1). The track-against-card boundary is 1.52:1 here and 1.35:1 in light: decorative
+   * in both, per the tester's hairline ruling, and the knob carries the control's extent.
+   */
+  --c-switch-off: 52 70 60;
+  --c-switch-knob-off: 236 244 238;
+  --c-switch-knob-on: 20 32 26;
+  /* Same three steps, tuned for a dark ground: more blur, much more opacity, no spread. */
+  --sh-1: 0 1px 2px rgb(0 0 0 / 0.44), 0 8px 20px -12px rgb(0 0 0 / 0.66);
+  --sh-2: 0 2px 8px rgb(0 0 0 / 0.5), 0 22px 40px -22px rgb(0 0 0 / 0.8);
+  --sh-3: 0 4px 12px rgb(0 0 0 / 0.55), 0 34px 64px -30px rgb(0 0 0 / 0.9);
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-ground text-ink font-sans antialiased;
+  overflow-x: hidden;
+}
+
+/*
+ * C4-3: the logo's long-press (plan v2 5.4, the demo tray) competes with iOS Safari's touch callout, which
+ * pops its own menu on a press-and-hold and steals the gesture. `manipulation` keeps normal
+ * scrolling and tapping while dropping the double-tap zoom delay.
+ */
+.long-press-target {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/*
+ * D20. The pause switch's colours. Geometry stays in Tailwind on the element; only the
+ * state-dependent colours live here, because a `checked:` utility and a `dark:` utility have
+ * the same specificity and Tailwind decides which wins by emission order. `:checked` adds a
+ * class-level selector, so these four rules resolve by specificity in every theme and cannot
+ * be reordered into a no-op. Sits after `@tailwind utilities`, so it also beats any stray
+ * `bg-*` utility left on the element.
+ */
+.switch-track {
+  background-color: rgb(var(--c-switch-off));
+}
+.switch-track:checked {
+  background-color: rgb(var(--c-leaf));
+}
+.switch-track::before {
+  background-color: rgb(var(--c-switch-knob-off));
+}
+.switch-track:checked::before {
+  background-color: rgb(var(--c-switch-knob-on));
+}
+
+/* ------------------------------------------------------------------------------------------
+ * Visual polish pass, 2026-09-09.
+ *
+ * Everything below is presentation. No rule here changes a layout box that the standalone
+ * checks measure (header padding, tab bar height, the bottom inset), and every animation is
+ * a CSS animation or transition, so the `prefers-reduced-motion` block at the end of this
+ * file switches all of it off with one declaration rather than each component remembering to.
+ * ---------------------------------------------------------------------------------------- */
+
+.elev-1 {
+  box-shadow: var(--sh-1);
+}
+.elev-2 {
+  box-shadow: var(--sh-2);
+}
+.elev-3 {
+  box-shadow: var(--sh-3);
+}
+
+/* Big money reads better slightly tightened, and always tabular so a count-up does not jitter. */
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * A press state you can feel. `transform` only, so nothing reflows, and the transition is
+ * short enough that a fast tap still shows it.
+ */
+.press {
+  transition:
+    transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 140ms ease,
+    color 140ms ease;
+}
+.press:active {
+  transform: scale(0.975);
+}
+
+/* A card that is itself a link or a button lifts on hover and settles on press. */
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sh-2);
+  }
+}
+.lift {
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.lift:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/*
+ * One focus style for everything that does not bring its own ring. Tailwind's
+ * `focus:outline-none` on `Button` outranks this on specificity, which is intended: that
+ * component draws its own offset ring instead.
+ */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid rgb(var(--c-leaf));
+  outline-offset: 3px;
+}
+
+/*
+ * Screen and card entrances.
+ *
+ * There are two of these, and the difference between them is not taste. An element with a
+ * transform is the containing block for every `position: fixed` element inside it, and an
+ * animation with `animation-fill-mode: both` leaves a transform applied FOREVER after it
+ * finishes, even when the last keyframe says `transform: none`: the computed value settles at
+ * `matrix(1, 0, 0, 1, 0, 0)`, which is a transform. The first version of this pass put the
+ * rise on `Screen`, which is the ancestor of the catch sheet, the milestone modal and every
+ * other fixed overlay in the app, and it moved all of them out of the viewport and behind the
+ * demo tray. Two cycle 4 specs caught it.
+ *
+ * So:
+ *   `.rise`    is for a whole screen, which is exactly where overlays live. Opacity only.
+ *   `.stagger` is for the children of a list, which never contain a fixed element. It may
+ *              move, and the movement is vertical only, because a horizontal transform on a
+ *              full width element can widen the document mid-animation.
+ *
+ * Anything fixed that ends up inside a staggered row will hit the same bug. Keep overlays out
+ * of lists, or drop the transform here too.
+ */
+@keyframes sc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sc-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: sc-fade 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > * {
+  animation: sc-rise 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 120ms;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 160ms;
+}
+.stagger > *:nth-child(6) {
+  animation-delay: 200ms;
+}
+.stagger > *:nth-child(n + 7) {
+  animation-delay: 240ms;
+}
+
+/* The jar's liquid surface. A slow horizontal drift of a wave path that is drawn twice as
+   wide as the jar, so the loop never shows a seam. */
+@keyframes sc-wave {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-72px);
+  }
+}
+.jar-wave {
+  animation: sc-wave 3.6s linear infinite;
+}
+
+/* The new lesson card and a freshly surfaced Learn card. A breath, not a throb. */
+@keyframes sc-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.012);
+  }
+}
+.breathe {
+  animation: sc-breathe 2.6s ease-in-out infinite;
+}
+
+/* The tree's canopy, moving as if there were a window open somewhere. */
+@keyframes sc-sway {
+  0%,
+  100% {
+    transform: rotate(-1.1deg);
+  }
+  50% {
+    transform: rotate(1.1deg);
+  }
+}
+.sway {
+  animation: sc-sway 5s ease-in-out infinite;
+  transform-origin: 80px 140px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    /*
+     * Visual polish pass, 2026-09-09. The delays have to go too, not just the durations.
+     * `.stagger` gives its later children an `animation-delay` of up to 240 ms, and a
+     * shortened animation that is still delayed leaves the element at its `from` keyframe,
+     * which for a fade-and-rise means invisible. Zeroing the duration alone would have turned
+     * a stagger into a quarter second of blank list rows for exactly the people who asked for
+     * less motion.
+     */
+    animation-delay: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}

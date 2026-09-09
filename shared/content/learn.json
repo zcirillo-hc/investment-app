@@ -1,0 +1,125 @@
+{
+  "version": 2,
+  "note": "Plan v2 sections 8.9 and 9.8. Sixteen pieces across three tracks. Nothing here is ever locked (R12.5): every piece is readable from day 0 on a freshly cleared profile, and the three surfacing moments highlight a piece that was already readable. Bodies are verbatim from plan 9.8. Terms are marked [[key]] or [[key|display]] and must exist in tooltips.json. Every string here must satisfy R15: it says what a thing is, never whether it is good, never what to buy, and never what anything is going to do next.",
+  "standingLine": "This is education, not advice. Spare Change explains how things work. It never tells you what to buy, never names a fund or a company, and never predicts what anything will do.",
+  "surfaces": {
+    "firstInvestVisit": "Somewhere to start: what a brokerage account actually is.",
+    "firstLedgerEntry": "You wrote your first one down. Here is what most people do first.",
+    "dayThirty": "A month in. Here is why the daily market news is not a signal."
+  },
+  "tracks": [
+    {
+      "key": "getting-started",
+      "title": "Getting started",
+      "blurb": "Opening an account and what actually happens first."
+    },
+    {
+      "key": "markets",
+      "title": "What the markets are",
+      "blurb": "Stocks, bonds, funds, and everything else, in plain words."
+    },
+    {
+      "key": "staying-sane",
+      "title": "Staying sane",
+      "blurb": "News, uncertainty, risk, and when to ask a real person."
+    }
+  ],
+  "items": [
+    {
+      "id": "E01",
+      "track": "getting-started",
+      "title": "What a brokerage actually is",
+      "body": "A [[brokerage]] is a shop that holds investments for you, the way a bank holds cash. You open an account, move money in, and buy something with it. That is genuinely the whole job. The apps with the nicest logos and the banks with the marble floors are doing the same thing."
+    },
+    {
+      "id": "E02",
+      "track": "getting-started",
+      "title": "Opening an account, start to finish",
+      "body": "It takes about fifteen minutes and it is mostly typing. They ask for your legal name, address, date of birth and a tax number, because the law says they have to know who you are, then you link a bank account. Nothing gets invested until you say so, so opening one and sitting on it for a month is a completely normal thing to do."
+    },
+    {
+      "id": "E03",
+      "track": "getting-started",
+      "title": "The account types, in one page",
+      "body": "A [[taxableAccount|taxable brokerage account]] is the plain one: money in, money out, whenever you like. A retirement account like an [[ira|IRA]] or a [[fourOhOneK|401(k)]] gets special tax treatment in exchange for rules about taking money out early. Here is the part nobody says out loud: the account is not the investment. It is the container, and what goes in it is a separate question."
+    },
+    {
+      "id": "E04",
+      "track": "getting-started",
+      "title": "Your first hundred dollars",
+      "body": "Most people's first move is small and boring on purpose. They move a little across, look at the screen, find where the buttons are, and let it sit while they get used to the idea. Nothing about the first hundred is supposed to be exciting. It is a rehearsal."
+    },
+    {
+      "id": "E05",
+      "track": "getting-started",
+      "title": "What the fees look like",
+      "body": "Buying and selling shares at most big brokerages costs nothing now, which used to cost real money and then quietly stopped. Funds charge an [[expenseRatio|expense ratio]] instead, a small yearly percentage taken out of the fund itself, so you never get a bill for it. Advisors charge on top of that. The numbers are always written down somewhere, and knowing where to look is most of the skill."
+    },
+    {
+      "id": "E06",
+      "track": "getting-started",
+      "title": "Why people set it and forget it",
+      "body": "A lot of people turn on a small automatic transfer and then stop thinking about it. Not because it is clever, but because deciding every single month is exhausting, and a decision you make once is one you cannot talk yourself out of at eleven at night. Putting in a fixed amount on a schedule has a name, [[dollarCostAveraging|dollar cost averaging]], which makes it sound far more impressive than it is."
+    },
+    {
+      "id": "E07",
+      "track": "markets",
+      "title": "What a stock actually is",
+      "body": "A [[stock]] is a slice of ownership of a company. Own one and you own a genuinely tiny piece of the buildings, the brand, the contracts and whatever is left over after the bills are paid. That is it. It is not a bet on a [[ticker]], even though every screen ever built makes it look like one."
+    },
+    {
+      "id": "E08",
+      "track": "markets",
+      "title": "What the stock market is",
+      "body": "The stock market is just the place those slices change hands. A price is not handed down by anyone official, it is what the last two people agreed on about thirty seconds ago. So when the news says the market lost two percent today, it means people were willing to pay two percent less than yesterday. That is a mood, and moods move."
+    },
+    {
+      "id": "E09",
+      "track": "markets",
+      "title": "What a bond is",
+      "body": "A [[bond]] is a loan you made. You hand over money, you get interest along the way, and at the end you get the loan back. Governments and big companies borrow like this because it is cheaper than asking a bank. The entire appeal is that it is dull, which is genuinely the point of it."
+    },
+    {
+      "id": "E10",
+      "track": "markets",
+      "title": "The bond market, bigger than you think",
+      "body": "The [[bondMarket|bond market]] is larger than the stock market and gets almost none of the attention. It is also the thing quietly setting what a mortgage costs, what a car loan costs, and what your government pays to borrow. Any time you wonder why rates moved, this is the room where it happened."
+    },
+    {
+      "id": "E11",
+      "track": "markets",
+      "title": "Index funds and ETFs",
+      "body": "An [[indexFund|index fund]] buys everything on a list, in the proportions the list says, and does not try to be clever about it. An [[etf|ETF]] is a fund you can buy and sell during the trading day like a share, and a lot of the popular ones are index funds in that wrapper. One purchase, hundreds of companies, nobody picking."
+    },
+    {
+      "id": "E12",
+      "track": "markets",
+      "title": "The other markets",
+      "body": "Past shares and bonds there are [[commodity|commodities]] like oil and wheat, there are currencies, there is property, and there is crypto. They are real markets and they mostly move for reasons that have nothing to do with each other. Plenty of people invest for forty years and never touch any of them, which is worth knowing before you feel like you are missing something."
+    },
+    {
+      "id": "E13",
+      "track": "staying-sane",
+      "title": "Why the news is not a signal",
+      "body": "Market news comes out every day because it is a daily publication, not because something meaningful happened every day. A headline needs a reason for today's number, so one gets found by lunchtime. Reading it is fine. Acting on it is a completely different sport."
+    },
+    {
+      "id": "E14",
+      "track": "staying-sane",
+      "title": "Nobody knows what happens next",
+      "body": "People who do this professionally, full time, with teams and expensive screens, disagree with each other constantly and are wrong in public all the time. That is not a scandal, it is what forecasting a thing made of other people's moods looks like. Anyone who sounds certain about next year is selling something."
+    },
+    {
+      "id": "E15",
+      "track": "staying-sane",
+      "title": "Risk, in plain words",
+      "body": "[[volatility|Risk]] here mostly means how much the number jumps around, not the odds of everything vanishing. A pile of money that swings twenty percent either way is unnerving if you need it in March and much less interesting if you do not need it until you are fifty. So the honest question is usually not how risky something is, it is when you need the money."
+    },
+    {
+      "id": "E16",
+      "track": "staying-sane",
+      "title": "When to ask a real person",
+      "body": "There is a point where this stops being reading and starts being your actual life: an inheritance, a house, a tax situation, a business, a divorce. That is when a [[feeOnly|fee only]] advisor earns their money, because they are paid by you rather than by whatever they sell you. This app is not that, and it is never going to pretend to be."
+    }
+  ]
+}

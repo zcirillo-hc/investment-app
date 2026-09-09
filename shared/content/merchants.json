@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "note": "Plan v2 section 7.2. Read by the app, the rule fixture and the copy lints. The index of an entry in `merchants` is the merchantIndex used by rule R2.4, so entries are never reordered or removed without a plan revision. Subscriptions produce a purchase and a round-up but no visit (R2.3), so they carry no time fields.",
+  "merchants": [
+    { "name": "Campus Coffee", "category": "coffee", "minCents": 325, "maxCents": 685, "usualMinute": 495, "minuteSpread": 22 },
+    { "name": "Corner Espresso", "category": "coffee", "minCents": 325, "maxCents": 685, "usualMinute": 510, "minuteSpread": 22 },
+    { "name": "Library Cart Coffee", "category": "coffee", "minCents": 325, "maxCents": 685, "usualMinute": 585, "minuteSpread": 25 },
+    { "name": "Late Night Ramen", "category": "food", "minCents": 850, "maxCents": 1620, "usualMinute": 1290, "minuteSpread": 40 },
+    { "name": "Taco Window", "category": "food", "minCents": 850, "maxCents": 1620, "usualMinute": 780, "minuteSpread": 40 },
+    { "name": "Dining Hall Guest Swipe", "category": "food", "minCents": 850, "maxCents": 1620, "usualMinute": 720, "minuteSpread": 35 },
+    { "name": "Pizza by the Slice", "category": "food", "minCents": 850, "maxCents": 1620, "usualMinute": 1170, "minuteSpread": 45 },
+    { "name": "Corner Market", "category": "groceries", "minCents": 1800, "maxCents": 6400, "usualMinute": 1080, "minuteSpread": 60 },
+    { "name": "Big Grocery", "category": "groceries", "minCents": 1800, "maxCents": 6400, "usualMinute": 1020, "minuteSpread": 60 },
+    { "name": "Rideshare", "category": "transport", "minCents": 700, "maxCents": 2400, "usualMinute": 1320, "minuteSpread": 90 },
+    { "name": "Bus Pass Top-up", "category": "transport", "minCents": 700, "maxCents": 2400, "usualMinute": 465, "minuteSpread": 30 },
+    { "name": "Gas Station", "category": "transport", "minCents": 700, "maxCents": 2400, "usualMinute": 900, "minuteSpread": 120 },
+    { "name": "Laundry Room", "category": "campus", "minCents": 250, "maxCents": 1200, "usualMinute": 840, "minuteSpread": 120 },
+    { "name": "Library Printing", "category": "campus", "minCents": 250, "maxCents": 1200, "usualMinute": 870, "minuteSpread": 90 },
+    { "name": "Textbook Exchange", "category": "campus", "minCents": 250, "maxCents": 1200, "usualMinute": 750, "minuteSpread": 120 },
+    { "name": "Movie Night", "category": "fun", "minCents": 500, "maxCents": 2200, "usualMinute": 1200, "minuteSpread": 60 },
+    { "name": "Bowling Alley", "category": "fun", "minCents": 500, "maxCents": 2200, "usualMinute": 1230, "minuteSpread": 60 },
+    { "name": "Thrift Store", "category": "fun", "minCents": 500, "maxCents": 2200, "usualMinute": 870, "minuteSpread": 90 },
+    { "name": "Arcade", "category": "fun", "minCents": 500, "maxCents": 2200, "usualMinute": 1140, "minuteSpread": 75 }
+  ],
+  "categoryWeights": [
+    { "category": "coffee", "weight": 34 },
+    { "category": "food", "weight": 28 },
+    { "category": "transport", "weight": 12 },
+    { "category": "campus", "weight": 12 },
+    { "category": "fun", "weight": 14 }
+  ],
+  "subscriptions": [
+    { "name": "Spotify", "dayOfMonth": 5, "cents": 1199 },
+    { "name": "Streaming", "dayOfMonth": 12, "cents": 1549 },
+    { "name": "Phone plan", "dayOfMonth": 20, "cents": 4500 }
+  ]
+}
