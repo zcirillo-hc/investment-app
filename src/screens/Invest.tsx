@@ -12,6 +12,8 @@ import { LedgerForm } from '../components/LedgerForm';
 import { AppLink } from '../lib/hooks';
 import { formatDateLongSafe } from '../domain/dates';
 import { sortedLedger } from '../domain/ledger';
+import { formatTerm, formatYield, maturityOf } from '../domain/maturity';
+import { formatCents } from '../domain/money';
 import { currentDate, ledgerCount, ledgerFirstDate, ledgerTotal } from '../domain/selectors';
 
 /**
@@ -187,6 +189,17 @@ export function Invest() {
                           {formatDateLongSafe(e.date)}
                         </div>
                         {e.note && <p className="mt-1.5 rounded-xl bg-ground px-2.5 py-1.5 text-sm">{e.note}</p>}
+                        {(() => {
+                          // R16. Only shows when the entry actually carries both, so every
+                          // pre R16 entry and every non bond row is untouched.
+                          const m = e.termMonths !== undefined && e.yieldBps !== undefined ? maturityOf(e.amountCents, e.yieldBps, e.termMonths) : null;
+                          if (!m) return null;
+                          return (
+                            <p className="mt-1.5 rounded-xl bg-leaf-soft px-2.5 py-1.5 text-sm font-semibold" data-testid={`ledger-maturity-${e.id}`}>
+                              {S.invest.maturityLine(formatYield(m.yieldBps), formatTerm(m.termMonths), formatCents(m.interestCents), formatCents(m.valueAtMaturityCents))}
+                            </p>
+                          );
+                        })()}
                         {e.source === 'jar' && (
                           <p className="mt-1.5 inline-flex rounded-full bg-leaf-soft px-2.5 py-1 text-xs font-bold text-leaf">{S.invest.jarSourced}</p>
                         )}

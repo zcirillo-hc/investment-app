@@ -330,6 +330,15 @@ spec('R10.4-b', 'R10.4', 'yourMoneyEnd', { putInCents: 0, age: 19 }, { fromAge: 
 capture('R10.4-c', 'R10.4', 'yourMoneyEnd', { putInCents: 10000, age: 99 });
 
 // ---------------------------------------------------------------------------------------
+// R16 bond and CD maturity. Arithmetic on the user's own two numbers, so all three are stated
+// rather than captured: $1,000 at 4.50% for a year pays exactly $45.
+spec('R16.1-a', 'R16.1', 'maturityValue', { principalCents: 100000, yieldBps: 450, termMonths: 12 }, { valueCents: 104500, interestCents: 4500 });
+// Two years compounds, so it is 1.05^2 and not 10% simple.
+spec('R16.1-b', 'R16.1', 'maturityValue', { principalCents: 100000, yieldBps: 500, termMonths: 24 }, { valueCents: 110250, interestCents: 10250 });
+// Out of range returns nothing at all rather than a number.
+spec('R16.1-c', 'R16.1', 'maturityValue', { principalCents: 100000, yieldBps: 0, termMonths: 12 }, { valueCents: 0, interestCents: 0 });
+
+// ---------------------------------------------------------------------------------------
 // R13 tick ordering. Floor: 8. Captured: a tick summary is defined by the whole pipeline.
 for (const days of [1, 7, 14, 30]) {
   capture(`R13-n${days}`, 'R13', 'tickSummary', { seed: 42, startDate: '2026-06-15', nudgesEnabled: true, days });

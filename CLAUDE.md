@@ -48,7 +48,7 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 
 ```
 npm run dev          vite dev server, http://localhost:5173
-npm test             vitest, unit  (681 passing)
+npm test             vitest, unit  (691 passing)
 npm run test:db      vitest against real Neon, isolated schema  (93 passing)
 npm run e2e          playwright, 4 viewport profiles  (~9 minutes)
 npm run typecheck    full tsc, includes tests and scripts
@@ -108,6 +108,9 @@ Key ones to know:
 - **R5.5** skipping credits the jar with an estimate drawn from the user's own history at that merchant.
 - **R14** nudge scheduling and delivery, including timezone and the daily cron.
 - **R15** education, not advice. See section 6.
+- **R16** bond and CD term and rate on a ledger entry, and what it pays held to maturity.
+  Allowed where a stock projection is not, because a CD rate is a contract and this is
+  arithmetic on the user's own two numbers rather than a guess about markets.
 
 Money is **integer cents** everywhere. Never floats.
 
@@ -182,7 +185,7 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-09: 681 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
+Green as of 2026-09-09: 691 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
 
 **Known open items:**
 - The v2 tester found 8 defects. Fixes for all of them plus the advice policy landed on 2026-09-09 and need a tester re-verification pass that has not run.

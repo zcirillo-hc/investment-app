@@ -7,6 +7,7 @@
 // asserts that by name over this module's exports, so adding one is a test failure.
 import type { Cents, LedgerEntry, LedgerSource } from './types';
 import { compareOrdinal } from './money';
+import { isUsableTerm, isUsableYield } from './maturity';
 import { isValidDate } from './dates';
 import { LEDGER_MAX_AMOUNT_CENTS, LEDGER_NOTE_MAX_LENGTH, LEDGER_WHAT_MAX_LENGTH } from '../config';
 
@@ -16,9 +17,11 @@ export interface LedgerDraft {
   what: string;
   note: string;
   source: LedgerSource;
+  termMonths?: number;
+  yieldBps?: number;
 }
 
-export type LedgerProblem = 'date' | 'dateFuture' | 'amount' | 'amountTooLarge' | 'what' | 'whatTooLong' | 'noteTooLong';
+export type LedgerProblem = 'date' | 'dateFuture' | 'amount' | 'amountTooLarge' | 'what' | 'whatTooLong' | 'noteTooLong' | 'term' | 'yield';
 
 export type LedgerValidation = { ok: true; draft: LedgerDraft } | { ok: false; problems: LedgerProblem[] };
 
@@ -38,6 +41,11 @@ export function validateDraft(draft: LedgerDraft, currentDate: string): LedgerVa
   if (what.length < 1) problems.push('what');
   else if (what.length > LEDGER_WHAT_MAX_LENGTH) problems.push('whatTooLong');
   if (note.length > LEDGER_NOTE_MAX_LENGTH) problems.push('noteTooLong');
+  // R16. Both are optional, but a value that is present and unusable is rejected rather than
+  // quietly dropped: a term with no rate renders nothing, and silently discarding what someone
+  // typed is how a ledger stops matching what they believe is in it.
+  if (draft.termMonths !== undefined && !isUsableTerm(draft.termMonths)) problems.push('term');
+  if (draft.yieldBps !== undefined && !isUsableYield(draft.yieldBps)) problems.push('yield');
   if (problems.length > 0) return { ok: false, problems };
   return { ok: true, draft: { ...draft, what, note } };
 }
@@ -61,6 +69,10 @@ export function makeEntry(ledger: LedgerEntry[], draft: LedgerDraft, createdAt: 
     note: draft.note.trim(),
     source: draft.source,
     createdAt,
+    // R16. Only spread when present, so a non bond entry never carries the keys at all and
+    // `e.termMonths !== undefined` stays an honest test of whether this is a rate bearing row.
+    ...(draft.termMonths !== undefined ? { termMonths: draft.termMonths } : {}),
+    ...(draft.yieldBps !== undefined ? { yieldBps: draft.yieldBps } : {}),
   };
 }
 
@@ -131,6 +143,18 @@ export function removeEntry(ledger: LedgerEntry[], id: string): LedgerEntry[] {
 
 export function replaceEntry(ledger: LedgerEntry[], id: string, draft: LedgerDraft): LedgerEntry[] {
   return ledger.map((e) =>
-    e.id === id ? { ...e, date: draft.date, amountCents: draft.amountCents, what: draft.what.trim(), note: draft.note.trim() } : e,
+    e.id === id
+      ? {
+          ...e,
+          date: draft.date,
+          amountCents: draft.amountCents,
+          what: draft.what.trim(),
+          note: draft.note.trim(),
+          // R16. An edit that clears the term or the rate must remove the key, not leave the
+          // old one behind, or the row would keep quoting a rate the user just deleted.
+          termMonths: draft.termMonths,
+          yieldBps: draft.yieldBps,
+        }
+      : e,
   );
 }

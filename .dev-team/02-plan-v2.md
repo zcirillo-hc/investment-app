@@ -751,6 +751,22 @@ non negative integers unless stated.
   - Carries the R10.3 disclosure, plus a line stating the app does not know what the user's
     investments are actually worth, so the number is never mistaken for a valuation.
 
+### R16 Bond and CD terms
+
+- **R16.1** A ledger entry may carry an optional `termMonths` and `yieldBps`, and only the
+  bonds or CDs holding type offers them. Value at maturity is
+  `round(principal * (1 + yieldBps / 10000) ^ (termMonths / 12))`. An APY already accounts
+  for the bank's compounding, so raising it to the term in years is the whole calculation.
+- **R16.2** Both are optional, but a value that is present and out of range is rejected rather
+  than dropped, on save and on import. Ceilings: 5000 basis points and 600 months, which are
+  sanity bounds against a typo, not opinions about what a good rate is.
+- **R16.3** This is allowed where a stock projection is not, and the distinction is the point.
+  A stock number is a guess about markets. A CD's rate is a contract, and this is arithmetic
+  on two numbers the user typed off their own statement. The copy beside it says so, and states
+  the two things it does not model: selling before the end, and an issuer that does not pay.
+- **R16.4** Nothing here ranks, recommends, or compares products. It reports what the user's
+  own stated rate pays, and nothing else. R15's second list still applies in full.
+
 ### R11 Privacy and deletion
 
 - **R11.1** A coordinate, if one exists, is stored only on the place record, never on a

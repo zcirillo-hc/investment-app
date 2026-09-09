@@ -7,7 +7,8 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAppNavigate } from '../lib/hooks';
 import { HOLDING_TYPES } from '../content/holdingTypes';
-import { parseDollarInput } from '../domain/money';
+import { formatCents, parseDollarInput } from '../domain/money';
+import { formatTerm, formatYield, maturityOf } from '../domain/maturity';
 import { currentDate } from '../domain/selectors';
 import { LEDGER_WHAT_MAX_LENGTH } from '../config';
 
@@ -17,6 +18,10 @@ interface Row {
   requiresLabel: boolean;
   amount: string;
   typedLabel: string;
+  // R16. Bond and CD rows only, both optional. Held as typed text so a half finished entry
+  // does not flicker a maturity figure while somebody is still typing the rate.
+  term: string;
+  rate: string;
 }
 
 /**
@@ -62,7 +67,7 @@ export function InvestCapture() {
     setRows((current) => {
       // A chip tapped twice must not create two rows for the same type.
       if (current.some((r) => r.key === key)) return current;
-      return [...current, { key, label: type.label, requiresLabel: type.requiresLabel, amount: '', typedLabel: '' }];
+      return [...current, { key, label: type.label, requiresLabel: type.requiresLabel, amount: '', typedLabel: '', term: '', rate: '' }];
     });
   };
 
@@ -70,6 +75,19 @@ export function InvestCapture() {
 
   const patchRow = (key: string, patch: Partial<Row>) =>
     setRows((current) => current.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+
+  // R16. Only a bond or CD row offers a term and a rate, and only a complete, sane pair
+  // produces a figure. A term with no rate, or either one out of range, shows nothing rather
+  // than a wrong number.
+  const rowMaturity = (r: Row) => {
+    if (r.key !== 'bondsCds') return null;
+    const cents = parseDollarInput(r.amount);
+    const months = Number(r.term.trim());
+    const pct = Number(r.rate.trim());
+    if (cents === null || r.term.trim() === '' || r.rate.trim() === '') return null;
+    if (!Number.isFinite(months) || !Number.isFinite(pct)) return null;
+    return maturityOf(cents, Math.round(pct * 100), Math.round(months));
+  };
 
   const rowReady = (r: Row): boolean => {
     const cents = parseDollarInput(r.amount);
@@ -90,7 +108,15 @@ export function InvestCapture() {
     for (const r of rows) {
       const cents = parseDollarInput(r.amount) ?? 0;
       const what = r.requiresLabel ? r.typedLabel.trim() : r.label;
-      const result = addLedgerEntry({ date, amountCents: cents, what, note: '', source: 'manual' });
+      const m = rowMaturity(r);
+      const result = addLedgerEntry({
+        date,
+        amountCents: cents,
+        what,
+        note: '',
+        source: 'manual',
+        ...(m ? { termMonths: m.termMonths, yieldBps: m.yieldBps } : {}),
+      });
       if (!result.ok) {
         setError(r.requiresLabel && what.length > LEDGER_WHAT_MAX_LENGTH ? S.capture.errLabelTooLong : S.invest.errAmount);
         return;
@@ -190,6 +216,50 @@ export function InvestCapture() {
                     />
                   </div>
                 </label>
+                {r.key === 'bondsCds' && (
+                  <div className="mt-3" data-testid={`invest-capture-cd-${r.key}`}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block text-sm">
+                        <span className="font-semibold">{S.invest.termLabel}</span>
+                        <div className="relative mt-1">
+                          <input
+                            data-testid="invest-capture-term"
+                            inputMode="numeric"
+                            className="min-h-[48px] w-full rounded-2xl bg-ground py-2 pl-3 pr-20 text-lg font-bold ring-1 ring-line transition num focus:outline-none focus:ring-2 focus:ring-leaf"
+                            value={r.term}
+                            onChange={(e) => patchRow(r.key, { term: e.target.value })}
+                          />
+                          <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted">{S.invest.termUnit}</span>
+                        </div>
+                      </label>
+                      <label className="block text-sm">
+                        <span className="font-semibold">{S.invest.yieldLabel}</span>
+                        <div className="relative mt-1">
+                          <input
+                            data-testid="invest-capture-rate"
+                            inputMode="decimal"
+                            className="min-h-[48px] w-full rounded-2xl bg-ground py-2 pl-3 pr-24 text-lg font-bold ring-1 ring-line transition num focus:outline-none focus:ring-2 focus:ring-leaf"
+                            value={r.rate}
+                            onChange={(e) => patchRow(r.key, { rate: e.target.value })}
+                          />
+                          <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted">{S.invest.yieldUnit}</span>
+                        </div>
+                      </label>
+                    </div>
+                    {(() => {
+                      const m = rowMaturity(r);
+                      if (!m) return null;
+                      return (
+                        <div className="mt-3 rounded-2xl bg-leaf-soft px-4 py-3">
+                          <p className="text-base font-bold" data-testid="invest-capture-maturity">
+                            {S.invest.maturityLine(formatYield(m.yieldBps), formatTerm(m.termMonths), formatCents(m.interestCents), formatCents(m.valueAtMaturityCents))}
+                          </p>
+                          <p className="mt-1 text-sm text-muted">{S.invest.maturityNote}</p>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </Card>
             </li>
           ))}

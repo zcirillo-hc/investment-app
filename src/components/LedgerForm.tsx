@@ -16,6 +16,8 @@ const MESSAGES: Record<LedgerProblem, string> = {
   what: S.invest.errWhat,
   whatTooLong: S.invest.errWhatTooLong,
   noteTooLong: S.invest.errNoteTooLong,
+  term: S.invest.errTerm,
+  yield: S.invest.errYield,
 };
 
 export function messageFor(problems: string[]): string {

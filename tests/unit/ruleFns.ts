@@ -16,6 +16,7 @@ import { estimateCentsFor, estimateFromAmounts } from '../../src/domain/estimate
 import { addToJar, crossedGoal, emptiedJar, isJarGoalPreset } from '../../src/domain/jar';
 import { ledgerTotalCents, sortedLedger, validateDraft } from '../../src/domain/ledger';
 import { treeStage } from '../../src/domain/tree';
+import { maturityOf } from '../../src/domain/maturity';
 import { byThirtyDollars, keepOfLeftCents, summerCurves, yourMoneyCurve } from '../../src/domain/summer';
 import { averageCents, roundCents } from '../../src/domain/money';
 import { keptThisWeekCents, keptSinceStartCents, skipsThisWeek } from '../../src/domain/selectors';
@@ -160,6 +161,12 @@ export const RULE_FNS: Record<string, (input: Json) => Json> = {
       endDollars: Math.round(c.endValue),
       hasMoney: c.hasMoney,
     };
+  },
+
+  // R16
+  maturityValue: (i) => {
+    const m = maturityOf(i.principalCents as number, i.yieldBps as number, i.termMonths as number);
+    return m ? { valueCents: m.valueAtMaturityCents, interestCents: m.interestCents } : { valueCents: 0, interestCents: 0 };
   },
 
   // R13

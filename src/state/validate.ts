@@ -6,6 +6,7 @@
 // holdings, history and allocation have no v2 meaning (plan section 3, "Explicitly out of
 // scope").
 import type { AppState, FearOption, LedgerKind, LedgerSource, LessonId, Place, PlaceVisit, Theme } from '../domain/types';
+import { MAX_TERM_MONTHS, MAX_YIELD_BPS, isUsableTerm, isUsableYield } from '../domain/maturity';
 import { LESSON_IDS, emptyLearn, emptyLearnSurfaces, initialPushState } from '../domain/types';
 import { LEARN_IDS, LEARN_SURFACES } from '../content/learn';
 import { compareDates, isValidDate, safeSimDate } from '../domain/dates';
@@ -230,6 +231,15 @@ function validateLedgerEntry(c: Checker, v: unknown, path: string): void {
   c.strMax(v.note, `${path}.note`, LEDGER_NOTE_MAX_LENGTH);
   c.oneOf(v.source, `${path}.source`, LEDGER_SOURCES);
   c.optionalTimestamp(v.createdAt, `${path}.createdAt`);
+  // R16. Optional, but present means valid. A hand edited file carrying a 900 month term or a
+  // 4000% rate would otherwise render a maturity figure that is arithmetically real and
+  // completely absurd, which is the silently wrong output class of defect.
+  if (v.termMonths !== undefined && !isUsableTerm(v.termMonths as number)) {
+    c.fail(`${path}.termMonths`, `expected a whole number of months, 1 to ${MAX_TERM_MONTHS}`);
+  }
+  if (v.yieldBps !== undefined && !isUsableYield(v.yieldBps as number)) {
+    c.fail(`${path}.yieldBps`, `expected whole basis points, 1 to ${MAX_YIELD_BPS}`);
+  }
 }
 
 function validateEvent(c: Checker, v: unknown, path: string): void {

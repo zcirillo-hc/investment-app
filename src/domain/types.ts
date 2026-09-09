@@ -55,6 +55,11 @@ export interface LedgerEntry {
   note: string;
   source: LedgerSource;
   createdAt: string; // ISO
+  // R16. Only a bond or CD row carries these, and only when the user filled them in. Absent on
+  // every other holding type and on every entry written before R16 existed, which is why they
+  // are optional rather than defaulted: a zero here would render as a real 0.00% rate.
+  termMonths?: number;
+  yieldBps?: number;
 }
 
 interface EventBase {

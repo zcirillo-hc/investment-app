@@ -252,6 +252,16 @@ export const S = {
     errDateFuture: 'That date has not happened yet.',
     errWhat: 'Say what it went into.',
     errWhatTooLong: 'Keep that under 60 characters.',
+    // R16. Bond and CD term and rate.
+    errTerm: 'Give the length in whole months, up to 50 years.',
+    errYield: 'Give the rate as a number, up to 50%.',
+    termLabel: 'How long is it for?',
+    termUnit: 'months',
+    yieldLabel: 'What rate does it pay?',
+    yieldUnit: '% a year',
+    maturityLine: (rate: string, term: string, interest: string, total: string) =>
+      `At ${rate} for ${term}, holding it to the end pays ${interest}, so you would have ${total}.`,
+    maturityNote: 'That is the rate doing its arithmetic, not a guess about markets. It assumes you hold it to the end and whoever issued it pays.',
     errNoteTooLong: 'Keep the note under 200 characters.',
     savedToast: 'Recorded. That is all we do with it.',
   },

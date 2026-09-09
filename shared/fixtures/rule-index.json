@@ -9,6 +9,7 @@
     "R10.4",
     "R13",
     "R14.2",
+    "R16.1",
     "R2.0",
     "R2.1",
     "R2.4",
@@ -86,6 +87,9 @@
     "R15.4": "No personalization of educational content. Enforced by the absence of any state read in learn.ts.",
     "R15.5": "No ranking of options. Covered by the human review gate in R15.7.",
     "R15.6": "The standing statement appears once per screen. Covered by copy.test.ts and the e2e learn spec.",
-    "R15.7": "The enforcement rule itself. It is the lint, the test and the review gate."
+    "R15.7": "The enforcement rule itself. It is the lint, the test and the review gate.",
+    "R16.2": "Range guards on term and rate. Covered by maturity.test.ts for the calculator and by validate.test.ts for the import path.",
+    "R16.3": "The reason this number is allowed where a stock projection is not. A copy rule, enforced by lint-advice and the R15 human review gate.",
+    "R16.4": "A prohibition: no ranking or recommending of products. Enforced by lint-advice and by the absence of any comparison in the strings."
   }
 }
