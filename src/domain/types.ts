@@ -74,6 +74,12 @@ export interface PurchaseEvent extends EventBase {
   category: PurchaseCategory;
   cents: Cents;
 }
+/**
+ * LEGACY ONLY. Round-ups were removed when skipping became the single way to fill the jar.
+ * Nothing creates one any more. The shape stays so a profile saved before the removal still
+ * loads, still shows its old history, and still counts toward totals, rather than a user's
+ * numbers dropping overnight because we changed our minds about a feature.
+ */
 export interface RoundUpEvent extends EventBase {
   kind: 'RoundUp';
   purchaseId: string;
@@ -179,7 +185,6 @@ export interface AppState {
     fear: FearOption | null;
   };
   settings: {
-    roundUpsPaused: boolean;
     catchPct: number;
     jarGoalCents: Cents;
     theme: Theme;
@@ -283,7 +288,6 @@ export function initialAppState(): AppState {
       fear: null,
     },
     settings: {
-      roundUpsPaused: false,
       catchPct: DEFAULT_CATCH_PCT,
       jarGoalCents: DEFAULT_JAR_GOAL_CENTS,
       theme: 'system',

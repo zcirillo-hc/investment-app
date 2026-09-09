@@ -71,12 +71,6 @@ spec('R1.3-b', 'R1.3', 'averageCents', { sumCents: 1, count: 2 }, { cents: 1 });
 
 // ---------------------------------------------------------------------------------------
 // R2.1 round-up. Floor: 6.
-spec('R2.1-a', 'R2.1', 'roundUpCents', { amountCents: 435 }, { cents: 65 });
-spec('R2.1-b', 'R2.1', 'roundUpCents', { amountCents: 400 }, { cents: 0 });
-spec('R2.1-c', 'R2.1', 'roundUpCents', { amountCents: 401 }, { cents: 99 });
-spec('R2.1-d', 'R2.1', 'roundUpCents', { amountCents: 499 }, { cents: 1 });
-spec('R2.1-e', 'R2.1', 'roundUpCents', { amountCents: 0 }, { cents: 0 });
-spec('R2.1-f', 'R2.1', 'roundUpCents', { amountCents: 1 }, { cents: 99 });
 
 // ---------------------------------------------------------------------------------------
 // R2.4 minute of day. Floor: 8. Captured: the draw is defined by the PRNG, not by the plan.

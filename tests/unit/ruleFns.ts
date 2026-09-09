@@ -8,7 +8,6 @@
  * function, so a fixture case can never pass against test-only arithmetic.
  */
 import { fnv1a32, hash, mulberry32Uint32 } from '../../src/domain/prng';
-import { roundUpCents } from '../../src/domain/roundup';
 import { visitMinuteFor } from '../../src/domain/simulator';
 import { isHabitFrom, spreadMinutesOf, usualMinuteOf } from '../../src/domain/habits';
 import { isNudgeMinuteOnSameDay, isWithinQuietHours, nudgeMinuteFor, nudgeSchedulePayload, selectNudge } from '../../src/domain/nudges';
@@ -52,9 +51,6 @@ export const RULE_FNS: Record<string, (input: Json) => Json> = {
   // R1.2 and R1.3
   roundCents: (i) => ({ cents: roundCents(i.value as number) }),
   averageCents: (i) => ({ cents: averageCents(i.sumCents as number, i.count as number) }),
-
-  // R2.1
-  roundUpCents: (i) => ({ cents: roundUpCents(i.amountCents as number) }),
 
   // R2.4
   minuteOfDay: (i) => ({

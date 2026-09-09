@@ -155,7 +155,6 @@ function validateProfile(c: Checker, v: unknown): void {
 
 function validateSettings(c: Checker, v: unknown): void {
   if (!c.obj(v, 'settings')) return;
-  c.bool(v.roundUpsPaused, 'settings.roundUpsPaused');
   c.intBetween(v.catchPct, 'settings.catchPct', MIN_CATCH_PCT, MAX_CATCH_PCT);
   c.oneOf(v.jarGoalCents, 'settings.jarGoalCents', JAR_GOAL_PRESETS);
   c.oneOf(v.theme, 'settings.theme', THEMES);

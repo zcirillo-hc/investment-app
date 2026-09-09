@@ -8,7 +8,7 @@ Last updated 2026-09-09. Keep it that way: when you change how this project work
 
 ## 1. What the app is
 
-A web app that notices where you spend without thinking about it, nudges you once in the morning to skip that stop, and puts the money you did not spend into a jar. When you move that money somewhere real, you tell the app where it went and it keeps the record.
+A web app that notices where you spend without thinking about it, nudges you once in the morning to skip that stop, and puts the money you did not spend into a jar. Skipping is the point: a day passing does not move money on its own. When you move that money somewhere real, you tell the app where it went and it keeps the record.
 
 Mission line: **"Keep a little. It goes a long way."**
 
@@ -24,6 +24,9 @@ This matters more than the feature list, because several of these were removed o
 - **It does not track your location in the background.** Habits come from the transaction feed. Location is When In Use only and merely labels a place. There is no geofencing.
 - **It does not nag.** One nudge a day maximum. Saying no produces silence, never a comment.
 - **It does not give financial advice.** See section 6.
+- **It does not do round-ups.** They were removed so that skipping is the only thing that
+  fills the jar. `RoundUp` still exists as a legacy event the app can read, so pre-removal
+  profiles keep their history, but nothing creates one.
 
 ---
 
@@ -48,7 +51,7 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 
 ```
 npm run dev          vite dev server, http://localhost:5173
-npm test             vitest, unit  (691 passing)
+npm test             vitest, unit  (684 passing)
 npm run test:db      vitest against real Neon, isolated schema  (93 passing)
 npm run e2e          playwright, 4 viewport profiles  (~9 minutes)
 npm run typecheck    full tsc, includes tests and scripts
@@ -185,7 +188,7 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-09: 691 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
+Green as of 2026-09-09: 684 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
 
 **Known open items:**
 - The v2 tester found 8 defects. Fixes for all of them plus the advice policy landed on 2026-09-09 and need a tester re-verification pass that has not run.

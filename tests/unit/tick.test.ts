@@ -64,7 +64,9 @@ describe('R12.2 onboarding', () => {
   });
 
   it('R12.4: a lesson unlocks once and keeps its first day', () => {
-    let s = tickN(onboarded(), deps(), 3);
+    // L1 used to unlock on the first round-up. With those gone it unlocks on the first skip,
+    // which is the first thing the user actually does.
+    let s = withSkippedJar();
     const day = s.lessons.L1.unlockedDay;
     expect(day).not.toBeNull();
     s = tickN(s, deps(), 5);
@@ -72,13 +74,27 @@ describe('R12.2 onboarding', () => {
   });
 });
 
+
+/**
+ * Money only reaches the jar through a skip or a catch now that round-ups are gone, so any test
+ * that needs a funded jar has to earn it rather than just letting days pass.
+ */
+function withSkippedJar(): AppState {
+  const s = forceNudge(setNudgesEnabled(injectHabitVisits(onboarded(), 'Demo Coffee', 510, 435), true));
+  const nudge = s.nudges.find((n) => n.status === 'pending');
+  return nudge ? takeSkip(s, nudge.id) : s;
+}
+
 describe('R13 the order of operations', () => {
-  it('advances the day, generates purchases and round-ups, and the jar grows', () => {
+  it('advances the day and generates purchases, and the jar stays put', () => {
+    // Round-ups are gone, so a day passing no longer moves money on its own. Purchases still
+    // arrive because habits are read off them; they just do not fill the jar any more. Only a
+    // skip or a catch does, which is the whole point of the removal.
     const s = tick(onboarded(), deps());
     expect(s.clock.dayIndex).toBe(1);
     expect(s.events.some((e) => e.kind === 'Purchase')).toBe(true);
-    expect(s.events.some((e) => e.kind === 'RoundUp')).toBe(true);
-    expect(s.jarCents).toBeGreaterThan(0);
+    expect(s.events.some((e) => e.kind === 'RoundUp'), 'nothing may create a round-up').toBe(false);
+    expect(s.jarCents, 'a day passing must not move money by itself').toBe(0);
   });
 
   it('tickN(7) equals seven successive ticks', () => {
@@ -94,8 +110,9 @@ describe('R13 the order of operations', () => {
     const subscriptions = purchases.filter((e) => e.kind === 'Purchase' && e.category === 'subscription');
     expect(subscriptions.length).toBeGreaterThan(0);
     expect(s.visits).toHaveLength(purchases.length - subscriptions.length);
-    // The subscription still produced a round-up, which is the point of R2.3.
-    expect(s.events.some((e) => e.kind === 'RoundUp')).toBe(true);
+    // R2.3's point is now only that a subscription is a purchase without a visit: it is not
+    // somewhere you went, so it can never become a habit and can never be nudged.
+    expect(subscriptions.every((e) => !s.visits.some((v) => v.dayIndex === e.dayIndex && v.displayName === (e as { merchant: string }).merchant))).toBe(true);
   });
 
   it('step 8: recomputes habits every tick, from scratch', () => {
@@ -214,7 +231,7 @@ describe('R5 the skip', () => {
 
 describe('R6 the jar actions', () => {
   it('R6.4: a jar move writes one entry, one JarMove event and empties the jar', () => {
-    const s = tickN(onboarded(), deps(), 10);
+    const s = tickN(withSkippedJar(), deps(), 10);
     const amount = s.jarCents;
     expect(amount).toBeGreaterThan(0);
     const r = moveJarToLedger(s, { date: '2026-06-25', what: 'Index fund', note: '' }, '2026-06-25T10:00:00.000Z');
@@ -234,7 +251,7 @@ describe('R6 the jar actions', () => {
   });
 
   it('R6.5: "I spent it" empties the jar with one neutral event and no ledger entry', () => {
-    const s = tickN(onboarded(), deps(), 10);
+    const s = tickN(withSkippedJar(), deps(), 10);
     const after = emptyJar(s);
     expect(after.jarCents).toBe(0);
     expect(after.ledger).toEqual([]);
@@ -250,7 +267,7 @@ describe('R6 the jar actions', () => {
   });
 
   it('R7.4: deleting a jar sourced entry does not restore the jar', () => {
-    const s = tickN(onboarded(), deps(), 10);
+    const s = tickN(withSkippedJar(), deps(), 10);
     const r = moveJarToLedger(s, { date: '2026-06-25', what: 'Index fund', note: '' }, '2026-06-25T10:00:00.000Z');
     if (!r.ok) throw new Error('move failed');
     expect(r.state.jarCents).toBe(0);
@@ -356,8 +373,12 @@ describe('counters and arithmetic', () => {
   });
 
   it('the first summer milestone fires on September 1 when there were kept events', () => {
-    // Start in August so a tick crosses into September.
-    const s = tickN(onboarded({ startDate: '2026-08-20' }), deps(), 14);
+    // Start in August so a tick crosses into September. A kept event has to exist for the
+    // milestone to mean anything, and with round-ups gone that means an actual skip.
+    const base = forceNudge(setNudgesEnabled(injectHabitVisits(onboarded({ startDate: '2026-08-20' }), 'Demo Coffee', 510, 435), true));
+    const nudge = base.nudges.find((n) => n.status === 'pending');
+    const seeded = nudge ? takeSkip(base, nudge.id) : base;
+    const s = tickN(seeded, deps(), 14);
     expect(s.milestones.firstSummer).not.toBeNull();
   });
 });

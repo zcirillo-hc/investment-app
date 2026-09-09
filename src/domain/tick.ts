@@ -3,7 +3,6 @@
 import type { Cents, Paycheck, PlaceVisit, SimContext } from './interfaces';
 import type { AppState, Deps, FearOption, Habit, LedgerEntry, LedgerEvent, Nudge, Place } from './types';
 import { dayOfMonth, monthOf, simDate } from './dates';
-import { roundUpsFor } from './roundup';
 import { addToJar, emptiedJar } from './jar';
 import { catchCents, clampCatchPct, paycheckCentsFor } from './catch';
 import { deletePlace as deletePlaceRecords, deleteAllPlaces as clearPlaceRecords, pruneVisits, upsertPlaces } from './places';
@@ -102,20 +101,9 @@ export function tick(state: AppState, deps: Deps): AppState {
     w.places = upsertPlaces(w.places, dayVisits, deps.location);
   }
 
-  // 5. Apply round-ups to the jar (R2.1), unless paused.
-  for (const r of roundUpsFor(purchases, state.settings.roundUpsPaused)) {
-    w.events.push({
-      kind: 'RoundUp',
-      id: eventId('RoundUp', dayIndex, w.events.length),
-      dayIndex,
-      date,
-      purchaseId: r.purchase.id,
-      merchant: r.purchase.merchant,
-      purchaseCents: r.purchase.amountCents,
-      cents: r.cents,
-    });
-    w.jar = addToJar(w.jar, r.cents);
-  }
+  // 5. Round-ups are gone (R2.1 removed). Purchases still drive habit detection, they just no
+  // longer put anything in the jar. A skip is the only thing the app asks you to do now, so it
+  // is the only thing that fills it.
 
   // 6. Queue a paycheck if one is due.
   const pc = deps.transactions.paycheckForDay(dayIndex, ctx);

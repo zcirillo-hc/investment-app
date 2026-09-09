@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSimulatedTransactionSource, isPaycheckDue } from '../../src/domain/simulator';
-import { roundUpsFor } from '../../src/domain/roundup';
 import { MERCHANTS } from '../../src/data/merchants';
-import { DEFAULT_JAR_GOAL_CENTS } from '../../src/config';
 
 const src = createSimulatedTransactionSource();
 const ctx = (seed: number) => ({ seed, paycheckCents: 50000, startDate: '2026-06-15' });
@@ -66,15 +64,16 @@ describe('simulator', () => {
    * crosses the default $25 goal several times over sixty days, which is the property the
    * original case was really protecting.
    */
-  it('60 days of round-ups fills the jar past the default goal at seeds 42 and 7', () => {
+  it('60 days produces a purchase feed dense enough to find habits at seeds 42 and 7', () => {
+    // Round-ups used to be what this guarded: their total over 60 days proved the feed was
+    // tuned. Nothing rounds up any more, but the feed still has to be dense enough for a place
+    // to reach the 3 visits in 14 days that makes it a habit, so the same tuning still matters
+    // and this now measures it directly.
     for (const seed of [42, 7]) {
-      let jar = 0;
-      for (let d = 1; d <= 60; d++) {
-        for (const r of roundUpsFor(src.purchasesForDay(d, ctx(seed)), false)) jar += r.cents;
-      }
-      expect(jar, `seed ${seed}`).toBeGreaterThan(DEFAULT_JAR_GOAL_CENTS);
-      // And not absurdly more: a feed that suddenly produced ten times this would be a bug.
-      expect(jar, `seed ${seed}`).toBeLessThan(DEFAULT_JAR_GOAL_CENTS * 20);
+      let purchases = 0;
+      for (let d = 1; d <= 60; d++) purchases += src.purchasesForDay(d, ctx(seed)).length;
+      expect(purchases, `seed ${seed}`).toBeGreaterThan(60);
+      expect(purchases, `seed ${seed}`).toBeLessThan(600);
     }
   });
 

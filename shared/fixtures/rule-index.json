@@ -11,7 +11,6 @@
     "R14.2",
     "R16.1",
     "R2.0",
-    "R2.1",
     "R2.4",
     "R3.2",
     "R3.3",
@@ -90,6 +89,7 @@
     "R15.7": "The enforcement rule itself. It is the lint, the test and the review gate.",
     "R16.2": "Range guards on term and rate. Covered by maturity.test.ts for the calculator and by validate.test.ts for the import path.",
     "R16.3": "The reason this number is allowed where a stock projection is not. A copy rule, enforced by lint-advice and the R15 human review gate.",
-    "R16.4": "A prohibition: no ranking or recommending of products. Enforced by lint-advice and by the absence of any comparison in the strings."
+    "R16.4": "A prohibition: no ranking or recommending of products. Enforced by lint-advice and by the absence of any comparison in the strings.",
+    "R2.1": "RETIRED. Round-ups were removed so that skipping is the only thing that fills the jar. The rule is referenced in R6.1 only to record that it is gone, and nothing implements it, so it has no case."
   }
 }

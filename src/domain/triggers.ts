@@ -19,7 +19,7 @@ export function evaluateLessonTriggers(state: AppState): AppState {
   let s = state;
   const day = s.clock.dayIndex;
   const has = (kind: string) => s.events.some((e) => e.kind === kind);
-  if (has('RoundUp')) s = unlock(s, 'L1', day);
+  if (has('Skip')) s = unlock(s, 'L1', day);
   if (has('Catch')) s = unlock(s, 'L2', day);
   if (has('Skip')) s = unlock(s, 'L3', day);
   if (s.ledger.length > 0) s = unlock(s, 'L4', day);

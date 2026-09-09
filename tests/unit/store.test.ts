@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { get } from 'idb-keyval';
+import { currentDate } from '../../src/domain/selectors';
 import { createAppStore } from '../../src/state/store';
 import { clearPersistedState, exportStateJson, parseImport, pickAppState, readPersistedEnvelope, writeImportedState } from '../../src/state/persistence';
 import { computeAutoAdvanceTicks, runAutoAdvance } from '../../src/state/bootstrap';
@@ -24,6 +25,21 @@ function onboard(store: ReturnType<typeof createAppStore>) {
   store.getState().setSummer(300000, 50000, 19);
   store.getState().setFear('pointless');
   store.getState().completeOnboarding();
+}
+
+
+/**
+ * The jar only fills from a skip or a catch now that round-ups are gone, so a store test that
+ * needs money in it has to perform one of those rather than just letting days pass.
+ */
+function fundJar(a: ReturnType<typeof createAppStore>): number {
+  a.getState().makeHabit();
+  a.getState().forceNudge();
+  const nudge = a.getState().nudges.find((n) => n.status === 'pending');
+  if (nudge) a.getState().takeSkip(nudge.id);
+  a.getState().landPaycheck();
+  a.getState().acceptCatch(5);
+  return a.getState().jarCents;
 }
 
 describe('store', () => {
@@ -117,11 +133,20 @@ describe('store', () => {
     const a = createAppStore();
     await a.persist.rehydrate();
     onboard(a);
+    // A day passing no longer moves money, so the goal is crossed by skipping repeatedly.
+    a.getState().makeHabit();
     let crossings = 0;
-    let ticks = 0;
-    while (ticks < 40 && crossings === 0) {
-      if (a.getState().nextDay().crossedGoal) crossings += 1;
-      ticks += 1;
+    let rounds = 0;
+    while (rounds < 60 && crossings === 0) {
+      a.getState().forceNudge();
+      const nudge = a.getState().nudges.find((n) => n.status === 'pending');
+      if (nudge) {
+        const wasBelow = a.getState().jarCents < a.getState().settings.jarGoalCents;
+        a.getState().takeSkip(nudge.id);
+        if (wasBelow && a.getState().jarCents >= a.getState().settings.jarGoalCents) crossings += 1;
+      }
+      a.getState().nextDay();
+      rounds += 1;
     }
     expect(crossings).toBe(1);
     expect(a.getState().jarCents).toBeGreaterThanOrEqual(a.getState().settings.jarGoalCents);
@@ -137,10 +162,11 @@ describe('store', () => {
     const a = createAppStore();
     await a.persist.rehydrate();
     onboard(a);
-    a.getState().skipWeek();
-    const before = a.getState().jarCents;
+    const before = fundJar(a);
     expect(before).toBeGreaterThan(0);
-    const r = a.getState().moveJarToLedger({ date: '2026-06-22', what: 'Index fund', note: '' });
+    // Dated today rather than a week out: funding the jar no longer advances the clock, so a
+    // hardcoded later date is now in the future and validateDraft rejects it.
+    const r = a.getState().moveJarToLedger({ date: currentDate(a.getState()), what: 'Index fund', note: '' });
     expect(r.ok).toBe(true);
     expect(a.getState().jarCents).toBe(0);
     expect(a.getState().ledger).toHaveLength(1);
@@ -153,8 +179,7 @@ describe('store', () => {
     const a = createAppStore();
     await a.persist.rehydrate();
     onboard(a);
-    a.getState().skipWeek();
-    expect(a.getState().jarCents).toBeGreaterThan(0);
+    expect(fundJar(a)).toBeGreaterThan(0);
     a.getState().emptyJar();
     expect(a.getState().jarCents).toBe(0);
     expect(a.getState().ledger).toEqual([]);

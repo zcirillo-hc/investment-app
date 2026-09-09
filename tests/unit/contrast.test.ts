@@ -193,9 +193,12 @@ describe('C4-8: no component reintroduces a raw label on a brand fill', () => {
     expect(runs.some((c) => /\bbg-amber(?![\w-])/.test(c) && /\btext-on-amber\b/.test(c))).toBe(true);
   });
 
-  it('D20: the pause switch takes its state colours from CSS, not from stacked Tailwind variants', () => {
-    const settings = readFileSync('src/screens/Settings.tsx', 'utf8');
-    const after = settings.split('data-testid="settings-pause-roundups"')[1]?.split('/>')[0] ?? '';
+  // Repointed when round-ups were removed and the pause switch went with them. The nudges
+  // toggle renders the identical switch, so the D20 ordering hole is still guarded rather than
+  // the guard being deleted along with the control it happened to be written against.
+  it('D20: the switch takes its state colours from CSS, not from stacked Tailwind variants', () => {
+    const settings = readFileSync('src/components/NudgesCard.tsx', 'utf8');
+    const after = settings.split('data-testid="nudges-toggle"')[1]?.split('/>')[0] ?? '';
     // The class list only, not the comment above it, which names the dead utilities on purpose.
     const sw = /className="([^"]*)"/.exec(after)?.[1] ?? '';
     expect(sw, 'the switch must render with a className').not.toBe('');

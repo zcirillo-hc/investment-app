@@ -8,7 +8,12 @@ import { EmptyState } from '../components/EmptyState';
 import { formatDateLongSafe } from '../domain/dates';
 import type { LedgerEvent } from '../domain/types';
 
-/** Plan v2 section 8.3: RoundUp, Catch, Skip, JarMove, JarEmptied. Purchases and Paychecks stay out. */
+/**
+ * Plan v2 section 8.3: Catch, Skip, JarMove, JarEmptied. Purchases and Paychecks stay out.
+ * RoundUp is LEGACY READ ONLY. Nothing creates one since round-ups were removed, but a profile
+ * saved before that still has them and its history should keep rendering rather than showing
+ * gaps where a user's real activity used to be.
+ */
 type FeedEvent = Extract<LedgerEvent, { kind: 'RoundUp' | 'Catch' | 'Skip' | 'JarMove' | 'JarEmptied' }>;
 
 function line(e: FeedEvent): string {

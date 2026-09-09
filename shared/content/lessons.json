@@ -4,8 +4,8 @@
   "lessons": [
     {
       "id": "L1",
-      "title": "Where the 65 cents went",
-      "body": "Your coffee was $4.35, so 65 cents went into the [[jar]]. That is not a rounding error, it is the whole trick. Little amounts you never notice add up to money you definitely will.",
+      "title": "The coffee you did not buy",
+      "body": "You skipped one stop, and the money you were about to spend went into the [[jar]] instead. Nothing came out of your account, because it never left it. That is the whole trick: the easiest money to keep is money you have not spent yet.",
       "unlockHint": "Unlocks with your first [[roundUp|round-up]]."
     },
     {

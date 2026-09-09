@@ -176,7 +176,7 @@ export const S = {
 
   activity: {
     title: 'Activity',
-    sub: 'Every [[roundUp|round-up]], [[catch]] and [[skip]], newest first.',
+    sub: 'Every [[catch]] and [[skip]], newest first.',
     emptyTitle: 'Nothing here yet.',
     // The empty state prints the title above this line, so the two do not repeat each other.
     empty: 'Everything you keep shows up here. Tap Next day in the demo tray, or come back tomorrow.',
@@ -323,8 +323,6 @@ export const S = {
     profileNote: 'Just so the app knows who you are. Nothing is sent anywhere.',
     nameInvalid: 'Keep the name between 1 and 40 characters. Your old name is still saved.',
     emailInvalid: 'That does not look like an email, so it was not saved. You can also leave it blank.',
-    pauseRoundUps: 'Pause round-ups',
-    pauseNote: 'Purchases still happen, but nothing goes in the [[jar]] until you turn this back on.',
     jarGoalTitle: 'Jar goal',
     jarGoalNote: 'Just a line on the jar. Nothing moves when you reach it, and nothing has to happen next.',
     jarGoalOption: (cents: number) => formatDollars(cents / 100),

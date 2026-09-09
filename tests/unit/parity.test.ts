@@ -32,7 +32,6 @@ describe('rule fixture', () => {
   it('meets the section 7.3 coverage floor, per category', () => {
     const n = (...rules: string[]) => cases.filter((c) => rules.includes(c.rule)).length;
     expect(n('R2.0')).toBeGreaterThanOrEqual(8);
-    expect(n('R2.1')).toBeGreaterThanOrEqual(6);
     expect(n('R2.4')).toBeGreaterThanOrEqual(8);
     expect(n('R3.2', 'R3.3', 'R3.4', 'R3.5')).toBeGreaterThanOrEqual(12);
     expect(n('R4.2', 'R4.3', 'R4.4')).toBeGreaterThanOrEqual(12);

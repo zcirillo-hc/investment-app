@@ -275,10 +275,6 @@ describe('enums and ranges', () => {
       /catchPct/,
     );
     expectRejected(
-      mutated((g) => ((g.settings as Record<string, unknown>).roundUpsPaused = 'yes')),
-      /roundUpsPaused/,
-    );
-    expectRejected(
       mutated((g) => ((g.settings as Record<string, unknown>).nudgesEnabled = 1)),
       /nudgesEnabled/,
     );

@@ -117,21 +117,6 @@ export function Settings() {
         <p className="mt-2 text-xs text-muted">{S.settings.profileNote}</p>
       </Card>
 
-      <Card className="mt-4">
-        <label className="flex items-center justify-between gap-4">
-          <span className="text-base font-extrabold">{S.settings.pauseRoundUps}</span>
-          <input
-            type="checkbox"
-            role="switch"
-            data-testid="settings-pause-roundups"
-            className="switch-track h-11 w-11 cursor-pointer appearance-none rounded-full bg-clip-content py-[10px] transition before:block before:h-5 before:w-5 before:translate-x-0.5 before:translate-y-0.5 before:rounded-full before:transition checked:before:translate-x-[22px]"
-            checked={state.settings.roundUpsPaused}
-            onChange={(e) => updateSettings({ roundUpsPaused: e.target.checked })}
-          />
-        </label>
-        <p className="mt-1 text-xs text-muted"><RichText text={S.settings.pauseNote} /></p>
-      </Card>
-
       {/* Plan 8.4: the jar goal replaces the sweep threshold. R6.3: nothing moves when it is reached. */}
       <Card className="mt-4">
         <h2 className="text-base font-extrabold">{S.settings.jarGoalTitle}</h2>

@@ -675,9 +675,14 @@ non negative integers unless stated.
 
 ### R6 The jar
 
-- **R6.1 Sources.** The jar accumulates round-ups (R2.1), paycheck catches (unchanged
-  v1 rule: `round(paycheck * pct / 100)`, pct clamped 1 to 20, default 5), and skips
-  (R5.5). Nothing else adds to it.
+- **R6.1 Sources.** The jar accumulates paycheck catches (`round(paycheck * pct / 100)`,
+  pct clamped 1 to 20, default 5) and skips (R5.5). Nothing else adds to it.
+  - **Round-ups are removed.** R2.1 is retired and nothing creates a `RoundUp` event. A day
+    passing no longer moves money at all: the only things that fill the jar are the two the
+    user chooses. Purchases are still generated, because habits are read off them, they just
+    no longer round up.
+  - The `RoundUp` event shape and its read paths stay for profiles saved before the removal,
+    so old history still renders and old totals still count. Nothing writes one.
 - **R6.2 No automatic sweep.** There is no threshold that moves money by itself. The
   sweep target from v1 is gone and is not replaced by another automatic destination.
 - **R6.3 The jar goal.** A display only target, default $25, presets $10, $25, $50,
