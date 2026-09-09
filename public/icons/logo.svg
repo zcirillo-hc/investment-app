@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Spare Change">
+  <defs>
+  <linearGradient id="sc-bg" x1="0" y1="0" x2="0.4" y2="1">
+  <stop offset="0" stop-color="#34B274"/>
+  <stop offset="1" stop-color="#11603A"/></linearGradient>
+  <radialGradient id="sc-glow" cx="0.5" cy="0.34" r="0.68">
+  <stop offset="0" stop-color="#BDF3D5" stop-opacity="0.45"/>
+  <stop offset="1" stop-color="#BDF3D5" stop-opacity="0"/></radialGradient>
+  <linearGradient id="sc-money" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#F5825F"/>
+  <stop offset="0.55" stop-color="#EE8A3C"/>
+  <stop offset="1" stop-color="#DC9420"/></linearGradient>
+  <linearGradient id="sc-round" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.34"/>
+  <stop offset="0.34" stop-color="#FFFFFF" stop-opacity="0"/>
+  <stop offset="0.74" stop-color="#6B3F14" stop-opacity="0"/>
+  <stop offset="1" stop-color="#6B3F14" stop-opacity="0.16"/></linearGradient>
+  <clipPath id="sc-jar">
+  <path d="M126 142 H386 Q414 142 414 196 V378 Q414 436 356 436 H156 Q98 436 98 378 V196 Q98 142 126 142 Z"/></clipPath></defs>
+  <rect width="512" height="512" fill="url(#sc-bg)"/>
+  <rect width="512" height="512" fill="url(#sc-glow)"/>
+  <ellipse cx="256" cy="446" rx="180" ry="20" fill="#05301C" opacity="0.22"/>
+  <path d="M126 142 H386 Q414 142 414 196 V378 Q414 436 356 436 H156 Q98 436 98 378 V196 Q98 142 126 142 Z" fill="#FFFFFF"/>
+  <g clip-path="url(#sc-jar)">
+  <path d="M98 212 C142 190 194 230 256 212 C318 194 370 228 414 206 L414 452 L98 452 Z" fill="#FBB067"/>
+  <path d="M98 232 C142 210 194 250 256 232 C318 214 370 248 414 226 L414 452 L98 452 Z" fill="url(#sc-money)"/>
+  <rect x="92" y="130" width="328" height="326" fill="url(#sc-round)"/>
+  <rect x="92" y="142" width="328" height="26" fill="#CEDDD4" opacity="0.55"/></g>
+  <rect x="108" y="62" width="296" height="88" rx="32" fill="#EBD6B9"/>
+  <rect x="108" y="62" width="296" height="62" rx="32" fill="#FFF7EA"/>
+  <rect x="108" y="94" width="296" height="30" fill="#FFF7EA"/></svg>
