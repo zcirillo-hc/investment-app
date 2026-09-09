@@ -8,7 +8,7 @@
  * deliberate act that invalidates every existing subscription anyway.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { methodOnly, sendJson } from '../_lib/validate';
+import { methodOnly, sendJson } from '../_lib/validate.js';
 
 export default function handler(req: VercelRequest, res: VercelResponse): void {
   if (!methodOnly(req, res, 'GET')) return;

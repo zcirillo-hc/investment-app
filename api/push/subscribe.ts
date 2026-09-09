@@ -13,8 +13,8 @@
  * `enabled`, because a browser that just subscribed is by definition reachable again.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb, table } from '../_lib/db';
-import { badRequest, hashEndpoint, methodOnly, parseSubscribeBody, readJsonBody, sendJson } from '../_lib/validate';
+import { getDb, table } from '../_lib/db.js';
+import { badRequest, hashEndpoint, methodOnly, parseSubscribeBody, readJsonBody, sendJson } from '../_lib/validate.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!methodOnly(req, res, 'POST')) return;

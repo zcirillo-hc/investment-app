@@ -14,7 +14,7 @@
  * both cases is the same one: you have not proved you are the subscriber.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb, table } from '../_lib/db';
+import { getDb, table } from '../_lib/db.js';
 import {
   badRequest,
   hashEndpoint,
@@ -23,7 +23,7 @@ import {
   readJsonBody,
   secretEquals,
   sendJson,
-} from '../_lib/validate';
+} from '../_lib/validate.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!methodOnly(req, res, 'POST')) return;

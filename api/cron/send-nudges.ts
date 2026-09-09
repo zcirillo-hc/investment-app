@@ -16,10 +16,10 @@
  * send or skip a day for everyone.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../_lib/db';
-import { runSend } from '../_lib/due';
-import { sendOne } from '../_lib/push';
-import { methodOnly, secretEquals, sendJson } from '../_lib/validate';
+import { getDb } from '../_lib/db.js';
+import { runSend } from '../_lib/due.js';
+import { sendOne } from '../_lib/push.js';
+import { methodOnly, secretEquals, sendJson } from '../_lib/validate.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!methodOnly(req, res, 'GET')) return;

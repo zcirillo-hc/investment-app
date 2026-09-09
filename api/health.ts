@@ -8,8 +8,8 @@
  * routing check, but it would tell a reader nothing about which of the two things broke.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb, table } from './_lib/db';
-import { methodOnly, sendJson } from './_lib/validate';
+import { getDb, table } from './_lib/db.js';
+import { methodOnly, sendJson } from './_lib/validate.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!methodOnly(req, res, 'GET')) return;

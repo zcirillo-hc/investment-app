@@ -16,8 +16,8 @@
  * a header or a body.
  */
 import type { NeonQueryFunction } from '@neondatabase/serverless';
-import { table } from './db';
-import { nudgePayload, type Sender } from './push';
+import { table } from './db.js';
+import { nudgePayload, type Sender } from './push.js';
 
 export type Db = NeonQueryFunction<false, false>;
 
