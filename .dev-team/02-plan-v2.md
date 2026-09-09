@@ -730,13 +730,26 @@ non negative integers unless stated.
   can see. This follows directly from the no shame voice rule and it is a hard
   constraint, not a preference.
 
-### R10 Summer, unchanged from v1
+### R10 Summer
 
 - **R10.1** Curves per v1 plan 4.11: keep 10% of the stated summer earnings each year
   from 19 to 65 at 7% nominal, against the same contributions starting at 30.
 - **R10.2** By 30 headline: `round(keptDollars * 1.07 ^ max(1, 30 - age))`.
 - **R10.3** The 7% is disclosed in a tooltip as an assumption on every screen it
   affects.
+- **R10.4** Your money curve. R10.1 is a story about a hypothetical summer job and never
+  moves once onboarding is done. R10.4 is its grounded companion: take the money the user
+  really has set aside, `keptSinceStartCents + ledgerTotal`, and grow it from
+  `clampAge(profile.age)` to `CURVE_END_AGE` at `ASSUMED_ANNUAL_RETURN`, one step per year,
+  `v = v * (1 + rate)`. It is a lump sum growing, NOT an assumed future contribution rate,
+  because the app does not know whether the user will keep going and inventing a rate would
+  be the same dishonesty that got the price series deleted in v2.
+  - Rendered in its own card on the Summer Money screen, below the R10.1 chart, on its own
+    axis. The two cannot share a scale: real kept money is tens of dollars against tens of
+    thousands, so a third polyline on the R10.1 axes sits flat on zero and reads as nothing.
+  - With nothing put in yet the card shows a warm empty line and no chart, never a flat zero.
+  - Carries the R10.3 disclosure, plus a line stating the app does not know what the user's
+    investments are actually worth, so the number is never mistaken for a valuation.
 
 ### R11 Privacy and deletion
 

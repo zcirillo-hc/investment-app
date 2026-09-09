@@ -321,6 +321,13 @@ capture('R10.1-c', 'R10.1', 'summerEndDollars', { earnedCents: 100000 });
 spec('R10.2-a', 'R10.2', 'byThirtyDollars', { keptCents: 10000, age: 19 }, { dollars: 210 });
 spec('R10.2-b', 'R10.2', 'byThirtyDollars', { keptCents: 10000, age: 30 }, { dollars: 107 });
 spec('R10.2-c', 'R10.2', 'keepOfLeftCents', { leftCents: 50000 }, { cents: 5000 });
+// R10.4 your money curve. A lump sum growing at 7% from the clamped age to 65.
+// 19 to 65 is 46 steps of growth and 47 points: round(41.49 * 1.07 ^ 46) = 932.
+spec('R10.4-a', 'R10.4', 'yourMoneyEnd', { putInCents: 4149, age: 19 }, { fromAge: 19, steps: 47, startCents: 4149, endDollars: 932, hasMoney: true });
+// Nothing put in yet: no money, and the line never goes negative.
+spec('R10.4-b', 'R10.4', 'yourMoneyEnd', { putInCents: 0, age: 19 }, { fromAge: 19, steps: 47, startCents: 0, endDollars: 0, hasMoney: false });
+// An age outside the 18 to 24 audience is clamped before it is used.
+capture('R10.4-c', 'R10.4', 'yourMoneyEnd', { putInCents: 10000, age: 99 });
 
 // ---------------------------------------------------------------------------------------
 // R13 tick ordering. Floor: 8. Captured: a tick summary is defined by the whole pipeline.

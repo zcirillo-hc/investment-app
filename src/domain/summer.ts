@@ -65,6 +65,47 @@ export function summerCurves(earnedCents: Cents | null): SummerCurves {
   };
 }
 
+export interface YourMoneyCurve {
+  ages: number[];
+  values: number[];
+  putInDollars: number;
+  endValue: number;
+  fromAge: number;
+  hasMoney: boolean;
+}
+
+/**
+ * Plan v2 R10.4. What the user has ACTUALLY put in, left alone at the assumed rate.
+ *
+ * The two curves in `summerCurves` are a story about a hypothetical summer job and never move.
+ * This one is grounded: it takes the money the user really kept and really recorded moving into
+ * investments, and grows it from their current age to `CURVE_END_AGE`.
+ *
+ * Deliberately a lump sum growing, not an assumed future contribution rate. The app does not
+ * know whether the user will keep going, and inventing a rate would be exactly the kind of made
+ * up number v2 deleted the price series to avoid.
+ */
+export function yourMoneyCurve(putInCents: Cents, age: number): YourMoneyCurve {
+  const fromAge = clampAge(age);
+  const putInDollars = Math.max(0, putInCents) / 100;
+  const ages: number[] = [];
+  const values: number[] = [];
+  let v = putInDollars;
+  for (let a = fromAge; a <= CURVE_END_AGE; a++) {
+    ages.push(a);
+    values.push(v);
+    if (a < CURVE_END_AGE) v = v * (1 + ASSUMED_ANNUAL_RETURN);
+  }
+  return {
+    ages,
+    values,
+    putInDollars,
+    endValue: values.length > 0 ? values[values.length - 1] : putInDollars,
+    fromAge,
+    hasMoney: putInCents > 0,
+  };
+}
+
 export function clampAge(age: number): number {
   if (!Number.isFinite(age)) return DEFAULT_AGE;
   return Math.min(MAX_AGE, Math.max(MIN_AGE, Math.round(age)));

@@ -4,6 +4,11 @@
   "arithmetic": [
     "R1.2",
     "R1.3",
+    "R10.1",
+    "R10.2",
+    "R10.4",
+    "R13",
+    "R14.2",
     "R2.0",
     "R2.1",
     "R2.4",
@@ -25,11 +30,7 @@
     "R8.1",
     "R8.2",
     "R9.1",
-    "R9.4",
-    "R10.1",
-    "R10.2",
-    "R13",
-    "R14.2"
+    "R9.4"
   ],
   "narrative": {
     "R1.1": "States that money is integer cents. Enforced by the type and by every case above, not by a case of its own.",

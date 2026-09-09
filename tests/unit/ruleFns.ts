@@ -16,7 +16,7 @@ import { estimateCentsFor, estimateFromAmounts } from '../../src/domain/estimate
 import { addToJar, crossedGoal, emptiedJar, isJarGoalPreset } from '../../src/domain/jar';
 import { ledgerTotalCents, sortedLedger, validateDraft } from '../../src/domain/ledger';
 import { treeStage } from '../../src/domain/tree';
-import { byThirtyDollars, keepOfLeftCents, summerCurves } from '../../src/domain/summer';
+import { byThirtyDollars, keepOfLeftCents, summerCurves, yourMoneyCurve } from '../../src/domain/summer';
 import { averageCents, roundCents } from '../../src/domain/money';
 import { keptThisWeekCents, keptSinceStartCents, skipsThisWeek } from '../../src/domain/selectors';
 import { completeOnboarding, tickN } from '../../src/domain/tick';
@@ -149,6 +149,18 @@ export const RULE_FNS: Record<string, (input: Json) => Json> = {
   },
   byThirtyDollars: (i) => ({ dollars: byThirtyDollars(i.keptCents as number, i.age as number) }),
   keepOfLeftCents: (i) => ({ cents: keepOfLeftCents(i.leftCents as number | null) }),
+
+  // R10.4
+  yourMoneyEnd: (i) => {
+    const c = yourMoneyCurve(i.putInCents as number, i.age as number);
+    return {
+      fromAge: c.fromAge,
+      steps: c.ages.length,
+      startCents: Math.round(c.values[0] * 100),
+      endDollars: Math.round(c.endValue),
+      hasMoney: c.hasMoney,
+    };
+  },
 
   // R13
   tickSummary: (i) => {

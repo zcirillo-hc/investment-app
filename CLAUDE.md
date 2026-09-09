@@ -48,7 +48,7 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 
 ```
 npm run dev          vite dev server, http://localhost:5173
-npm test             vitest, unit  (670 passing)
+npm test             vitest, unit  (681 passing)
 npm run test:db      vitest against real Neon, isolated schema  (93 passing)
 npm run e2e          playwright, 4 viewport profiles  (~9 minutes)
 npm run typecheck    full tsc, includes tests and scripts
@@ -99,6 +99,11 @@ If you change behavior, change the rule in the plan and the fixture, not just th
 
 Key ones to know:
 - **R4** habit detection: a place becomes a habit at 3+ visits in 14 days at a similar time.
+- **R10.1 / R10.4** the two charts on Summer Money. R10.1 is the hypothetical summer-job
+  comparison and never moves. R10.4 is the grounded one: real money put in
+  (`keptSinceStartCents + ledgerTotal`) grown at 7% to 65. They have separate cards and
+  separate scales on purpose, because real money is tens of dollars against tens of thousands
+  and a shared axis flattens the real one to nothing.
 - **R4.4** one nudge per day, maximum.
 - **R5.5** skipping credits the jar with an estimate drawn from the user's own history at that merchant.
 - **R14** nudge scheduling and delivery, including timezone and the daily cron.
@@ -177,7 +182,7 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-09: 670 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
+Green as of 2026-09-09: 681 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
 
 **Known open items:**
 - The v2 tester found 8 defects. Fixes for all of them plus the advice policy landed on 2026-09-09 and need a tester re-verification pass that has not run.

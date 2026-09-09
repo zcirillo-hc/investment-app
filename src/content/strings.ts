@@ -86,6 +86,15 @@ export const S = {
     leftLine: (keep: number) => `Keeping 10% of what's left is ${formatCents(keep)}. That is one textbook.`,
     ageOption: (age: number) => `${age}`,
     axisAge: 'Age',
+    // R10.4. The grounded companion to the two hypothetical curves above: real money the user
+    // kept and recorded, on its own scale. Wording stays an assumption, never a promise (R15).
+    yourMoneyTitle: 'Your money',
+    yourMoneyChartTitle: 'What you have put in so far, left alone',
+    yourMoneyPutIn: (cents: number) => `You have put in ${formatCents(cents)} so far.`,
+    yourMoneyHeadline: (end: number, age: number) =>
+      `Left alone, that is about ${formatDollars(end)} by 65. You are ${age} now, so it has that long to work.`,
+    yourMoneyEmpty: 'Nothing in yet. The first skip starts this line, and it does not have to be much.',
+    yourMoneyNote: 'This is only what you have kept and told us you moved. It does not know what your investments are worth.',
   },
 
   fear: {

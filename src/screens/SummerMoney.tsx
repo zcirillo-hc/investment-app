@@ -8,9 +8,11 @@ import { Screen } from '../components/Screen';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { SummerCurves } from '../components/SummerCurves';
+import { GrowthCurve } from '../components/GrowthCurve';
+import { keptSinceStartCents, ledgerTotal } from '../domain/selectors';
 import { RichText } from '../components/Term';
 import { parseDollarInput } from '../domain/money';
-import { keepOfLeftCents, summerCurves } from '../domain/summer';
+import { keepOfLeftCents, summerCurves, yourMoneyCurve } from '../domain/summer';
 import { DEFAULT_AGE, MAX_AGE, MIN_AGE } from '../config';
 
 /**
@@ -20,6 +22,7 @@ import { DEFAULT_AGE, MAX_AGE, MIN_AGE } from '../config';
  * back control from `backControlFor` rather than the onboarding Back button.
  */
 export function SummerMoney() {
+  const state = useAppStore();
   const profile = useAppStore((s) => s.profile);
   const setSummer = useAppStore((s) => s.setSummer);
   const showToast = useUiStore((s) => s.showToast);
@@ -33,6 +36,10 @@ export function SummerMoney() {
   const leftCents = parseDollarInput(left);
   const curves = useMemo(() => summerCurves(earnedCents), [earnedCents]);
   const data = useMemo(() => curves.ages.map((a, i) => ({ age: a, now: Math.round(curves.startNow[i]), later: Math.round(curves.startAt30[i]) })), [curves]);
+  // R10.4. What the user actually put in: kept in the jar plus what they recorded moving into
+  // investments. Both are money they set aside, which is what "put in" means to them.
+  const putInCents = keptSinceStartCents(state) + ledgerTotal(state);
+  const mine = useMemo(() => yourMoneyCurve(putInCents, age), [putInCents, age]);
   const ages: number[] = [];
   for (let a = MIN_AGE; a <= MAX_AGE; a++) ages.push(a);
 
@@ -100,6 +107,30 @@ export function SummerMoney() {
         <p className="mt-1 text-sm text-muted">
           <RichText text={S.summer.assumption} />
         </p>
+      </Card>
+      <Card className="mt-4" data-testid="your-money-card">
+        <h2 className="text-sm font-semibold text-muted">{S.summer.yourMoneyTitle}</h2>
+        {mine.hasMoney ? (
+          <>
+            <p className="mt-1 text-base font-semibold" data-testid="your-money-putin">
+              {S.summer.yourMoneyPutIn(putInCents)}
+            </p>
+            <div data-testid="your-money-chart" style={{ width: '100%', height: 160 }} className="mt-2">
+              <GrowthCurve ages={mine.ages} values={mine.values} />
+            </div>
+            <p className="mt-3 text-lg font-bold" data-testid="your-money-headline" data-end={Math.round(mine.endValue)}>
+              {S.summer.yourMoneyHeadline(mine.endValue, mine.fromAge)}
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              <RichText text={S.summer.assumption} />
+            </p>
+            <p className="mt-1 text-sm text-muted">{S.summer.yourMoneyNote}</p>
+          </>
+        ) : (
+          <p className="mt-1 text-base" data-testid="your-money-empty">
+            {S.summer.yourMoneyEmpty}
+          </p>
+        )}
       </Card>
       {leftCents !== null && leftCents > 0 && (
         <p className="mt-4 text-base" data-testid="summer-left-line">
