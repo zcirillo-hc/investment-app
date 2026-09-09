@@ -76,6 +76,15 @@ export function Invest() {
         </p>
       </Card>
 
+      {/*
+        * Cycle 8, R15.6 and 9.8a. Next to the ledger total on purpose: this is the one screen
+        * where a reader is looking at their own money while the app is talking about
+        * investing in general, and it is the screen the library surfaces a piece onto.
+        */}
+      <p className="mt-4 rounded-2xl bg-leaf-soft p-3.5 text-sm leading-snug ring-1 ring-leaf/15" data-testid="invest-not-advice">
+        {S.invest.notAdvice}
+      </p>
+
       {/* Plan 8.7a: the primary action when the ledger is empty, a secondary link once it has entries. */}
       {count === 0 ? (
         <EmptyState

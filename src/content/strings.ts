@@ -211,6 +211,8 @@ export const S = {
   invest: {
     title: 'Invest',
     sub: 'What you told us you put in.',
+    // R15.6 and 9.8a, cycle 8: the same sentence, verbatim, on all six surfaces.
+    notAdvice: NOT_ADVICE_LINE,
     count: (n: number) => `${n} ${n === 1 ? 'entry' : 'entries'}`,
     since: (date: string) => `since ${date}`,
     empty: 'Nothing recorded yet.',
@@ -267,9 +269,12 @@ export const S = {
   lessons: {
     title: 'Confidence path',
     sub: 'Short lessons that unlock as things happen. Skip any of them, none are required.',
-    // R15.6: this sentence appears once at the top of Lessons, once on Learn and once in
-    // Settings. Not once per piece, because a disclaimer on every paragraph reads as
-    // nervousness rather than honesty.
+    // R15.6, rewritten by the cycle 8 amendment (9.8a). It used to appear in three places and
+    // deliberately not per piece, because a disclaimer on every paragraph reads as
+    // nervousness. The amendment keeps that reasoning against repeating a PARAGRAPH and drops
+    // it for one short line: the library and the lessons may now state general principles, and
+    // a reader who deep links into a single piece would otherwise be the one person who never
+    // sees the sentence that makes them education. Six surfaces now, same words in each.
     notAdvice: NOT_ADVICE_LINE,
     learnLink: 'There is more, whenever you want it.',
     ring: (read: number, total: number) => `${read} of ${total}`,
@@ -365,6 +370,11 @@ export const S = {
     what: 'One question before your usual time, at most one a day. Say no and nothing happens.',
     explainerLink: 'What this changes',
     on: 'Nudges are on for this browser.',
+    // Test report V2-1. In `denied`, `needs-ios-install` and `unsupported` the toggle turns
+    // the in app nudge on without ever subscribing, so nothing is sent anywhere and no
+    // notification can arrive. Saying "on for this browser" there would be an over-claim in
+    // the same family as the retired privacy promise, just pointing the other way.
+    onAppOnly: 'Nudges are on, in the app. No notification will arrive on this browser.',
     off: 'Nudges are off.',
     quietHours: (start: number, end: number) =>
       `[[quietHours|Quiet hours]]: we only ask between ${formatMinuteOfDay(start)} and ${formatMinuteOfDay(end)}.`,
@@ -373,6 +383,10 @@ export const S = {
     storedTitle: 'What is on the server while nudges are on',
     storedLine:
       'Three things: an address your browser hands out so a notification can reach it, your time zone, and the minute to wake you.',
+    // The honest counterpart, shown whenever nudges are on and nothing was ever subscribed.
+    notStoredTitle: 'Nothing is on the server',
+    notStoredLine:
+      'Nudges are running on this device only. Nothing has been sent anywhere, so there is no row to delete. When one is due you will find it on Home the next time you open the app.',
     endpointLabel: (hash: string) => `This browser is known to the server as ${hash}.`,
     unsupported: 'This browser cannot do notifications, so nudges will not arrive here. The nudge card on Home still works.',
     unreachable: 'We could not reach the nudge service. Everything else still works.',
@@ -417,7 +431,10 @@ export const S = {
     turnOff: 'Turn nudges off',
     turnOffConfirm:
       'This deletes the row on the server, right now. Your places, your jar and everything you have kept stay exactly where they are.',
+    turnOffConfirmLocal:
+      'This turns nudges off here. There is nothing on the server to delete, because nothing was ever sent. Your places, your jar and everything you have kept stay exactly where they are.',
     turnOffDone: 'Nudges are off and the server row is gone.',
+    turnOffDoneLocal: 'Nudges are off. There was nothing on the server to delete.',
     turnOffOffline:
       'Nudges are off on this device. We could not reach the server to delete the row, so it will be deleted the next time it fails to reach you, and in any case within ninety days. You can try again.',
     // R14.3: a browser that cannot resolve a zone sends UTC and is told so plainly.

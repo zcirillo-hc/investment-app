@@ -55,6 +55,15 @@ export function NudgesCard() {
 
   const on = state.settings.nudgesEnabled;
 
+  /**
+   * Test report V2-1. `on` says whether the in app nudge exists (R4.5). It says NOTHING about
+   * whether a row exists on the server, because `onToggle` deliberately turns nudges on
+   * without subscribing in `denied`, `needs-ios-install` and `unsupported` (criterion 24's in
+   * app loop must keep working there). Every sentence about the server is therefore gated on
+   * this instead, which is only ever set by a subscribe that actually succeeded.
+   */
+  const hasServerRow = state.push.subscribed;
+
   useEffect(() => {
     const s = forced ?? supportState();
     setSupport(s);
@@ -119,11 +128,17 @@ export function NudgesCard() {
   /** 9.5. Turning nudges off always succeeds locally, and says honestly what the server did. */
   const turnOff = async () => {
     setBusy(true);
+    // Read before `clearPush()` wipes it: "the row is gone" is only true if there was one.
+    const hadServerRow = hasServerRow;
     setNudgesEnabled(false);
     setPanel('none');
     const r = await unsubscribeEverywhere();
     clearPush();
     setBusy(false);
+    if (!hadServerRow) {
+      setTurnOffMsg(S.nudges.turnOffDoneLocal);
+      return;
+    }
     setTurnOffMsg(r.serverOk ? S.nudges.turnOffDone : S.nudges.turnOffOffline);
   };
 
@@ -154,8 +169,14 @@ export function NudgesCard() {
 
       <p className="mt-1 text-xs text-muted">{S.nudges.what}</p>
 
-      <p className="mt-2 text-sm font-semibold" data-testid="nudges-state" data-support={support} data-on={on ? 'true' : 'false'}>
-        {on ? S.nudges.on : S.nudges.off}
+      <p
+        className="mt-2 text-sm font-semibold"
+        data-testid="nudges-state"
+        data-support={support}
+        data-on={on ? 'true' : 'false'}
+        data-subscribed={hasServerRow ? 'true' : 'false'}
+      >
+        {!on ? S.nudges.off : hasServerRow ? S.nudges.on : S.nudges.onAppOnly}
       </p>
 
       {support === 'ready' && !on && (
@@ -178,10 +199,11 @@ export function NudgesCard() {
 
       {on && (
         <>
-          <div className="mt-3 rounded-2xl bg-ground p-3.5 ring-1 ring-line/70" data-testid="nudges-stored">
-            <h3 className="text-sm font-semibold">{S.nudges.storedTitle}</h3>
-            <p className="mt-1 text-xs text-muted">{S.nudges.storedLine}</p>
-            {state.push.endpointHash && (
+          {/* V2-1: the server block only exists where a server row does. */}
+          <div className="mt-3 rounded-2xl bg-ground p-3.5 ring-1 ring-line/70" data-testid={hasServerRow ? 'nudges-stored' : 'nudges-not-stored'}>
+            <h3 className="text-sm font-semibold">{hasServerRow ? S.nudges.storedTitle : S.nudges.notStoredTitle}</h3>
+            <p className="mt-1 text-xs text-muted">{hasServerRow ? S.nudges.storedLine : S.nudges.notStoredLine}</p>
+            {hasServerRow && state.push.endpointHash && (
               <p className="mt-1 text-xs text-muted" data-testid="nudges-endpoint">
                 {S.nudges.endpointLabel(state.push.endpointHash.slice(0, 8))}
               </p>
@@ -235,7 +257,7 @@ export function NudgesCard() {
             <Button size="sm" variant="secondary" data-testid="nudges-turn-off" disabled={busy} onClick={() => void turnOff()}>
               {S.nudges.turnOff}
             </Button>
-            <p className="mt-1 text-xs text-muted">{S.nudges.turnOffConfirm}</p>
+            <p className="mt-1 text-xs text-muted">{hasServerRow ? S.nudges.turnOffConfirm : S.nudges.turnOffConfirmLocal}</p>
           </div>
         </>
       )}

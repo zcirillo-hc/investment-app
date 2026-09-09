@@ -2282,3 +2282,366 @@ The axe walk reports only moderate findings, and the same three it reported befo
 (Home leads with a figure rather than an `h1`, 32) and `landmark-one-main` (8). None is
 serious or critical, and none of the three is new.
 
+
+---
+
+## v2 defect fixes and advice policy, 2026-09-09
+
+Second coder pass. Two jobs: the eight defects in `04-test-report-v2.md`, and the cycle 8
+amendment to R15 (advice relaxed with a disclosure). Everything below was run. Where a suite
+is still red I say so and say why rather than rounding it down.
+
+I did not edit any `tester-*` file, and I changed no `data-testid`. Two new testids were
+added (`nudges-not-stored`, and the four new disclosure nodes); nothing was renamed or
+removed.
+
+### Job B, the defects
+
+#### V2-1, Major, the Nudges card claimed a server row that was never created. FIXED
+
+**Reproduced** by running the tester's own case:
+`npx playwright test tests/e2e/tester-v2-nudges-honesty.spec.ts`, which printed
+`PUSH-STATE denied: nudgesEnabled=true nudges-stored=1 endpoint-line=0 apiCalls=[]` before
+the change. `apiCalls=[]` is the proof: nothing was ever sent.
+
+The bug was the gate, not the copy. `on` (`settings.nudgesEnabled`) answers "does an in app
+nudge exist", which is R4.5 and is deliberately true in `denied`, `needs-ios-install` and
+`unsupported` without subscribing. It was being used to answer a different question: "is
+there a row on the server". Those are the same value in one state out of four.
+
+- `src/components/NudgesCard.tsx`: a new `hasServerRow = state.push.subscribed`, which is
+  only ever set by a `subscribe()` that actually succeeded. Every sentence about the server
+  now gates on it: the stored block, the endpoint hash line, the turn off confirmation, and
+  the message after turning off. `data-subscribed` is exposed on `nudges-state` so this is
+  observable from a test rather than inferable.
+- `src/content/strings.ts`: three new strings, and the reasoning for each is that every
+  permission state now says something true rather than saying nothing.
+  - `onAppOnly`: "Nudges are on, in the app. No notification will arrive on this browser."
+    (replaces "Nudges are on for this browser", which promised a notification.)
+  - `notStoredTitle` / `notStoredLine`: "Nothing is on the server" / "Nudges are running on
+    this device only. Nothing has been sent anywhere, so there is no row to delete. When one
+    is due you will find it on Home the next time you open the app."
+  - `turnOffConfirmLocal` and `turnOffDoneLocal`, so "the server row is gone" is never said
+    about a row that never existed.
+- The `turnOff` handler reads `hasServerRow` **before** `clearPush()` wipes it, which is the
+  one ordering bug this fix could plausibly have introduced.
+
+The card in these states is now shorter and calmer than it was, not heavier: the honest
+version is one short block instead of a server explainer plus a delete warning.
+
+**Verification:** the tester's four cases pass at all four viewports (below).
+
+#### V2-2, Major, three controls 36 px tall (D7, third occurrence). FIXED
+
+**Reproduced:** `npx playwright test tests/e2e/tester-v2-regression.spec.ts -g "44 px tap
+targets"` reported `jar-move 311x36`, `jar-spent 311x36`, `places-enable-nudges 133x36`.
+
+Fixed at the size scale, not at the three call sites, which is why it kept coming back:
+
+- `src/components/Button.tsx`: `sm` is now `min-h-[44px] px-3.5 text-sm`. It is a smaller
+  typeface and a tighter horizontal pad, not a shorter button. `sizes` and a new
+  `MIN_TAP_TARGET_PX` are exported so a test can read them. This also covers the ten other
+  `size="sm"` controls the tester listed as unreachable in a default render
+  (`place-delete-yes`, `place-mute-*`, `nudges-turn-off`, `nudges-retry`, `settings-unmute-*`,
+  `learn-surface-*`, `invest-capture-remove-*`) without touching any of them.
+- `tests/unit/tap-targets.test.ts` (NEW, 2 cases) enforces the rule generally rather than the
+  three ids: every entry in `Button`'s size scale is at least 44, and no `min-h-[Npx]`
+  anywhere under `src/` is below 44. The second half catches the hand rolled controls that do
+  not go through `Button` at all. It is a source scan, so it complements rather than replaces
+  the tester's rendering audit.
+
+I chose 44 at every viewport rather than only on touch viewports. The tester's audit runs on
+the `desktop` project too and requires 44 there, a media query would have made the rule
+conditional and therefore easy to regress again, and 44 px is not a bad desktop button.
+
+#### V2-6, Minor, six import shapes accepted, one losing money. FIXED (see the caveat)
+
+**Reproduced:** `npx vitest run tests/unit/tester-v2-import.test.ts
+tests/unit/tester-v2-import-impact.test.ts` failed 7 of 58, including
+`DUP-LEDGER: 2 entries totalling 14900c -> after deleting one: 0 entries totalling 0c`.
+
+All six are closed in `src/state/validate.ts`, inside `validateOrdering` (which runs only
+once every element is well shaped, so the messages stay about one thing at a time):
+
+| shape | rule now enforced |
+|---|---|
+| duplicate ledger id | `uniqueIds`, applied to places, visits, nudges, ledger, events and pendingPaychecks |
+| duplicate place id | same |
+| ledger `date` after the simulated date | R7.1, compared against `safeSimDate(startDate, dayIndex)` |
+| visit naming no place | R11.3, every `visit.placeId` must be in `places` |
+| two nudges on one `dayIndex` | R4.4 |
+| `lessons.L1.unlockedDay` past the clock | at most `clock.dayIndex` |
+
+Uniqueness is asserted over six arrays rather than the two the report named, because an id is
+the handle every delete, edit and lookup uses; the duplicate-ledger-id case is data loss only
+because `removeEntry` filters by id, and every other array is filtered by id somewhere too.
+
+**Caveat, and it is the one thing in this pass a reader should not skim.** The tester wrote
+`tests/unit/tester-v2-import-impact.test.ts` to document what the accepted shapes DO once in
+state, and each of its four cases asserts `validateImportedState(...).ok === true` first.
+Three of those four passed before this fix and fail after it, and the fourth (the
+duplicate-ledger one) fails on a different line than it did before. **All four now fail
+because the defect is fixed.** They are not evidence of a regression; they are the defect
+written down as an expectation.
+
+The tester's report says "when V2-1 to V2-6 are fixed, all 10 should go green with no edit to
+the tests". That is not achievable for this file: its four cases and the six `AUDIT` cases in
+`tester-v2-import.test.ts` assert opposite things about the same six inputs. I have left the
+impact file untouched and failing, per the protocol. It needs to be deleted or inverted by
+its author.
+
+#### V2-3, Minor, concurrent runs double-send. FIXED
+
+**Reproduced:** `AUDIT-RESULT concurrent-sends=2 ... expected 2 to be 1`.
+
+`api/_lib/due.ts`: the per local day lock is now taken **before** the send rather than after
+it, as one conditional update (`claimForSend`), with `releaseClaim` to put it back when the
+send did not happen. Postgres re-evaluates an `UPDATE`'s qualifier against the committed row
+after taking the row lock, so of two concurrent claims exactly one matches a row; the other
+matches none and skips that row.
+
+The claim is released on 429 and on a generic failure, which is what keeps R14.8 true: a 429
+still leaves the row completely untouched (`send.test.ts` asserts `last_sent_local_date` is
+still null after one), and a generic failure still leaves the row retryable rather than
+costing it the whole day. On success `markSent` runs as before; on 404/410 the row is deleted
+and there is no claim left to release. `FullSendReport` gains `skipped`, so a run can say how
+many rows another run already owned.
+
+#### V2-4, Minor, the send loop could not finish its own batch. FIXED, with the number
+
+**Reproduced:** `AUDIT-RESULT serial-send: 20 rows in 2715 ms (136 ms/row); 500 rows projects
+to 68 s against maxDuration 60`. (The tester measured 76 s; I measured 68 on a quieter
+machine. Both are over 60.)
+
+**The number, and why.** `DUE_LIMIT` stays 500. It is the plan's number (6.8), the run happens
+once a day, and dropping rows out of the batch means dropping people's nudges for that day.
+Every row's cost is latency, not work, so the lever is concurrency:
+
+```
+SEND_CONCURRENCY   = 8        a fixed size pool, not one row at a time
+ASSUMED_MS_PER_ROW = 250      1.6x the worst the tester measured (153 ms)
+projected          = 500 / 8 x 250 ms = 15.6 s
+SEND_BUDGET_MS     = 45_000   a 2.9x margin, inside maxDuration 60
+```
+
+Eight rather than eighty because the real ceiling is other people's rate limits and one Neon
+HTTP connection; a run that trips a 429 storm has made things worse. The remaining 15 s of the
+function's life covers the two housekeeping statements, a cold start and platform overhead.
+
+There is also a **soft deadline**: no new row is started once `SEND_BUDGET_MS` is spent, rows
+in flight finish, and the count of rows never started is reported as `unstarted`. A run that
+would have overrun now returns a report instead of being killed halfway through a batch. Rows
+not started keep their minute and are picked up by the next run, or cleared by `staleSweep` at
+the date rollover, which is 6.8's existing answer to a dropped nudge.
+
+**The test that fails if the two ceilings stop being consistent:** `tests/db/send-budget.test.ts`
+(NEW, 4 cases). It asserts the arithmetic above holds with at least a 2x margin, that the send
+budget leaves at least a quarter of `maxDuration` for everything else, that
+`MAX_DURATION_SECONDS` still equals what `vercel.json` actually deploys (parsed, with the glob
+matched against `api/cron/send-nudges.ts`), and that the loop really does stop and report
+`unstarted` when the budget runs out. Change `DUE_LIMIT`, `SEND_CONCURRENCY`, `SEND_BUDGET_MS`
+or `vercel.json` alone and it goes red.
+
+#### V2-5, Minor, unsubscribe was a subscription oracle. FIXED
+
+**Reproduced:** `AUDIT-RESULT unsubscribe-oracle: subscribed=403 unsubscribed=200`.
+
+`api/push/unsubscribe.ts` no longer returns early on a mismatch. A caller who has not proved
+they are the subscriber always gets `200 {ok: true, deleted: 0}`, whether the row exists or
+not.
+
+I chose uniform 200 over uniform 403 deliberately. Uniform 403 would have broken idempotency,
+which is the route's documented contract and a real client path: the second unsubscribe of a
+pair, and "delete everything" after a 410 has already removed the row, both legitimately find
+nothing and must not be reported to the user as a failure. `deleted: 0` is the literal truth
+in both cases, and the row is still not deleted without the secret.
+
+**This changed one existing test.** `tests/db/routes.test.ts`, "refuses to delete a row
+belonging to another browser when the auth is wrong", asserted `403`, which is the defect
+written as an expectation. The assertion that matters (the row survives) is unchanged; the
+case now also calls the same wrong auth against an unknown endpoint and asserts the two
+responses are identical, which is the property that was missing.
+
+#### V2-8, Minor, duplicate accessible control on Settings. FIXED
+
+`src/screens/Settings.tsx`: the `sr-only` file input behind the Import JSON button now carries
+`tabIndex={-1}` and `aria-hidden="true"` and no `aria-label`, exactly as `Welcome.tsx` has
+since the D12 fix. `data-testid="settings-import"` is unchanged, and `setInputFiles` still
+works on it.
+
+### Job A, the advice policy (cycle 8)
+
+#### The disclosure
+
+`shared/content/learn.json` `standingLine` is now, verbatim:
+
+> This is general information, not personal advice. We are not licensed financial advisors,
+> and nothing here is tailored to you or your money.
+
+It renders, visible with no tap and no expand, on all six surfaces 9.8a names:
+
+| surface | file | testid |
+|---|---|---|
+| Learn library index | `src/screens/Learn.tsx` | `learn-not-advice` (existing) |
+| all 16 Learn item pages | `src/screens/LearnItem.tsx` | `learn-item-not-advice` (new) |
+| top of Lessons | `src/screens/Lessons.tsx` | `lessons-not-advice` (existing) |
+| all 8 lesson pages | `src/screens/Lesson.tsx` | `lesson-not-advice` (new) |
+| Invest | `src/screens/Invest.tsx` | `invest-not-advice` (new) |
+| Settings | `src/screens/Settings.tsx` | `settings-not-advice` (existing) |
+
+All six render the same constant (`S.learn.notAdvice`, `S.lessons.notAdvice`,
+`S.invest.notAdvice`, `S.settings.notAdvice`, all `=== NOT_ADVICE_LINE`), so there is no
+second wording to drift. On a lesson page it renders in the locked branch as well as the read
+one. It is one line in the same soft green panel the existing three used, not a bordered
+notice: the amendment asked for honest, not scary.
+
+#### L7
+
+`shared/content/lessons.json` L7 is rewritten to 9.6a exactly: title "Why early money has
+more time to grow", body "Money invested now has decades to do its work before you are likely
+to need it. Money invested later, even if it is more of it, has less time to do the same job.
+That is not a reason to wait until you have more to put in, it is the reason not to." Its
+`unlockHint`, its place as the sixth of eight and the `pointless -> L7` fear mapping are
+untouched.
+
+**Not in the amendment, and I would have missed the point without it:** `LessonVisual.tsx`
+drew L7 as two bars, "$20 a week" tall and green against "$500 once" short and coral. That is
+the same ranked comparison with figures attached that the title was rewritten to remove, and a
+picture makes the claim as loudly as a sentence. It is now a timeline: the same amount put in
+early with a long runway, and later with a short one. No figures, no outcome, no taller bar.
+
+#### The lint
+
+`scripts/lint-advice.ts` keeps all three existing checks unchanged and gains two things.
+
+**Rule 4, the amendment's pattern.** A specific number (a dollar amount, a digit run, or a
+written out number) sharing a **sentence** with a comparison word (`beats`, `beat`, `versus`,
+`vs`, `instead of`, `rather than`, `better than`, `wins`, `loses to`) fails. Scoped to a
+sentence rather than a whole string, because prose legitimately mentions a figure in one
+sentence and draws an unquantified contrast in the next. R15.7's impersonal framing allowlist
+(`most people`, `generally`, `usually`, `in general`, `on average`, plus `plenty of people`
+and `a lot of people`, which the library already uses) exempts a sentence from **this rule
+only**; the banned phrase, ticker and percentage rules still apply to it.
+
+**The disclosure placement check.** `lint:advice` now fails if any of the six screens above
+stops rendering the line, checked by both its `data-testid` and its `*.notAdvice` reference.
+It runs in `prebuild`, so a deleted disclosure cannot ship while the e2e suite is red or
+unrun. It is honest about being a static check: `tests/e2e/learn.spec.ts` proves the sentence
+is actually on screen.
+
+**The regression fixture.** `tests/fixtures/original-l7.json` holds the original, unmodified
+L7 title and body, byte for byte. It lives in `tests/fixtures/` because that is the one tree
+neither lint walks, so it is a fixture and not a violation.
+`tests/unit/advice-lint.test.ts` (NEW, 26 cases) asserts the strengthened lint fails on it:
+
+```
+ORIGINAL L7 TITLE -> R15.3/R15.5 a specific number in the same sentence as a comparison:
+"$2" with "beats" in "Why $20 a week beats $500 later"
+```
+
+The same file asserts the replacement L7 passes, that five more comparison shapes fail, that
+the six sentences R15's new first list explicitly allows all pass (including the plan's own
+"most people start with a broad fund rather than picking companies"), and that the eight
+pre-existing rules still fire after the relaxation.
+
+#### The R15 read-through of all 24 pieces and 8 lessons
+
+I read every Learn piece, every lesson, every tooltip and the screen copy against the new R15
+line. **This is not the R15.7 layer 3 gate.** That gate is the manager's, it has still never
+run, and a coder reading their own output is exactly the review that does not count. What
+follows is what I changed and what I am flagging, so the human gate starts from something
+narrower than twenty four blank pages.
+
+Changed, four pieces beyond L7:
+
+- **Learn E04**, title only: "Your first hundred dollars" -> "What a first move usually looks
+  like", and "Nothing about the first hundred" -> "Nothing about the first one". A heading
+  attaching a specific amount to *your* first move reads as the suggested starting amount,
+  which is R15.3's "start with $X" in a different grammar. The body was already impersonal.
+- **Learn E16**: "That is when a fee only advisor earns their money, because they are paid by
+  you rather than by whatever they sell you" ranked one kind of advisor over another (R15.5,
+  still banned with a disclosure; the tester flagged this as V2-7's second instance). Replaced
+  with a description of how each arrangement works and the procedural point that you may ask
+  which one you are sitting with. The `[[feeOnly]]` term is still used, so tooltip coverage
+  holds.
+- **Lesson L6**: "keep a little in checking for rent and let this grow behind it" was a second
+  person instruction about where this reader's money should sit. Unquantified, but R15.3 bans
+  the construction "numeric or not". Now: "which is why most people leave the money they need
+  this month somewhere they can reach it, and let the rest sit behind it." The reassurance the
+  lesson exists for is untouched.
+- **`LessonVisual.tsx` L7**, above.
+
+Read and left alone, with reasons: E08's "the market lost two percent today" and E15's "swings
+twenty percent either way" are hypothetical illustrations of what a number means, not return
+claims (the tester reached the same conclusion independently). The `sevenPercent` tooltip is
+R15.2's own named exception and says "assume". Every other tooltip says what a thing is and
+never whether it is good. L2's "5%" is the app's own catch setting being described.
+
+**Two things I am flagging rather than deciding:**
+
+1. **The Summer Money screen is a comparison of two timings with figures attached**, which is
+   what the new lint rule targets. `chartTitle` ("Keeping 10% of every summer paycheck from
+   19, versus starting at 30") and `headline` ("Starting now instead of at 30: about $X more
+   at 65...") both fire it. R15.2 names the summer projection as the single permitted forward
+   looking number and criterion 14 requires the screen to render both curves; R15.5's revised
+   text bans framing "two choices, amounts or timings as one beating or winning against the
+   other". Those two readings of the plan disagree. I took the narrower one: the screen stays
+   exactly as specified, and the lint carries a two entry, **exact sentence** allowlist
+   (`COMPARISON_EXEMPT`) with the reasoning written above it. A new comparison sentence in the
+   same block still fails. Rewording it to dodge the word `versus` would have been worse:
+   same claim on screen, lint blind to it. **Architect: this is yours to confirm or overrule.**
+2. **Learn E06** ("Why people set it and forget it") is the closest thing left in the library
+   to the plan's standing example of what a lint cannot see. It is impersonally framed, names
+   no amount and no product, and the amendment explicitly permits encouragement and general
+   observation, so I left it. It is the first piece I would put in front of the human gate.
+
+### Deviations and judgement calls, collected
+
+1. `DUE_LIMIT` stays 500 and concurrency is the fix (V2-4). The tester's own case asserts
+   `expect(DUE_LIMIT).toBe(500)`, so lowering it was not available anyway, but I would have
+   made the same choice: a lower limit drops nudges.
+2. `unsubscribe` answers 200, not 403, for a wrong auth (V2-5), to keep idempotency. One
+   existing assertion changed.
+3. `Button` `sm` is 44 px at every viewport, not only on touch (V2-2).
+4. Id uniqueness is enforced over six arrays, not the two the report named (V2-6).
+5. The Summer Money lint exemption, above.
+6. Three existing tests encoded the pre-amendment advice policy and were updated to the new
+   one: `tests/unit/copy.test.ts` and `tests/unit/content-tooltips.test.ts` (the line's
+   wording), and `tests/e2e/learn.spec.ts` (which asserted the line was *absent* from a Learn
+   item page, which the amendment reverses). No `tester-*` file was touched.
+
+### What the tester should re-check, near each fix
+
+- **V2-1:** the `ready` path, which I could not exercise (headless Chromium reports
+  `denied`). Specifically: after a real subscribe, does `nudges-stored` come back with the
+  endpoint line, and does turning off say "the server row is gone" rather than the new local
+  message? The `hasServerRow` read happens before `clearPush()`; that ordering is the fix's
+  weak point. Also `push.subscribed` after a reload, since it is the new gate.
+- **V2-2:** the ten `size="sm"` controls behind a confirm or a condition that your audit could
+  not reach, and whether any of them now wraps or overflows at 320 px with the extra height.
+- **V2-3:** three or more overlapping runs, and a claim followed by a sender that throws
+  (release then `recordFailure`, two statements, not atomic). A crash between them leaves the
+  row released and un-incremented, which is the safe direction but is worth confirming.
+- **V2-4:** the `unstarted` path against real rows, and whether 8 concurrent sends to one push
+  service provokes a 429 that serial sending did not.
+- **V2-5:** every other route for the same shape. `schedule` was already right; `subscribe`
+  should be checked for whether it distinguishes a new row from an existing one.
+- **V2-6:** whether any legitimately app-written export now fails the new rules. I ran the
+  full unit suite and the round trip tests, but a long lived profile with pruned visits is the
+  case I could not construct.
+- **Job A:** the six disclosure surfaces at 320 px (the panel is new on three screens and adds
+  height above the "Got it" button), and the new lint rule against sentences that sound
+  general but read as tailored.
+
+### Real test results, this pass
+
+Run on darwin 25.6, Node 24, against the same Neon isolated schema harness.
+
+| gate | result |
+|---|---|
+| `npm run lint:copy` | **ok**, 103 files |
+| `npm run lint:advice` | **ok**, 88 files (with the new rule 4 and the placement check) |
+| `npm run build` (incl. `prebuild` lints and `rules:check`, and `postbuild` secret scan) | **green**. `rules:check ok (28 arithmetic rules, 107 cases)`; `check-bundle-secrets ok (14 files)` |
+| `npm run test:db` | **93 passed / 93** (57 existing + 32 tester + 4 new). All three tester defect cases green. |
+| `npm test` | **666 passed, 4 failed of 670.** The 4 are `tester-v2-import-impact.test.ts`, all asserting the V2-6 defect is accepted. See the caveat above. |
+| `npm run typecheck` | **1 error, pre-existing and not mine**: `tests/e2e/tester-v2-product.spec.ts(7,51): TS6133: 'openTray' is declared but its value is never read`. It is an unused import in a `tester-*` file I am not permitted to edit; `tsconfig.build.json` excludes `tests/`, so `npm run build` is unaffected. |

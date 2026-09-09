@@ -95,6 +95,82 @@ const PERCENT_RE = '(?:\\d+(?:\\.\\d+)?\\s*(?:%|percent))';
 const PERCENT_NEAR = new RegExp(`${PERCENT_RE}[^.]{0,40}\\b${RETURN_WORD}\\b|\\b${RETURN_WORD}\\b[^.]{0,40}${PERCENT_RE}`, 'i');
 const CAPS_TOKEN = /\b[A-Z]{2,5}\b/g;
 
+/**
+ * Rule 4, added by the cycle 8 amendment (R15.7).
+ *
+ * The relaxation this cycle lets a general, unquantified principle through with a disclosure
+ * next to it. The exact thing it must NOT let through is that principle with figures attached
+ * and one side framed as winning, because that is where a general truth turns into an
+ * instruction about this particular reader's money, and it is what both existing lints missed:
+ * "Why $20 a week beats $500 later" contains no banned phrase, no all capitals token and no
+ * percentage next to a return word, and it shipped.
+ *
+ * So: a specific number (a dollar amount, a bare figure, or a written out one) sharing a
+ * SENTENCE with a comparison word fails. Sentence, not string, because a piece of prose may
+ * legitimately mention a figure in one sentence and draw an unquantified contrast in the next.
+ *
+ * `COMPARISON_WORDS` is R15.7's list verbatim. `rather than` and `instead of` are on it and
+ * are ordinary English, which is exactly why the rule is scoped to a sentence that also
+ * carries a number: "leave rent money where you can reach it rather than behind a three day
+ * transfer" is prose, and "$20 a week beats $500 later" is a recommendation.
+ */
+const COMPARISON_WORDS = ['beats', 'beat', 'versus', 'vs', 'instead of', 'rather than', 'better than', 'wins', 'loses to'];
+const COMPARISON_RE = new RegExp(`\\b(?:${COMPARISON_WORDS.map((w) => w.replace(/ /g, '\\s+')).join('|')})\\b`, 'i');
+
+/**
+ * A "specific number" is a digit run (with or without a currency mark, and with or without a
+ * `k`/`%` suffix) or one of the written out numbers a sentence like this actually uses. Ranks
+ * ("the first one", "one of them") and the word "one" as a pronoun are excluded: they carry no
+ * quantity, and including them made the rule fire on ordinary sentences during development.
+ */
+const WRITTEN_NUMBERS = [
+  'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety',
+  'hundred', 'thousand', 'million',
+];
+const NUMBER_RE = new RegExp(`\\$\\s*\\d|\\b\\d+(?:[.,]\\d+)?\\b|\\b(?:${WRITTEN_NUMBERS.join('|')})\\b`, 'i');
+
+/**
+ * R15.7's impersonal framing allowlist. A sentence that frames itself as what people in
+ * general do is the shape R15's first list exists to permit, so it is exempt from the
+ * comparison rule ("most people start with a broad fund rather than picking companies" is the
+ * plan's own example of an allowed sentence). It is NOT exempt from anything else: the banned
+ * phrase list, the ticker rule and the percentage rule all still apply to it, and R15.7 layer
+ * 3 exists precisely because a human still has to judge whether an impersonally framed
+ * sentence reads as a recommendation anyway.
+ */
+const IMPERSONAL_FRAMING = ['most people', 'generally', 'usually', 'in general', 'on average', 'plenty of people', 'a lot of people'];
+
+/**
+ * The one place in the app where a specific number and a comparison word legitimately share a
+ * sentence: the Summer Money projection, which R15.2 names as the single forward looking
+ * number in the product and which criterion 14 requires to render both curves. Comparing
+ * "start now" with "start at 30" IS that screen; there is no wording of it that is not a
+ * comparison, and rewording it to dodge the word `versus` would be worse than exempting it,
+ * because it would leave the same claim on screen with the lint blind to it.
+ *
+ * Exact sentences, not a file or a prefix. A new comparison sentence added to the same block
+ * fails like any other, and each entry below is a reviewed line.
+ *
+ * NOTE FOR THE ARCHITECT, recorded in the build notes rather than decided here: R15.5's
+ * revised text bans framing "two choices, amounts or TIMINGS as one beating or winning against
+ * the other", and this screen compares two timings by construction. R15.2 and criterion 14
+ * require the screen. Those two readings of the plan disagree, and this allowlist takes the
+ * narrower one (the screen stays, exactly as specified) rather than deleting a required
+ * feature on my own authority.
+ */
+const COMPARISON_EXEMPT = new Set([
+  // The chart title. R10.3's assumption label sits directly beneath it.
+  'Keeping 10% of every summer paycheck from 19, versus starting at 30',
+  // The headline, with its two interpolations removed by the literal scanner above.
+  'Starting now instead of at 30:',
+]);
+
+/** Sentence splitting good enough for prose: a terminator followed by a space or the end. */
+function sentencesOf(text: string): string[] {
+  return text.split(/(?<=[.!?;:])\s+|\n+/).filter((s) => s.trim().length > 0);
+}
+
 interface Problem {
   file: string;
   line: number;
@@ -220,6 +296,20 @@ export function checkText(text: string): { rule: string; detail: string }[] {
   }
   const pct = PERCENT_NEAR.exec(text);
   if (pct) found.push({ rule: 'R15.2 percentage next to a return claim', detail: pct[0].trim() });
+  for (const sentence of sentencesOf(text)) {
+    const trimmed = sentence.trim().replace(/\s+/g, ' ');
+    if (COMPARISON_EXEMPT.has(trimmed)) continue;
+    const lowered = trimmed.toLowerCase();
+    if (IMPERSONAL_FRAMING.some((f) => lowered.includes(f))) continue;
+    const cmp = COMPARISON_RE.exec(sentence);
+    if (!cmp) continue;
+    const num = NUMBER_RE.exec(sentence);
+    if (!num) continue;
+    found.push({
+      rule: 'R15.3/R15.5 a specific number in the same sentence as a comparison',
+      detail: `"${num[0].trim()}" with "${cmp[0].trim()}" in "${sentence.trim().slice(0, 90)}"`,
+    });
+  }
   return found;
 }
 
@@ -231,6 +321,49 @@ function scan(file: string): void {
   }
 }
 
+/**
+ * Criterion 28 and 9.8a: the six surfaces the disclosure has to be visible on, with no tap and
+ * no expand. Each maps to the screen file that renders it and to the `data-testid` the e2e
+ * suite finds it by.
+ *
+ * A static check, and it is honest about being one: it proves the screen renders the shared
+ * constant, not that the sentence is on screen at the moment a user looks. The Playwright case
+ * in `tests/e2e/learn.spec.ts` proves the second thing on all six. This one is here because it
+ * runs in `prebuild`, which means the disclosure cannot be deleted from a screen and shipped
+ * while the e2e suite is red or unrun.
+ */
+export const DISCLOSURE_SURFACES: Array<{ file: string; testId: string; what: string }> = [
+  { file: 'src/screens/Learn.tsx', testId: 'learn-not-advice', what: 'the Learn library index' },
+  { file: 'src/screens/LearnItem.tsx', testId: 'learn-item-not-advice', what: 'every Learn item page' },
+  { file: 'src/screens/Lessons.tsx', testId: 'lessons-not-advice', what: 'the top of Lessons' },
+  { file: 'src/screens/Lesson.tsx', testId: 'lesson-not-advice', what: 'every lesson page' },
+  { file: 'src/screens/Invest.tsx', testId: 'invest-not-advice', what: 'the Invest screen' },
+  { file: 'src/screens/Settings.tsx', testId: 'settings-not-advice', what: 'Settings' },
+];
+
+function checkDisclosurePlacement(): void {
+  for (const surface of DISCLOSURE_SURFACES) {
+    const full = resolve(process.cwd(), surface.file);
+    if (!existsSync(full)) {
+      problems.push({ file: surface.file, line: 0, rule: 'R15.6 disclosure placement', detail: `${surface.what}: file is missing` });
+      continue;
+    }
+    const source = readFileSync(full, 'utf8');
+    // The rendered node, found by its test id, and the shared constant reached through `S`.
+    // Requiring both means neither a stray test id nor a hand retyped sentence passes.
+    const hasNode = source.includes(`data-testid="${surface.testId}"`);
+    const hasLine = /\bS\.(?:learn|lessons|settings|invest)\.notAdvice\b/.test(source);
+    if (!hasNode || !hasLine) {
+      problems.push({
+        file: surface.file,
+        line: 0,
+        rule: 'R15.6 disclosure placement',
+        detail: `${surface.what} must render the 9.8a line: ${!hasNode ? `no data-testid="${surface.testId}"` : 'no *.notAdvice reference'}`,
+      });
+    }
+  }
+}
+
 const args = process.argv.slice(2);
 const files: string[] = [];
 if (args.length > 0) {
@@ -238,6 +371,9 @@ if (args.length > 0) {
 } else {
   walk(resolve(process.cwd(), 'src'), /\.(ts|tsx)$/, files);
   walk(resolve(process.cwd(), 'shared/content'), /\.json$/, files);
+  // Only on a whole tree run: pointing the lint at one file is a fixture check, and the
+  // placement rule has nothing to say about a single file.
+  checkDisclosurePlacement();
 }
 
 for (const f of files) scan(f);

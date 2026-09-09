@@ -61,6 +61,19 @@ export function LearnItem() {
         </p>
       </Card>
 
+      {/*
+        * Cycle 8, R15.6 and 9.8a. It used to be deliberate that this line did NOT appear here:
+        * the library index carried it once and repeating it per piece read as nervousness.
+        * The amendment reverses that, and the reason is specific rather than legalistic. The
+        * library is now allowed to state general principles, and a reader who arrives at one
+        * piece from a deep link or a surfacing card never sees the index. That reader would be
+        * the only one who never sees the sentence that makes this education rather than
+        * advice. One short line, the same one, in the same words.
+        */}
+      <p className="mt-4 rounded-2xl bg-leaf-soft p-3.5 text-sm leading-snug ring-1 ring-leaf/15" data-testid="learn-item-not-advice">
+        {S.learn.notAdvice}
+      </p>
+
       <div className="mt-6">
         <Button size="lg" full data-testid="learn-item-got-it" onClick={() => navigate('/learn')}>
           {S.common.gotIt}

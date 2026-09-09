@@ -49,6 +49,11 @@ export function Lesson() {
           </p>
         </Card>
       )}
+      {/* Cycle 8, R15.6 and 9.8a: on every lesson page, not only at the top of the path. */}
+      <p className="mt-4 rounded-2xl bg-leaf-soft p-3.5 text-sm leading-snug ring-1 ring-leaf/15" data-testid="lesson-not-advice">
+        {S.lessons.notAdvice}
+      </p>
+
       <div className="mt-6">
         <Button size="lg" full data-testid="lesson-got-it" onClick={() => navigate('/lessons')}>
           {st === 'locked' ? S.lessons.backToPath : S.common.gotIt}

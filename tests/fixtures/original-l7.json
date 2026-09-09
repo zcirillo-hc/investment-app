@@ -1,0 +1,6 @@
+{
+  "note": "TESTER/CODER regression fixture, plan v2 R15.7 and criterion 28. The ORIGINAL, unmodified lessons.json L7, exactly as it shipped and exactly as it passed both lints. It lives here, outside every tree lint-advice and lint-copy walk, so that it is a fixture and not a violation. Do not fix this text. Its whole job is to fail.",
+  "id": "L7",
+  "title": "Why $20 a week beats $500 later",
+  "body": "Twenty dollars a week is about $1,000 a year. Started now and left alone, the early money has decades to grow, and time is the part you cannot buy later. Waiting for a big amount usually means waiting forever."
+}

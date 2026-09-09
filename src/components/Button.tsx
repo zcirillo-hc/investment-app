@@ -16,7 +16,21 @@ const variants = {
   danger: 'bg-coral text-on-coral hover:brightness-110 elev-1 active:shadow-none',
   amber: 'bg-amber text-on-amber hover:brightness-110 elev-1 active:shadow-none',
 };
-const sizes = { sm: 'min-h-[36px] px-3.5 text-sm', md: 'min-h-[44px] px-4 text-base', lg: 'min-h-[52px] px-6 text-lg' };
+/**
+ * The tap target floor, plan 6.13 and 11.2. It is a property of the size scale rather than of
+ * any one call site: D7 came back a third time (test report V2-2) because `sm` was 36 px and
+ * three screens happened to use it, and patching those three screens would have left the next
+ * `size="sm"` to fail the same way. `sm` is now a smaller *typeface* and a tighter horizontal
+ * pad, not a shorter button. `tests/unit/button-size.test.ts` asserts the floor over every
+ * entry in this record, so a new size cannot be added below it.
+ */
+export const MIN_TAP_TARGET_PX = 44;
+
+export const sizes = {
+  sm: 'min-h-[44px] px-3.5 text-sm',
+  md: 'min-h-[44px] px-4 text-base',
+  lg: 'min-h-[52px] px-6 text-lg',
+} as const;
 
 /**
  * Visual polish pass, 2026-09-09: the press state is a real one now. `.press` scales by 2.5%

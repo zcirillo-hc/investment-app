@@ -239,15 +239,29 @@ describe('6.6 POST /api/push/unsubscribe', () => {
     });
   });
 
-  it('refuses to delete a row belonging to another browser when the auth is wrong', async () => {
+  /**
+   * Test report V2-5. This case used to assert 403, which is what made the route a
+   * subscription oracle: an unsubscribed endpoint with the same wrong auth answered 200. The
+   * refusal itself is the assertion that matters and it is unchanged (the row is still there),
+   * but the STATUS now has to match what an unknown endpoint gets, or the pair of responses
+   * still answers "is this endpoint subscribed" to a caller who cannot prove anything.
+   */
+  it('refuses to delete a row belonging to another browser when the auth is wrong, indistinguishably from an unknown endpoint', async () => {
     const sub = makeSub();
     await post(subscribe, {
       subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       tz: 'UTC',
     });
-    const r = await post(unsubscribe, { endpoint: sub.endpoint, auth: 'notthesecret' });
-    expect(r.status).toBe(403);
-    expect(await countRows()).toBe(1);
+    const known = await post(unsubscribe, { endpoint: sub.endpoint, auth: 'notthesecret' });
+    expect(await countRows(), 'the row is not deleted without the secret').toBe(1);
+
+    const unknown = await post(unsubscribe, { endpoint: makeSub().endpoint, auth: 'notthesecret' });
+    expect([known.status, known.json()], 'a wrong auth must not reveal that a row exists').toEqual([
+      unknown.status,
+      unknown.json(),
+    ]);
+    expect(known.status).toBe(200);
+    expect(known.json()).toEqual({ ok: true, deleted: 0 });
   });
 });
 

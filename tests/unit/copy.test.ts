@@ -200,11 +200,19 @@ describe('R15 education, not advice', () => {
     expect(S.summer.assumption.toLowerCase()).toMatch(/assum|7%/);
   });
 
-  it('R15.6: the standing statement is one sentence group, used in three places', () => {
+  // Cycle 8 amendment (R15.6, 9.8a): the line is rewritten and its placement widens from
+  // three surfaces to six. The two new SCREENS (a Learn item page, a lesson page) render the
+  // same `S.learn.notAdvice` and `S.lessons.notAdvice` constants asserted here; that they
+  // actually render them is checked statically by `lint:advice`'s placement rule and live by
+  // `tests/e2e/learn.spec.ts`.
+  it('R15.6: the standing statement is one sentence group, used verbatim on every surface', () => {
     expect(S.lessons.notAdvice).toBe(NOT_ADVICE_LINE);
     expect(S.learn.notAdvice).toBe(NOT_ADVICE_LINE);
     expect(S.settings.notAdvice).toBe(NOT_ADVICE_LINE);
-    expect(NOT_ADVICE_LINE).toContain('never tells you what to buy');
+    expect(S.invest.notAdvice).toBe(NOT_ADVICE_LINE);
+    expect(NOT_ADVICE_LINE).toContain('not personal advice');
+    expect(NOT_ADVICE_LINE).toContain('not licensed financial advisors');
+    expect(NOT_ADVICE_LINE).toContain('nothing here is tailored to you');
   });
 
   it('R15.5: the ledger suggestion list is a list of words, never a shortlist to buy', () => {

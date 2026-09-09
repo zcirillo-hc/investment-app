@@ -187,7 +187,24 @@ export function Settings() {
           <Button variant="secondary" onClick={() => fileInput.current?.click()}>
             {S.settings.importBtn}
           </Button>
-          <input ref={fileInput} type="file" accept="application/json,.json" data-testid="settings-import" className="sr-only" aria-label={S.settings.importBtn} onChange={(e) => void onImportFile(e.target.files?.[0])} />
+          {/*
+            * Test report V2-8, the shape the D12 fix removed from Welcome and did not carry
+            * across. The visible button above is the control; this input is only its file
+            * picker. With an `aria-label` and no `tabIndex` it was a second focusable element
+            * with the same accessible name, 1x1, which a keyboard or screen reader user meets
+            * as "Import JSON" twice. Out of the tab order and out of the accessibility tree,
+            * exactly as `Welcome.tsx` does it.
+            */}
+          <input
+            ref={fileInput}
+            type="file"
+            accept="application/json,.json"
+            data-testid="settings-import"
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => void onImportFile(e.target.files?.[0])}
+          />
           {/* R11.4. */}
           <Button variant="secondary" data-testid="settings-delete-places" onClick={() => deleteAllPlaces()}>
             {S.settings.deletePlaces}

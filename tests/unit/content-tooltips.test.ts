@@ -161,6 +161,9 @@ describe('8.9 the library itself', () => {
 
   it('9.8a: the standing line is one sentence group and lives in the content, not in a screen', () => {
     expect(NOT_ADVICE_LINE).toBe(learn.standingLine);
-    expect(NOT_ADVICE_LINE).toContain('education, not advice');
+    // Cycle 8 amendment: R15 no longer says "education, not advice" full stop, because the
+    // library may now carry general principles. The line names the limit that is actually
+    // true instead, which is that nobody here is licensed and nothing here is tailored.
+    expect(NOT_ADVICE_LINE).toContain('not personal advice');
   });
 });

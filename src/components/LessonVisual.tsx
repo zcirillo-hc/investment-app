@@ -68,12 +68,24 @@ export function LessonVisual({ id }: { id: LessonId }) {
         </svg>
       );
     case 'L7':
+      // Cycle 8, the revised R15. This used to be two bars, "$20 a week" tall and green
+      // against "$500 once" short and coral, which is the same ranked comparison with figures
+      // attached that the lesson's old title was rewritten to remove. A picture makes that
+      // claim as loudly as a sentence does. What is left is the principle and nothing else:
+      // two identical amounts, no figures, no outcome, and the only difference between them
+      // is how much runway each one has.
       return (
-        <svg viewBox="0 0 240 120" className={common} role="img" aria-label="Two bars: twenty dollars a week for five years versus five hundred once">
-          <rect x="40" y="20" width="50" height="84" rx="6" className="fill-leaf" />
-          <text x="65" y="115" textAnchor="middle" className="fill-ink text-[10px] font-bold">$20 a week</text>
-          <rect x="150" y="96" width="50" height="8" rx="4" className="fill-coral" />
-          <text x="175" y="115" textAnchor="middle" className="fill-ink text-[10px] font-bold">$500 once</text>
+        <svg viewBox="0 0 240 120" className={common} role="img" aria-label="The same amount put in early has a long runway ahead of it; put in later, a short one">
+          <path d="M24 92 h192" className="stroke-line" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="48" cy="92" r="9" className="fill-leaf-soft stroke-leaf" strokeWidth="3" />
+          <path d="M48 84 v-40" className="stroke-leaf" strokeWidth="3" strokeLinecap="round" strokeDasharray="5 5" />
+          <path d="M48 78 h150" className="stroke-leaf" strokeWidth="4" strokeLinecap="round" />
+          <path d="M198 78 l-11 -6 v12z" className="fill-leaf" />
+          <text x="48" y="36" textAnchor="start" className="fill-ink text-[10px] font-bold">Put in early</text>
+          <circle cx="150" cy="92" r="9" className="fill-leaf-soft stroke-leaf" strokeWidth="3" />
+          <path d="M150 102 h48" className="stroke-leaf" strokeWidth="4" strokeLinecap="round" />
+          <path d="M198 102 l-11 -6 v12z" className="fill-leaf" />
+          <text x="150" y="118" textAnchor="start" className="fill-muted text-[10px] font-bold">Later</text>
         </svg>
       );
     case 'L8':

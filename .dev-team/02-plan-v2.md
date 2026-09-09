@@ -265,14 +265,17 @@ emotional job the brief cares most about, which is making a small number feel li
 large one later. Deleting it would remove the mission carrying scene while removing
 nothing that was fake in a new way. Both curves keep rendering, now in inline SVG.
 
-**The eight lessons: kept, two rewritten.** Six survive verbatim. `L3 Your jar just
+**The eight lessons: kept, three rewritten.** Five survive verbatim. `L3 Your jar just
 became shares` is rewritten as `L3 The coffee you didn't buy` and retriggered on the
 first skip, because the jar no longer becomes shares. `L4 Why a dip isn't a loss` keeps
 its title and most of its body, gains two sentences saying that this app deliberately
 never shows you a number going down because it does not watch prices at all, and is
-retriggered on the first ledger entry, which is the moment the fear becomes real. L1,
-L2, L5, L6, L7 and L8 are unchanged, so the fear check mapping (rent to L6, pointless
-to L7, confused to L8, losing to L4) still holds.
+retriggered on the first ledger entry, which is the moment the fear becomes real. `L7 Why
+$20 a week beats $500 later` is rewritten as `L7 Why early money has more time to grow`
+per the advice policy revision in section 4 (R15) and section 9.6a, because its original
+title and body read as a tailored comparison rather than a general principle. L1, L2, L5,
+L6 and L8 are unchanged, so the fear check mapping (rent to L6, pointless to L7, confused
+to L8, losing to L4) still holds.
 
 ### 1.4 What replaces "growth is always shown since you started"
 
@@ -472,11 +475,22 @@ dev server does not serve `api/`. Criteria that touch the database are verified 
     and never gates anything.
 28. `npm run lint:advice` reports 0. A full text scan of every string in `shared/content/`
     and `src/content/` finds no ticker symbol outside the allowlist, no numeric return claim,
-    no phrase from the banned advice list, and no second person imperative directed at the
-    user's money. Every `[[term]]` marker in `learn.json` and `lessons.json` resolves to a
-    tooltip entry, and every tooltip entry is used. The standing line from 9.8a appears
-    exactly once each on Lessons, on Learn and in Settings. A deliberately offending fixture
-    string fails the lint, proving it is wired up.
+    no phrase from the banned advice list, no tailored allocation, contribution amount or
+    timeline, and no dollar amount or other specific number sharing a sentence with a
+    comparison word (`beats`, `beat`, `versus`, `vs`, `instead of`, `rather than`, `better
+    than`, `wins`, `loses to`) per the revised R15.7. A general, unquantified principle
+    ("money invested earlier has more time to grow") and a procedural first step ("most
+    brokerages have no minimum now") both pass. A fixture holding the original, unmodified
+    `lessons.json` L7 text ("Why $20 a week beats $500 later" and its body) fails the lint,
+    proving the new pattern would have caught the shipped defect the tester found (V2-7).
+    Every `[[term]]` marker in `learn.json` and `lessons.json` resolves to a tooltip entry,
+    and every tooltip entry is used. The disclosure from 9.8a appears, verbatim and without
+    any tap or expand, on the Learn library index, on every one of the sixteen individual
+    Learn item pages, on every one of the eight individual lesson pages, on the Invest
+    screen, and in Settings. A deliberately offending fixture string fails the lint, proving
+    it is wired up, and the human review gate required by R15.7 layer 3 has been run at
+    least once and is recorded as done in the status report before this criterion is
+    considered met.
 
 ---
 
@@ -860,56 +874,112 @@ frequent trigger later (6.8a) is a constant change in those two rules, not a rew
   without a five second timeout, and nothing claims a nudge was scheduled when the call
   failed.
 
-### R15 Education, not advice
+### R15 Education, not advice, with one deliberate carve out
 
-New this amendment, and a hard constraint rather than a preference. It matters more now than
-in v1 because the app carries a real ledger the user types real amounts into, and because the
-Learn library talks about markets. Every rule here applies to lesson bodies, Learn pieces,
+Revised this cycle at the user's direction, and still a hard constraint rather than a
+preference. Their words: general information can carry a visible disclosure instead of being
+banned outright, but nothing that reads as a personal recommendation ever gets cured by a
+disclosure, because the user is not a registered investment adviser and a disclaimer does not
+turn a personalized recommendation into general education. That is a factual limit, not a
+style choice, and it is why the line below has two lists rather than one. It matters more now
+than in v1 because the app carries a real ledger the user types real amounts into, and because
+the Learn library talks about markets. Every rule here applies to lesson bodies, Learn pieces,
 tooltips, screen copy, empty states, toasts, notification text and error messages alike.
+
+**Allowed, and only ever with the disclosure from R15.6 visible on the same screen:**
+
+- **General principles and rules of thumb that apply to everyone**, stated impersonally, with
+  no reference to this user's own numbers: "money invested earlier has more time to grow",
+  "spreading money across many companies lowers the risk that any one of them sinks you",
+  "most people start with a broad fund rather than picking companies". A principle stays
+  general as long as it is true of any reader and does not resolve to a specific number, date
+  or amount this reader should act on.
+- **Practical first steps that are procedural rather than a recommendation**: "opening an
+  account usually needs your ID and a bank link", "most brokerages have no minimum now". These
+  describe how a process works, not which choice within it to make.
+- **Encouragement to start**, unqualified, because it is the entire point of the product:
+  telling someone that starting small and starting now is worth doing does not choose an
+  account, a fund or an amount for them.
+
+**Still not allowed, disclosure or not, because a disclosure cannot cure these:**
 
 - **R15.1 No named security, ever.** No ticker symbol, fund name, company name, brokerage
   name, product name or brand appears anywhere in the app's copy. Categories are allowed ("a
   broad index fund"); instances are not. The five real ETF tickers from v1 left with the
   price series and do not come back in prose.
-- **R15.2 No predicted, promised or implied return.** The only forward looking number in the
-  entire app is the summer projection, at its disclosed 7% assumption, applied to the user's
-  own answer, labeled an assumption every time it appears (R10.3). No lesson, tooltip or
-  string states a historical or expected return figure, a growth rate, or a comparison of
-  what one thing returned against another.
-- **R15.3 No imperative directed at the user's money.** Copy explains what a thing is and
-  what people generally do. It never says "you should", "we recommend", "put your money in",
-  "the best X is", "start with", or any construction that resolves to an instruction about
-  this user's funds. Describing what is common ("most people's first move is small") is
-  allowed and is the voice the library is written in; instructing is not.
+- **R15.2 No predicted, promised or guaranteed return.** The only forward looking number in
+  the entire app is the summer projection, at its disclosed 7% assumption, applied to the
+  user's own answer, labeled an assumption every time it appears (R10.3). No lesson, tooltip
+  or string states a historical or expected return figure, a growth rate, or a comparison of
+  what one thing returned against another. A general, unquantified principle ("earlier money
+  has more time to grow") is allowed under R15's new first list; a number, a rate or a
+  promise attached to it is not.
+- **R15.3 No tailored allocation, contribution amount or timeline.** Copy never tells this
+  reader what to put where, how much to put in, or when, in a way that reads as sized to
+  their own situation: no "you should", "we recommend", "put your money in", "the best X is",
+  "start with $X", "invest $X a week", or any construction, numeric or not, that resolves to
+  an instruction about this reader's funds. A general rule of thumb stated for everyone is
+  R15's new first list; the moment a specific amount, date or split is attached to what
+  "you" should do, it is this rule, and it stays banned regardless of a disclosure sitting
+  next to it.
 - **R15.4 No personalization of educational content.** No lesson or Learn piece varies its
   text based on the user's ledger, amounts, age, fear answer or place data. The fear check
   chooses which confidence path lesson unlocks first, and that is the only permitted
   personalization anywhere: it selects, it never rewrites. Nothing in the app ever says
   "based on what you have invested".
-- **R15.5 No ranking of options.** The app does not say one account type, fund shape, market
-  or approach is better, safer, smarter or more suitable than another. It says what each one
-  is. The ledger's suggestion list is a list of words a user might type, ordered arbitrarily
-  and fixed, never a shortlist of things to buy.
-- **R15.6 The standing statement.** The line in 9.8a appears once at the top of Lessons, once
-  at the top of Learn and once in Settings. It is not repeated per piece, because a
-  disclaimer on every paragraph reads as nervousness rather than honesty.
+- **R15.5 No ranking of options, and no comparison that implies an outcome.** The app does
+  not say one account type, fund shape, market or approach is better, safer, smarter or more
+  suitable than another, and it does not frame two choices, amounts or timings as one
+  "beating" or "winning against" the other. It says what each one is, and, where R15's first
+  list allows it, what people in general tend to do. The ledger's suggestion list is a list
+  of words a user might type, ordered arbitrarily and fixed, never a shortlist of things to
+  buy.
+- **Anything that reads as a personalized recommendation, full stop.** If a reasonable person
+  would come away thinking the app just told them what to do with their own money, it is
+  banned, whatever list of allowed phrasing it borrows from and whatever disclosure sits next
+  to it. A disclosure discloses; it does not launder a recommendation into education.
+- **R15.6 The disclosure, and where it must be visible.** Exact copy and full placement list
+  live in section 9.8a. In short: it now appears on the Learn library index, on every one of
+  the sixteen individual Learn item pages, on every one of the eight lesson pages, on the
+  Invest screen, and in Settings, because the app now carries general principles that need a
+  disclosure next to them wherever they can be read, not only at the top of a list a reader
+  may never scroll back to. It is one short line repeated verbatim everywhere it appears, not
+  a paragraph, so that reading it once tells you what it will say every other time.
 - **R15.7 Enforcement, in three layers, and all three are required.**
   1. `scripts/lint-advice.ts`, run in `prebuild` and in CI, scanning `src/content/**`,
-     `shared/content/**` and string literals under `src/**`. It fails on a banned phrase list
-     (`you should`, `we recommend`, `recommended for you`, `best fund`, `best stock`,
-     `best etf`, `best investment`, `guaranteed`, `risk free`, `can't lose`, `beat the
-     market`, `outperform`, `our pick`, `top pick`, `will grow`, `will return`, `will make
-     you`, `buy now`, `you need to buy`), on any all capitals token of 2 to 5 letters that is
-     not in a small explicit allowlist (`ETF`, `IRA`, `USD`, `FDIC`, `SIPC`, `UK`, `US`,
-     `PWA`), and on any percentage adjacent to the words return, gain, growth or profit. The
-     allowlist lives beside the script and every addition to it is a reviewed change.
+     `shared/content/**` and string literals under `src/**`. It must still fail on the
+     original banned phrase list (`you should`, `we recommend`, `recommended for you`, `best
+     fund`, `best stock`, `best etf`, `best investment`, `guaranteed`, `risk free`, `can't
+     lose`, `beat the market`, `outperform`, `our pick`, `top pick`, `will grow`, `will
+     return`, `will make you`, `buy now`, `you need to buy`), on any all capitals token of 2
+     to 5 letters not in the small explicit allowlist (`ETF`, `IRA`, `USD`, `FDIC`, `SIPC`,
+     `UK`, `US`, `PWA`), and on any percentage adjacent to the words return, gain, growth or
+     profit. It gains a new pattern this amendment: a dollar amount or other specific number
+     appearing within the same sentence as a comparison word (`beats`, `beat`, `versus`,
+     `vs`, `instead of`, `rather than`, `better than`, `wins`, `loses to`) fails, because that
+     shape is exactly how R15.3 and R15.5 get violated without tripping the old phrase list,
+     and it is exactly the shape the shipped `lessons.json` L7 title used. The lint must not
+     fail on a general principle stated with no attached number ("money invested earlier has
+     more time to grow" passes) or on a procedural first step ("most brokerages have no
+     minimum now" passes), so the allowlist of impersonal framing words (`most people`,
+     `generally`, `usually`, `in general`, `on average`, when not adjacent to a percentage)
+     stays explicitly exempted from the imperative check. Before this amendment ships, add a
+     regression fixture containing the original, unmodified L7 text ("Why $20 a week beats
+     $500 later" plus its body) and assert the lint still fails on it under the new rules;
+     this is the proof that relaxing R15 did not accidentally relax the one case it was
+     already failing to catch.
   2. `tests/unit/copy.test.ts` gains the same assertions over the loaded content, so a
      violation fails the test suite and not only the build.
-  3. **A human review gate.** The manager reads all sixteen Learn pieces, all eight lessons
-     and every new tooltip against R15 before the cycle closes, and states in the status
-     report that it was done. The lint is a regex; it catches carelessness and cannot catch
-     intent, and "most people in your position end up in a broad index fund" would pass every
-     automated check in this plan while being advice.
+  3. **A human review gate, restated against the new line, and it has never run.** The
+     manager reads all sixteen Learn pieces, all eight lessons and every new tooltip against
+     this revised R15 before the cycle closes, checking specifically for the shape a lint
+     cannot see: a general sounding sentence that a reasonable reader would still take as
+     being told what to do. "Most people in your position end up in a broad index fund" is
+     the standing example, and it would pass every automated check in this plan while being
+     a personalized recommendation dressed as an observation. **This gate has not been run
+     even once across v1 or v2, per the test report's V2-7 finding, and it must run before
+     the next deploy, not as a nice to have but as the condition the plan treats R15 as met
+     at all.** A lint pass is necessary and not sufficient; only this reading closes R15.
 
 ---
 
@@ -1982,9 +2052,11 @@ consequence before confirming.
 
 ### 8.7 Invest (new)
 
-The manual investment ledger. Header: total contributed, entry count, first entry date, and
-the honest line from section 9.3. Then a list per R7.5, then an "Add what you invested"
-button.
+The manual investment ledger. Header: total contributed, entry count, first entry date, the
+honest line from section 9.3, and the disclosure from 9.8a, visible with no tap or expand
+required, because this is the screen where the ledger lives and where a reader is most likely
+to be thinking about their own money while reading the app's general copy. Then a list per
+R7.5, then an "Add what you invested" button.
 `LedgerForm` fields: amount, date, what it went into (free text with a suggestion list:
 index fund, ETF, retirement account, savings account, individual stock, crypto, something
 else), and an optional note. The form states that the app does not check this against
@@ -2239,7 +2311,7 @@ Shown in full, with a continue button, before any permission prompt.
   Change has stored in this browser: your places, your jar, your ledger, your lessons. It
   cannot be undone and there is no copy anywhere else."
 
-### 9.6 The two rewritten confidence path lessons
+### 9.6 The three rewritten confidence path lessons
 
 - **L3, "The coffee you didn't buy".** "You skipped one stop, and the money you were about
   to spend is sitting in your jar instead. Nothing was taken out of your account, because it
@@ -2249,6 +2321,39 @@ Shown in full, with a continue button, before any permission prompt.
   never shows you a number going down. That is on purpose. It does not watch prices at all,
   so it cannot panic you with one bad week, and it cannot pretend to know what your money is
   doing today."
+- **L7, rewritten this amendment, disposition below.** Its title and body change; see
+  section 9.6a for why and for the replacement text.
+
+### 9.6a L7's disposition under the revised R15
+
+The test report's V2-7 flagged the shipped `lessons.json` L7, "Why $20 a week beats $500
+later", for ranking one approach over another and reading as a directional growth claim, and
+found that it passed both automated lints. Under the revised R15 the question is no longer
+whether it is banned outright, it is whether it lands in the first list (general principle,
+allowed with the disclosure) or the second (tailored amount framed as a comparison, still
+banned regardless of disclosure). It lands in the second, and it needs a rewrite, not a
+disclosure. The reasoning: R15's first list allows an unquantified principle like "money
+invested earlier has more time to grow"; the title "$20 a week beats $500 later" attaches two
+specific dollar figures to that principle and frames one as beating the other, which is
+exactly the "beats/versus/instead of plus a number" shape the revised R15.7 lint pattern now
+targets, and exactly the shape R15.3 and R15.5 name as still banned even with a disclosure
+next to it. A reasonable reader takes "$20 a week beats $500 later" as being told what to
+contribute and when; that is a personalized recommendation dressed as an observation, and a
+disclosure does not cure it.
+
+The fix keeps the underlying principle, which is sound, honest and exactly what R15's first
+list is for, and drops the specific figures and the "beats" framing that turned it into a
+comparison:
+
+- **New title: "Why early money has more time to grow".**
+- **New body:** "Money invested now has decades to do its work before you are likely to need
+  it. Money invested later, even if it is more of it, has less time to do the same job. That
+  is not a reason to wait until you have more to put in, it is the reason not to."
+
+This keeps L7's spot in the fear check mapping (pointless to L7, unchanged) and its place as
+the sixth of eight lessons; only its title and body change, and the `learn.json` L7 fixture
+used by the lint's regression test in R15.7 must be the original, unmodified text, not this
+replacement, so the test continues proving the lint would have caught the shipped version.
 
 ### 9.7 Neutral copy for the jar actions
 
@@ -2362,13 +2467,42 @@ and never telling you what to do with your money.
   paid by you rather than by whatever they sell you. This app is not that, and it is never
   going to pretend to be."
 
-### 9.8a The standing education line
+### 9.8a The disclosure
 
-One sentence, shown once at the top of Lessons, once at the top of Learn, and once in
-Settings. Not repeated per piece.
+Rewritten this amendment because R15 now allows general principles and procedural first
+steps to appear with a visible disclosure instead of being banned outright (section 4). The
+line has to earn its keep in two ways at once: it has to be true (the user is not a licensed
+adviser, so this really is general information and not advice tailored to anyone), and it has
+to read like the rest of the app, a friend a year ahead of you, not a lawyer. One line, no
+dashes, used verbatim everywhere it appears so a reader who has seen it once knows exactly
+what it says every other time:
 
-"This is education, not advice. Spare Change explains how things work. It never tells you
-what to buy, never names a fund or a company, and never predicts what anything will do."
+"This is general information, not personal advice. We are not licensed financial advisors,
+and nothing here is tailored to you or your money."
+
+**Placement, expanded from the previous cycle.** The old rule showed a longer version once at
+the top of Lessons, once at the top of Learn and once in Settings, on the reasoning that a
+disclaimer on every paragraph reads as nervousness rather than honesty. That reasoning still
+holds against repeating a paragraph, but it no longer holds against repeating one short line,
+because the library can now say things like "most people start with a broad fund rather than
+picking companies", and a reader who opens a single Learn piece or lesson from a deep link,
+without ever seeing the library index, should not be the one person who never sees the
+disclosure that makes that sentence education instead of advice. The line therefore appears,
+at minimum, in all of these places, visible on the screen with no tap or expand required:
+
+- Once at the top of the Learn library index (unchanged from the previous cycle).
+- Once at the top of Lessons (unchanged from the previous cycle).
+- On every one of the sixteen individual Learn item pages (new).
+- On every one of the eight individual lesson pages (new).
+- On the Invest screen, near the ledger total from section 8.7, since that is where the
+  ledger and the "what are you invested in" capture live and where a reader is most likely to
+  be thinking about their own money while reading general copy (new).
+- In Settings (unchanged from the previous cycle).
+
+It stays one line in all six places, not the longer three sentence version this replaces, so
+that a reader sees the same short, calm statement everywhere rather than a heavier notice in
+some places and a lighter one in others. `npm run lint:advice` checks for its exact presence
+on each of these screens (section 2, criterion 28).
 
 ### 9.8b New tooltips required by the Learn library
 
@@ -2689,12 +2823,18 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
    mechanical guard, the `src/` to `api/` import boundary test is the second, and the
    post build grep of `dist/` for the literal secret values is the third. Keep all three.
 7. **The advice lint is a regex and a well written recommendation will walk straight past
-   it.** "Most people in your position end up in a broad index fund" contains no banned
-   phrase and is advice. The lint catches the careless cases and enforces the ticker ban; it
-   cannot catch intent. R15 therefore names a human review gate: the manager reads every
-   Learn piece, every tooltip and every new string against R15 before the cycle closes, and
-   says in the status report that it was done. Treat a lint pass as necessary and not
-   sufficient.
+   it, and this cycle proved it.** "Most people in your position end up in a broad index
+   fund" contains no banned phrase and is advice; the shipped `lessons.json` L7, "Why $20 a
+   week beats $500 later", is the real instance, and it passed both `lint:advice` and the
+   copy test (test report V2-7). The revised R15.7 lint pattern (a number sharing a sentence
+   with a comparison word) catches that specific shape, and now that R15 also allows general
+   principles with a disclosure, the surface area for a lint miss is larger, not smaller: a
+   sentence can be phrased impersonally enough to read as R15's allowed first list while
+   still landing a tailored recommendation. R15 therefore names a human review gate, and it
+   is not a formality: **the manager reads every Learn piece, every lesson and every new
+   string against the revised R15 before the cycle closes, and states in the status report
+   that it was done, and this gate has not run once across either cycle to date.** It must
+   run before the next deploy. Treat a lint pass as necessary and never sufficient.
 8. **Sixteen new pieces of copy in one voice is where voice drift happens.** The eight
    confidence path lessons were written together and hang together. The library is twice
    that, written in one pass, and the ones near the end will not sound like the ones near
@@ -2922,3 +3062,45 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
   existing privacy copy review gate (9.4) now also covers the reworded 9.1 and 9.4a strings,
   since a timing claim that overstates precision is its own kind of dishonesty even though it
   is not a privacy claim.
+
+### Cycle 8, 2026-09-09: advice policy relaxed with disclosure
+
+- **Changed.** R15 (section 4) is no longer an absolute explain never advise rule. It now
+  splits in two: general principles stated for everyone, procedural first steps, and plain
+  encouragement to start are allowed, but only with a visible disclosure on the same screen;
+  named securities, tailored allocations, contribution amounts or timelines, predicted or
+  guaranteed returns, ranked or "beats" style comparisons, and anything a reasonable reader
+  would take as a personal recommendation stay banned outright, disclosure or not. The
+  disclosure itself is rewritten (9.8a) to "This is general information, not personal advice.
+  We are not licensed financial advisors, and nothing here is tailored to you or your money."
+  and its placement widens from three list level spots to six: the Learn library index, every
+  one of the sixteen Learn item pages, every one of the eight lesson pages, the Invest screen,
+  Settings, and the top of Lessons. `scripts/lint-advice.ts` gains a pattern that fails on a
+  specific number sharing a sentence with a comparison word, with a regression fixture proving
+  it now catches the original, unmodified L7 text that the test report's V2-7 finding showed
+  slipping past both existing lints. L7 itself is rewritten (9.6, 9.6a) from "Why $20 a week
+  beats $500 later" to "Why early money has more time to grow", keeping its place in the fear
+  check mapping and dropping the specific figures and the "beats" framing that made it a
+  tailored comparison rather than a general principle. R15.7 layer 3, the human review gate,
+  is restated against the new line and flagged, factually and without alarm, as never having
+  run across either cycle; it must run before the next deploy. Section 2's criterion 28 and
+  section 12's risk 7 are updated to match.
+- **Because.** The user's own words: "some simple advice can be good, but not specific
+  financial advice or you can give it but just incude a disclosure about how its not
+  technically financial advice bc i cant give that." That is a factual limit as much as a
+  preference, since the user is not a registered investment adviser, and a disclosure does
+  not convert a personalized recommendation into general education no matter how it is
+  worded. The revision draws the line where the user drew it: general and procedural content
+  gets a disclosure, personalized recommendations stay banned regardless of one.
+- **Impact on downstream.** The coder implements the new disclosure string in
+  `shared/content/strings.ts` or `learn.json` (whichever already holds 9.8a's line), renders
+  it on the three new surfaces (every Learn item page, every lesson page, Invest) in addition
+  to the three existing ones, rewrites L7 in `shared/content/lessons.json` to the 9.6a text,
+  and adds the comparison word plus number pattern to `scripts/lint-advice.ts` along with the
+  original L7 regression fixture and the impersonal framing allowlist so genuinely general
+  sentences keep passing. The tester should re-run the eight planted violations from V2-7 plus
+  the new L7 fixture, confirm the disclosure renders unexpanded on all six surfaces, and adversarially
+  probe the new "allowed" list for sentences that sound general but read as tailored, since
+  that boundary is exactly where the human review gate exists to catch what the lint cannot.
+  The manager's status report must state plainly whether the R15.7 layer 3 read-through has
+  now actually happened, since the plan no longer treats R15 as satisfied without it.

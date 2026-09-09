@@ -8,7 +8,7 @@
 import type { AppState, FearOption, LedgerKind, LedgerSource, LessonId, Place, PlaceVisit, Theme } from '../domain/types';
 import { LESSON_IDS, emptyLearn, emptyLearnSurfaces, initialPushState } from '../domain/types';
 import { LEARN_IDS, LEARN_SURFACES } from '../content/learn';
-import { isValidDate } from '../domain/dates';
+import { compareDates, isValidDate, safeSimDate } from '../domain/dates';
 import { recomputeHabits } from '../domain/habits';
 import {
   JAR_GOAL_PRESETS,
@@ -369,8 +369,29 @@ function validateMilestones(c: Checker, v: unknown): void {
  * `firstSkipDayIndex` with no Skip behind it lights a lesson that never unlocked.
  */
 function validateOrdering(c: Checker, input: Obj): void {
-  const clock = input.clock as { dayIndex: number };
+  const clock = input.clock as { dayIndex: number; startDate: string };
   const dayIndex = clock.dayIndex;
+
+  /**
+   * Test report V2-6. Six shapes the plan's own rules forbid were being accepted, and one of
+   * them lost money: two ledger entries sharing an id total correctly and then BOTH vanish
+   * when either is deleted, because `removeEntry` filters by id. Nothing the app itself writes
+   * can produce any of these, so each needs a hand edited or corrupted file, and "clear error,
+   * state untouched" (plan 11) is the documented answer to exactly that.
+   *
+   * Uniqueness is asserted generally rather than for the two arrays the report happened to
+   * name: an id is the handle every delete, edit and lookup in the app uses, so a shared id is
+   * a silent aliasing bug wherever it appears.
+   */
+  const uniqueIds = (arr: unknown[], path: string) => {
+    const seen = new Set<string>();
+    arr.forEach((el, i) => {
+      const id = (el as { id: unknown }).id;
+      if (typeof id !== 'string') return;
+      if (seen.has(id)) c.fail(`${path}[${i}].id`, `expected a unique id (${JSON.stringify(id)} appears more than once)`);
+      seen.add(id);
+    });
+  };
 
   const ordered = (arr: unknown[], path: string) => {
     let prev = -1;
@@ -386,21 +407,68 @@ function validateOrdering(c: Checker, input: Obj): void {
   ordered(events, 'events');
   ordered(input.visits as unknown[], 'visits');
 
+  // R4.4: at most one nudge per simulated day, in stored state as well as in the loop that
+  // writes it. Two on one day means only the first pending one is ever reachable.
+  const nudgeDays = new Set<number>();
   (input.nudges as unknown[]).forEach((n, i) => {
     const d = (n as { dayIndex: number }).dayIndex;
     if (d > dayIndex) c.fail(`nudges[${i}].dayIndex`, `expected at most clock.dayIndex (${dayIndex})`);
+    if (nudgeDays.has(d)) c.fail(`nudges[${i}].dayIndex`, `expected at most one nudge per day (day ${d} appears more than once)`);
+    nudgeDays.add(d);
   });
 
-  (input.places as unknown[]).forEach((p, i) => {
+  const places = input.places as unknown[];
+  places.forEach((p, i) => {
     const pl = p as { firstSeenDay: number; lastSeenDay: number };
     if (pl.lastSeenDay < pl.firstSeenDay) c.fail(`places[${i}].lastSeenDay`, 'expected at or after firstSeenDay');
     if (pl.lastSeenDay > dayIndex) c.fail(`places[${i}].lastSeenDay`, `expected at most clock.dayIndex (${dayIndex})`);
   });
 
+  uniqueIds(places, 'places');
+  uniqueIds(input.visits as unknown[], 'visits');
+  uniqueIds(input.nudges as unknown[], 'nudges');
+  uniqueIds(input.ledger as unknown[], 'ledger');
+  uniqueIds(events, 'events');
+  uniqueIds(input.pendingPaychecks as unknown[], 'pendingPaychecks');
+
+  /**
+   * R11.3: deleting a place deletes its visits, so a visit naming a place that is not in the
+   * file is state the app cannot produce. It is invisible on Places, which means it cannot be
+   * deleted through the UI, and it carries a `displayName` straight back out into the next
+   * export.
+   */
+  const placeIds = new Set(places.map((p) => (p as { id: unknown }).id).filter((id): id is string => typeof id === 'string'));
+  (input.visits as unknown[]).forEach((v, i) => {
+    const pid = (v as { placeId: string }).placeId;
+    if (!placeIds.has(pid)) c.fail(`visits[${i}].placeId`, `expected to name a place in this file (${JSON.stringify(pid)} does not)`);
+  });
+
+  /**
+   * R7.1: a ledger entry's `date` may not be later than the current simulated date. A future
+   * date sorts to the top of Invest for as long as the profile exists.
+   */
+  const today = safeSimDate(clock.startDate, dayIndex);
+  if (today !== null) {
+    (input.ledger as unknown[]).forEach((e, i) => {
+      const d = (e as { date: string }).date;
+      if (compareDates(d, today) > 0) c.fail(`ledger[${i}].date`, `expected at or before the current simulated date (${today})`);
+    });
+  }
+
   (input.pendingPaychecks as unknown[]).forEach((p, i) => {
     const d = (p as { dayIndex: number }).dayIndex;
     if (d > dayIndex) c.fail(`pendingPaychecks[${i}].dayIndex`, `expected at most clock.dayIndex (${dayIndex})`);
   });
+
+  // A lesson cannot have unlocked on a day that has not happened. Cosmetic on its own, and
+  // the same class of forged state as the rest of this function.
+  const lessons = input.lessons as Record<string, { unlockedDay: number | null }>;
+  for (const id of LESSON_IDS) {
+    const day = lessons[id]?.unlockedDay;
+    if (typeof day === 'number' && day > dayIndex) {
+      c.fail(`lessons.${id}.unlockedDay`, `expected at most clock.dayIndex (${dayIndex})`);
+    }
+  }
 
   const firstSkip = (input.milestones as { firstSkipDayIndex: number | null }).firstSkipDayIndex;
   if (firstSkip !== null) {

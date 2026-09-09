@@ -1,0 +1,194 @@
+# Spare Change
+
+**Read this file first. It is the single entry point for this repo. You should not need to search the folder to get oriented.**
+
+Last updated 2026-09-09. Keep it that way: when you change how this project works, update this file in the same commit.
+
+---
+
+## 1. What the app is
+
+A web app that notices where you spend without thinking about it, nudges you once in the morning to skip that stop, and puts the money you did not spend into a jar. When you move that money somewhere real, you tell the app where it went and it keeps the record.
+
+Mission line: **"Keep a little. It goes a long way."**
+
+Audience: college students and recent grads, 18 to 24, who earn in bursts and have no system. Not traders.
+
+**All spending is simulated.** No bank link, no brokerage, no payments, no real money moves. The investment ledger is a record of what the user typed, nothing more.
+
+### What it deliberately does NOT do
+
+This matters more than the feature list, because several of these were removed on purpose and should not come back without a decision:
+
+- **It does not know what anything is worth.** No price feed, no simulated market, no computed growth, no charts of value. v1 had all of that and it was deleted, because inventing numbers was dishonest. The app shows what it knows: what you kept, and what you told it you invested.
+- **It does not track your location in the background.** Habits come from the transaction feed. Location is When In Use only and merely labels a place. There is no geofencing.
+- **It does not nag.** One nudge a day maximum. Saying no produces silence, never a comment.
+- **It does not give financial advice.** See section 6.
+
+---
+
+## 2. Live, deploy, and accounts
+
+| Thing | Value |
+|---|---|
+| Production | **https://sparechangeinvesting.vercel.app** |
+| Old URL | `spare-change-rho.vercel.app` redirects here. Do not use it. |
+| GitHub | https://github.com/zcirillo-hc/investment-app (branch `main`) |
+| Vercel project | `spare-change`, team `zachc`, **Hobby plan** |
+| Database | Neon Postgres, provisioned via Vercel Marketplace, connected to the project |
+| CLI | `export PATH="$HOME/.local/bin:$PATH"`, already authenticated |
+
+**Deploying: push to `main`.** The repo is connected to Vercel, so a push builds and deploys. Do not run `vercel deploy` by hand.
+
+Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`, plus the Neon `DATABASE_URL` family. **Never print or commit their values.** `npm run postbuild` greps `dist/` for the private key and the cron secret and fails the build if either leaks.
+
+---
+
+## 3. Commands
+
+```
+npm run dev          vite dev server, http://localhost:5173
+npm test             vitest, unit  (670 passing)
+npm run test:db      vitest against real Neon, isolated schema  (93 passing)
+npm run e2e          playwright, 4 viewport profiles  (~9 minutes)
+npm run typecheck    full tsc, includes tests and scripts
+npm run build        tsc -p tsconfig.build.json && vite build
+npm run lint:copy    no em or en dashes, banned strings
+npm run lint:advice  the education-not-advice rules
+npm run rules:check  every numbered rule has a fixture case
+npm run db:migrate   apply db/migrations against DATABASE_URL
+```
+
+Demo URL, which is how you exercise the loop by hand:
+`http://localhost:5173/?demo=1&freeze=1&start=2026-06-15&seed=42`
+Long-press the logo to open the demo tray without the query param.
+
+---
+
+## 4. Layout
+
+```
+src/domain/     Pure TypeScript. No React, no platform imports. All money math.
+                habits, nudges, estimate, places, jar, ledger, tick, simulator,
+                summer, tree, triggers, money, dates, prng, selectors, types
+src/state/      Zustand store, IndexedDB persistence, validate, urlParams, bootstrap
+src/screens/    Welcome, SummerMoney, FearCheck, Home, Places, Invest, InvestCapture,
+                Activity, Learn, LearnItem, Lessons, Lesson, Settings
+src/components/ Jar, Tree, NudgeCard, NudgesCard, CatchSheet, Term, Tooltip, Button, ...
+src/content/    strings.ts is the ONLY place UI copy lives. Also learn, lessons, tooltips.
+shared/content/ Copy as JSON: learn, lessons, tooltips, holdingTypes, merchants
+shared/fixtures/rules-v2.json, the machine-readable statement of the domain rules
+api/            Vercel Functions, Node runtime. push/{subscribe,unsubscribe,schedule,
+                vapid-public-key}, cron/send-nudges, health, _lib/{db,due,push,validate}
+db/             migrate.ts and numbered SQL migrations. One table: push_subs
+scripts/        lint-copy, lint-advice, check-rules, gen-rules-fixture,
+                check-bundle-secrets, gen-icons, logo-art
+public/         manifest.webmanifest, sw.js, icons/
+.dev-team/      Decision history. See section 9.
+```
+
+**The domain layer is the crown jewel.** It is pure, deterministic from a seed, and unit tested in isolation. Keep React and platform concerns out of it.
+
+---
+
+## 5. The rules
+
+`.dev-team/02-plan-v2.md` **section 4** is the single definition of every domain rule, numbered R1 to R15. Implementing functions cite their rule id in a comment. `shared/fixtures/rules-v2.json` holds the cases, `npm run rules:check` fails if a rule has no case.
+
+If you change behavior, change the rule in the plan and the fixture, not just the code.
+
+Key ones to know:
+- **R4** habit detection: a place becomes a habit at 3+ visits in 14 days at a similar time.
+- **R4.4** one nudge per day, maximum.
+- **R5.5** skipping credits the jar with an estimate drawn from the user's own history at that merchant.
+- **R14** nudge scheduling and delivery, including timezone and the daily cron.
+- **R15** education, not advice. See section 6.
+
+Money is **integer cents** everywhere. Never floats.
+
+---
+
+## 6. Advice policy, R15
+
+The app talks about investing, so this is a real constraint, not a style preference.
+
+**Allowed, alongside the standing disclosure:**
+- General principles that apply to everyone ("money invested earlier has more time to grow")
+- Procedural steps ("opening an account usually needs your ID and a bank link")
+- Encouragement to start, which is the point of the product
+
+**Not allowed, disclosure or not:**
+- Naming a specific security, ticker or fund as something to buy
+- Telling the reader what their allocation, contribution or timeline should be
+- Predicting or promising a return
+- Anything that reads as tailored to the individual
+
+Why the second list stays banned even with a disclaimer: the owner is not a registered adviser, and a disclaimer does not turn a personalized recommendation into general education.
+
+**The standing disclosure**, rendered on Learn, every Learn item, Lessons, every lesson, Invest and Settings:
+
+> This is general information, not personal advice. We are not licensed financial advisors, and nothing here is tailored to you or your money.
+
+`npm run lint:advice` enforces what it can. It cannot catch everything, so **a human must read all 16 Learn pieces and 8 lessons against the list above before a content change ships.** That gate is R15.7 layer 3.
+
+---
+
+## 7. Copy rules
+
+- **No em dashes or en dashes anywhere in UI copy.** Use commas, periods or parentheses. `lint:copy` fails the build.
+- All UI copy in `src/content/strings.ts`. No inline strings in components.
+- Banned string: "everything stays on this device". It stopped being true when push shipped, and the lint keeps it from creeping back.
+- No shame language. Declining a nudge produces no comment.
+- Every financial term renders through `Term` with a tooltip.
+- Voice: a friend a year ahead of you. Encouraging, honest, a little funny, never preachy.
+
+---
+
+## 8. Gotchas that have already cost a deploy
+
+Read these before touching the build or the API.
+
+1. **`tsconfig.json` includes `tests/`, but `.vercelignore` strips it.** The build must use `tsconfig.build.json`, which covers only `src`, `api` and `db`. Using the full config breaks the deploy while passing locally.
+2. **`"type": "module"` means every relative import under `api/` needs an explicit `.js` extension.** `vercel dev` tolerates extensionless imports; the deployed runtime returns `ERR_MODULE_NOT_FOUND` and every route 500s.
+3. **Hobby cron runs once a day and only within the hour of its slot.** `0 10 * * *`. Per-user local nudge times cannot be honored precisely. The schema keeps the timezone and nudge minute so moving to Pro or QStash is a one-line change.
+4. **`Tooltip.tsx` and the color tokens are this codebase's fragile spots.** Two separate fixes to them caused their own regressions. Any change to either needs the full tap sweep in `tests/e2e/tooltip.spec.ts` and the axe run in both themes.
+5. **iOS needs `viewport-fit=cover`** or every `env(safe-area-inset-*)` resolves to zero and the standalone layout silently breaks.
+6. **`apple-touch-icon` must have no alpha channel.** iOS composites transparency onto black.
+
+---
+
+## 9. Process and history
+
+This project runs through a four-agent pipeline (Architect, Coder, Tester, Manager) with a human checkpoint at each handoff. Artifacts in `.dev-team/`:
+
+| File | What it is |
+|---|---|
+| `01-brief.md` | Original product brief and the accepted architect Q&A |
+| `02-plan.md` | **v1 plan. Historical.** The round-up investing product, now deleted. |
+| `02-plan-v2.md` | **Current plan and the authority on rules.** ~2600 lines, several amendments. |
+| `03-build-notes.md` | Every build pass: deviations, assumptions, self-declared weak points |
+| `04-test-report.md` | v1 tester report, defects D1 to D12 |
+| `04-test-report-v2.md` | v2 tester report, defects V2-1 to V2-8 |
+| `05-status.md` | v1 manager status |
+
+v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habit nudges. The pivot deleted the entire simulated market.
+
+---
+
+## 10. Current state
+
+Green as of 2026-09-09: 670 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
+
+**Known open items:**
+- The v2 tester found 8 defects. Fixes for all of them plus the advice policy landed on 2026-09-09 and need a tester re-verification pass that has not run.
+- Four tests in `tests/unit/tester-v2-import-impact.test.ts` were inverted on 2026-09-09: they originally asserted the import validator wrongly ACCEPTED four bad shapes, in order to demonstrate the damage. The validator now rejects all four, so they assert rejection instead. Coverage preserved, intent unchanged.
+- Never tested: a real iPhone, real Safari, WebKit, Firefox, screen readers, and an actual push notification arriving on a physical phone.
+- The cron has never been observed firing on its real daily schedule in production.
+
+---
+
+## 11. Updating this file
+
+When you change how the project works, update the section here that covers it, in the same commit. Specifically: a new gotcha that cost you time goes in section 8, a rule change goes in section 5 or 6, a new command goes in section 3, and anything that changes what the app is or refuses to do goes in section 1.
+
+The point of this file is that the next agent reads one thing and is oriented. If it drifts out of date it is worse than nothing.

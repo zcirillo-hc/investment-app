@@ -23,7 +23,13 @@ export interface LearnItem {
 export const LEARN_TRACKS: LearnTrack[] = raw.tracks as LearnTrack[];
 export const LEARN_ITEMS: LearnItem[] = raw.items as LearnItem[];
 
-/** Plan 9.8a. One sentence, shown once at the top of Lessons, once on Learn, once in Settings (R15.6). */
+/**
+ * Plan 9.8a, as rewritten by the cycle 8 amendment. One sentence, shown on six surfaces: the
+ * Learn library index, every one of the sixteen Learn item pages, every one of the eight
+ * lesson pages, the Invest screen, the top of Lessons, and Settings. Verbatim in all six, so a
+ * reader who has seen it once knows what it says every other time. `scripts/lint-advice.ts`
+ * fails the build if any of those screens stops rendering it.
+ */
 export const NOT_ADVICE_LINE: string = raw.standingLine;
 
 export const LEARN_ITEM_BY_ID: Record<string, LearnItem> = Object.fromEntries(LEARN_ITEMS.map((i) => [i.id, i]));

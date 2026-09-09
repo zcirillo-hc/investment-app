@@ -22,6 +22,14 @@ const learn = JSON.parse(readFileSync(resolve(process.cwd(), 'shared/content/lea
 
 const IDS = learn.items.map((i) => i.id);
 
+const lessons = JSON.parse(readFileSync(resolve(process.cwd(), 'shared/content/lessons.json'), 'utf8')) as {
+  lessons: { id: string; title: string; body: string }[];
+};
+const LESSON_IDS = lessons.lessons.map((l) => l.id);
+
+/** The same frozen clock and seed `onboard` uses, so a deep link lands in the same world. */
+const DEEP = '?demo=1&freeze=1&start=2026-06-15&seed=42';
+
 test.describe('the Learn library', () => {
   test('criterion 27: sixteen pieces across three tracks, all open on day 0', async ({ page }) => {
     await onboard(page);
@@ -78,28 +86,50 @@ test.describe('the Learn library', () => {
     await expect(page.locator('[data-testid^="lesson-card-"]')).toHaveCount(8);
   });
 
-  test('R15.6: the standing line appears exactly once on Lessons, on Learn and in Settings', async ({ page }) => {
+  /**
+   * Cycle 8 amendment (R15.6, 9.8a, criterion 28). This case used to assert the line on three
+   * surfaces and its ABSENCE from a Learn item page. The amendment reverses the absence: the
+   * library may now state general principles, so the sentence that makes them education has to
+   * be reachable by a reader who deep links into one piece and never sees the index.
+   *
+   * "Exactly once" is still asserted everywhere, because the point of one short repeated line
+   * is that it is one short line, and two of them on a screen is the nervousness the old rule
+   * was written against.
+   */
+  test('R15.6: the standing line appears exactly once on all six surfaces, with no tap or expand', async ({ page }) => {
     await onboard(page);
     await dismissCapturePrompt(page);
     const line = learn.standingLine;
+    const onceOn = async (screen: string, testId: string) => {
+      await expect(page.getByTestId(testId), `${screen}: the 9.8a line`).toHaveText(line);
+      expect((await page.getByTestId(screen).innerText()).split(line).length - 1, `${screen}: exactly once`).toBe(1);
+    };
 
     await page.getByTestId('nav-lessons').click();
-    await expect(page.getByTestId('lessons-not-advice')).toHaveText(line);
-    expect((await page.getByTestId('screen-lessons').innerText()).split(line).length - 1).toBe(1);
+    await onceOn('screen-lessons', 'lessons-not-advice');
 
     await clickClear(page, 'learn-link');
-    await expect(page.getByTestId('learn-not-advice')).toHaveText(line);
-    expect((await page.getByTestId('screen-learn').innerText()).split(line).length - 1).toBe(1);
+    await onceOn('screen-learn', 'learn-not-advice');
 
     await page.getByTestId('nav-settings').click();
-    await expect(page.getByTestId('settings-not-advice')).toHaveText(line);
-    expect((await page.getByTestId('screen-settings').innerText()).split(line).length - 1).toBe(1);
+    await onceOn('screen-settings', 'settings-not-advice');
 
-    // Not repeated per piece: a disclaimer on every paragraph reads as nervousness.
-    await page.getByTestId('nav-lessons').click();
-    await clickClear(page, 'learn-link');
-    await clickClear(page, 'learn-item-E01');
-    expect((await page.getByTestId('screen-learn-item').innerText()).split(line).length - 1).toBe(0);
+    await page.getByTestId('nav-invest').click();
+    await onceOn('screen-invest', 'invest-not-advice');
+
+    // New this amendment: every one of the sixteen Learn item pages.
+    for (const id of IDS) {
+      await page.goto(`/learn/${id}${DEEP}`);
+      await expect(page.getByTestId('screen-learn-item'), id).toBeVisible();
+      await onceOn('screen-learn-item', 'learn-item-not-advice');
+    }
+
+    // New this amendment: every one of the eight lesson pages, locked or not.
+    for (const id of LESSON_IDS) {
+      await page.goto(`/lessons/${id}${DEEP}`);
+      await expect(page.getByTestId('screen-lesson'), id).toBeVisible();
+      await onceOn('screen-lesson', 'lesson-not-advice');
+    }
   });
 
   test('R12.5: the first Invest visit surfaces a piece without unlocking anything', async ({ page }) => {

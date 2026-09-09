@@ -1,7 +1,7 @@
 {
   "version": 2,
   "note": "Plan v2 sections 8.9 and 9.8. Sixteen pieces across three tracks. Nothing here is ever locked (R12.5): every piece is readable from day 0 on a freshly cleared profile, and the three surfacing moments highlight a piece that was already readable. Bodies are verbatim from plan 9.8. Terms are marked [[key]] or [[key|display]] and must exist in tooltips.json. Every string here must satisfy R15: it says what a thing is, never whether it is good, never what to buy, and never what anything is going to do next.",
-  "standingLine": "This is education, not advice. Spare Change explains how things work. It never tells you what to buy, never names a fund or a company, and never predicts what anything will do.",
+  "standingLine": "This is general information, not personal advice. We are not licensed financial advisors, and nothing here is tailored to you or your money.",
   "surfaces": {
     "firstInvestVisit": "Somewhere to start: what a brokerage account actually is.",
     "firstLedgerEntry": "You wrote your first one down. Here is what most people do first.",
@@ -46,8 +46,8 @@
     {
       "id": "E04",
       "track": "getting-started",
-      "title": "Your first hundred dollars",
-      "body": "Most people's first move is small and boring on purpose. They move a little across, look at the screen, find where the buttons are, and let it sit while they get used to the idea. Nothing about the first hundred is supposed to be exciting. It is a rehearsal."
+      "title": "What a first move usually looks like",
+      "body": "Most people's first move is small and boring on purpose. They move a little across, look at the screen, find where the buttons are, and let it sit while they get used to the idea. Nothing about the first one is supposed to be exciting. It is a rehearsal."
     },
     {
       "id": "E05",
@@ -119,7 +119,7 @@
       "id": "E16",
       "track": "staying-sane",
       "title": "When to ask a real person",
-      "body": "There is a point where this stops being reading and starts being your actual life: an inheritance, a house, a tax situation, a business, a divorce. That is when a [[feeOnly|fee only]] advisor earns their money, because they are paid by you rather than by whatever they sell you. This app is not that, and it is never going to pretend to be."
+      "body": "There is a point where this stops being reading and starts being your actual life: an inheritance, a house, a tax situation, a business, a divorce. That is when it is worth sitting down with a real person. They get paid in different ways: some charge you directly and take nothing from anyone else, which is what [[feeOnly|fee only]] means, and some are paid by whoever makes the things they sell. Which one you are sitting with is a fair thing to ask, and they have to tell you. This app is not that, and it is never going to pretend to be."
     }
   ]
 }
