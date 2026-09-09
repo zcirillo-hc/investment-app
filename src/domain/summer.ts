@@ -24,6 +24,7 @@ export interface SummerCurves {
   yearlyKeep: number;
   earnedDollars: number;
   usedDefault: boolean;
+  startAge: number;
 }
 
 export function effectiveSummerEarnedDollars(earnedCents: Cents | null): { dollars: number; usedDefault: boolean } {
@@ -31,16 +32,25 @@ export function effectiveSummerEarnedDollars(earnedCents: Cents | null): { dolla
   return { dollars: earnedCents / 100, usedDefault: false };
 }
 
-/** Plan v2 R10.1. Curves always start at 19 regardless of the entered age. */
-export function summerCurves(earnedCents: Cents | null): SummerCurves {
+/**
+ * Plan v2 R10.1. "Start now" means start at the age the user actually gave.
+ *
+ * This used to hardcode 19 on the grounds that it was a story about the summer job years
+ * rather than a personal projection. In the screen that reads as broken: the age selector sits
+ * right above the chart, and changing it moved nothing, because neither the curve, the title
+ * nor the "more put in" figure looked at it. Now `startAge` drives all three, so a 21 year old
+ * sees 21 years of contributions and not 11 years they cannot go back and make.
+ */
+export function summerCurves(earnedCents: Cents | null, age: number = CURVE_START_AGE): SummerCurves {
   const { dollars, usedDefault } = effectiveSummerEarnedDollars(earnedCents);
+  const startAge = clampAge(age);
   const K = SUMMER_KEEP_RATE * dollars;
   const ages: number[] = [];
   const startNow: number[] = [];
   const startAt30: number[] = [];
   let a = 0;
   let b = 0;
-  for (let age = CURVE_START_AGE; age <= CURVE_END_AGE; age++) {
+  for (let age = startAge; age <= CURVE_END_AGE; age++) {
     ages.push(age);
     startNow.push(a);
     startAt30.push(b);
@@ -58,10 +68,11 @@ export function summerCurves(earnedCents: Cents | null): SummerCurves {
     endNow,
     endAt30,
     diff: endNow - endAt30,
-    extraPutIn: (CURVE_LATE_START_AGE - CURVE_START_AGE) * K,
+    extraPutIn: Math.max(0, CURVE_LATE_START_AGE - startAge) * K,
     yearlyKeep: K,
     earnedDollars: dollars,
     usedDefault,
+    startAge,
   };
 }
 

@@ -114,7 +114,7 @@ const CAPS_TOKEN = /\b[A-Z]{2,5}\b/g;
  * carries a number: "leave rent money where you can reach it rather than behind a three day
  * transfer" is prose, and "$20 a week beats $500 later" is a recommendation.
  */
-const COMPARISON_WORDS = ['beats', 'beat', 'versus', 'vs', 'instead of', 'rather than', 'better than', 'wins', 'loses to'];
+const COMPARISON_WORDS = ['beats', 'beat', 'versus', 'vs', 'instead of', 'rather than', 'better than', 'wins', 'loses to', 'next to', 'more than', 'compared with', 'compared to'];
 const COMPARISON_RE = new RegExp(`\\b(?:${COMPARISON_WORDS.map((w) => w.replace(/ /g, '\\s+')).join('|')})\\b`, 'i');
 
 /**
@@ -160,10 +160,16 @@ const IMPERSONAL_FRAMING = ['most people', 'generally', 'usually', 'in general',
  * feature on my own authority.
  */
 const COMPARISON_EXEMPT = new Set([
-  // The chart title. R10.3's assumption label sits directly beneath it.
-  'Keeping 10% of every summer paycheck from 19, versus starting at 30',
-  // The headline, with its two interpolations removed by the literal scanner above.
-  'Starting now instead of at 30:',
+  // The chart title, now interpolating the user's own age (R10.1). The literal scanner strips
+  // `${startAge}`, which is why the exempt form leaves a gap after "from".
+  'Keeping 10% of every summer paycheck from , next to waiting until 30',
+  'Keeping 10% of every summer paycheck from, next to waiting until 30',
+  // The same title with no age to interpolate, used as the SVG's accessible name.
+  'Keeping 10% of every summer paycheck, next to waiting until 30',
+  // The headline after the plain language pass, interpolations stripped. `next to` and
+  // `more than` were added to COMPARISON_WORDS above specifically so this rewording is
+  // exempted in the open rather than slipping past a lint that never knew the phrasing.
+  'Starting at means putting in more than someone who waits until 30.',
 ]);
 
 /** Sentence splitting good enough for prose: a terminator followed by a space or the end. */

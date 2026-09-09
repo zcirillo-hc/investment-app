@@ -3,7 +3,7 @@
   "note": "Plan v2 section 1.2 and 8.7a. The six holding types the invest capture offers. `key` is stable and is used in test ids; `label` is what is written to a ledger entry's `what` field, except for `other`, where the user types the label. `requiresLabel` marks the row that needs free text before it can be saved.",
   "holdingTypes": [
     { "key": "indexFund", "label": "Broad index fund", "requiresLabel": false },
-    { "key": "targetDate", "label": "Target date fund", "requiresLabel": false },
+    { "key": "bondsCds", "label": "Bonds or CDs", "requiresLabel": false },
     { "key": "stocks", "label": "Individual stocks", "requiresLabel": false },
     { "key": "crypto", "label": "Crypto", "requiresLabel": false },
     { "key": "cash", "label": "Cash savings", "requiresLabel": false },

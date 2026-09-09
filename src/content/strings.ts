@@ -79,22 +79,28 @@ export const S = {
     defaultNote: 'We will use $3,000 as an example.',
     curveNow: 'Start now',
     curveLater: 'Start at 30',
-    chartTitle: 'Keeping 10% of every summer paycheck from 19, versus starting at 30',
-    headline: (diff: number, extra: number) =>
-      `Starting now instead of at 30: about ${formatDollars(diff)} more at 65, for ${formatDollars(extra)} more put in.`,
-    assumption: 'Assumes [[sevenPercent]] a year. Nobody knows the real number.',
-    leftLine: (keep: number) => `Keeping 10% of what's left is ${formatCents(keep)}. That is one textbook.`,
+    // R10.1. Takes the age so the title cannot drift from the curve underneath it.
+    chartTitle: (startAge: number) => `Keeping 10% of every summer paycheck from ${startAge}, next to waiting until 30`,
+    chartTitleGeneric: 'Keeping 10% of every summer paycheck, next to waiting until 30',
+    // Plain language pass. The old line was one telegraphic sentence with a colon and two
+    // figures and it never said WHY the gap was so large, which is the only interesting part.
+    // Three short sentences now: what it costs you, what you get, and where the gap comes from.
+    chartIntro: 'Here is what keeping a little every summer adds up to. This is a picture, not a plan you have to sign up for.',
+    headline: (diff: number, extra: number, startAge: number) =>
+      `Starting at ${startAge} means putting in ${formatDollars(extra)} more than someone who waits until 30. That comes out to about ${formatDollars(diff)} more at 65. Most of that gap is time doing the work, not the extra you put in.`,
+    assumption: 'Assumes [[sevenPercent]] a year, which is a guess based on the long run past. Nobody knows the real number.',
+    leftLine: (keep: number) => `Ten percent of what you have left is ${formatCents(keep)}. Small enough that you would not feel it go, which is the whole point.`,
     ageOption: (age: number) => `${age}`,
     axisAge: 'Age',
     // R10.4. The grounded companion to the two hypothetical curves above: real money the user
     // kept and recorded, on its own scale. Wording stays an assumption, never a promise (R15).
     yourMoneyTitle: 'Your money',
-    yourMoneyChartTitle: 'What you have put in so far, left alone',
-    yourMoneyPutIn: (cents: number) => `You have put in ${formatCents(cents)} so far.`,
+    yourMoneyChartTitle: 'What you have put in so far, if you left it alone',
+    yourMoneyPutIn: (cents: number) => `You have kept ${formatCents(cents)} so far.`,
     yourMoneyHeadline: (end: number, age: number) =>
-      `Left alone, that is about ${formatDollars(end)} by 65. You are ${age} now, so it has that long to work.`,
-    yourMoneyEmpty: 'Nothing in yet. The first skip starts this line, and it does not have to be much.',
-    yourMoneyNote: 'This is only what you have kept and told us you moved. It does not know what your investments are worth.',
+      `If you left that alone it could be about ${formatDollars(end)} by the time you are 65. You are ${age}, so it has a long time to sit there and grow.`,
+    yourMoneyEmpty: 'Nothing in here yet. Your first skip starts this line, and it really does not have to be much.',
+    yourMoneyNote: 'This only counts what you kept and what you told us you moved. It cannot see your real accounts, so it does not know what that is worth today.',
   },
 
   fear: {

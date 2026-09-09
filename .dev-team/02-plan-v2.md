@@ -2380,7 +2380,7 @@ replacement, so the test continues proving the lint would have caught the shippe
 - Screen title: "What are you invested in?"
 - Subhead: "Tell us what you already put money into, in your own words. We only ever record
   what you type. We do not check it against anything, and we never work out what it is worth."
-- Chip labels: "Broad index fund", "Target date fund", "Individual stocks", "Crypto", "Cash
+- Chip labels: "Broad index fund", "Bonds or CDs", "Individual stocks", "Crypto", "Cash
   savings", "Something else".
 - Something else label field placeholder: "Say what it is."
 - Amount field label: "How much."

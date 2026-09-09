@@ -34,7 +34,7 @@ export function SummerMoney() {
 
   const earnedCents = parseDollarInput(earned);
   const leftCents = parseDollarInput(left);
-  const curves = useMemo(() => summerCurves(earnedCents), [earnedCents]);
+  const curves = useMemo(() => summerCurves(earnedCents, age), [earnedCents, age]);
   const data = useMemo(() => curves.ages.map((a, i) => ({ age: a, now: Math.round(curves.startNow[i]), later: Math.round(curves.startAt30[i]) })), [curves]);
   // R10.4. What the user actually put in: kept in the jar plus what they recorded moving into
   // investments. Both are money they set aside, which is what "put in" means to them.
@@ -97,12 +97,13 @@ export function SummerMoney() {
         </p>
       )}
       <Card className="mt-5">
-        <h2 className="text-sm font-semibold text-muted">{S.summer.chartTitle}</h2>
+        <h2 className="text-sm font-semibold text-muted">{S.summer.chartTitle(curves.startAge)}</h2>
+        <p className="mt-1 text-sm text-muted" data-testid="summer-intro">{S.summer.chartIntro}</p>
         <div data-testid="summer-chart" style={{ width: '100%', height: 220 }} className="mt-2">
           <SummerCurves data={data} />
         </div>
         <p className="mt-3 text-lg font-bold" data-testid="summer-diff" data-now={Math.round(curves.endNow)} data-later={Math.round(curves.endAt30)}>
-          <RichText text={S.summer.headline(curves.diff, curves.extraPutIn)} />
+          <RichText text={S.summer.headline(curves.diff, curves.extraPutIn, curves.startAge)} />
         </p>
         <p className="mt-1 text-sm text-muted">
           <RichText text={S.summer.assumption} />

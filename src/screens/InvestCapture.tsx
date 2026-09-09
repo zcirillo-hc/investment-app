@@ -25,7 +25,7 @@ interface Row {
  */
 const CHIP_ICON: Record<string, string> = {
   indexFund: 'M4 18.5h16M7 15V9M11.5 15V6M16 15v-4',
-  targetDate: 'M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8z',
+  bondsCds: 'M4 7h16v10H4zM4 11h16M9 7v10M15 7v10',
   stocks: 'M4 16.5l5-5 3.5 3.5L20 7.5M20 7.5h-4.5M20 7.5V12',
   crypto: 'M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM9.5 8h4a2.2 2.2 0 0 1 0 4.4h-4M9.5 12.4h4.4a2.3 2.3 0 0 1 0 4.6H9.5M11 6v12',
   cash: 'M3.5 7.5h17v9h-17zM12 15a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',

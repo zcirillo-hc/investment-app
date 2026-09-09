@@ -44,7 +44,7 @@ export function SummerCurves({ data }: { data: SummerPoint[] }) {
       data-testid="summer-curves"
       preserveAspectRatio="xMidYMid meet"
     >
-      <title id={titleId}>{S.summer.chartTitle}</title>
+      <title id={titleId}>{S.summer.chartTitleGeneric}</title>
       {yTicks.map((v) => (
         <g key={v}>
           <line x1={PAD_L} x2={W - PAD_R} y1={y(v)} y2={y(v)} className="stroke-line" strokeWidth="1" />
