@@ -18,7 +18,7 @@ import { treeStage } from '../../src/domain/tree';
 import { maturityOf } from '../../src/domain/maturity';
 import { byThirtyDollars, keepOfLeftCents, summerCurves, yourMoneyCurve } from '../../src/domain/summer';
 import { averageCents, roundCents } from '../../src/domain/money';
-import { keptThisWeekCents, keptSinceStartCents, skipsThisWeek } from '../../src/domain/selectors';
+import { bestSkipWeek, keptThisWeekCents, keptSinceStartCents, skipsThisWeek } from '../../src/domain/selectors';
 import { completeOnboarding, tickN } from '../../src/domain/tick';
 import { createSimulatedTransactionSource } from '../../src/domain/simulator';
 import { createSimulatedLocationSource } from '../../src/domain/places';
@@ -163,6 +163,13 @@ export const RULE_FNS: Record<string, (input: Json) => Json> = {
   maturityValue: (i) => {
     const m = maturityOf(i.principalCents as number, i.yieldBps as number, i.termMonths as number);
     return m ? { valueCents: m.valueAtMaturityCents, interestCents: m.interestCents } : { valueCents: 0, interestCents: 0 };
+  },
+
+  // R17
+  bestSkipWeek: (i) => {
+    const days = i.days as number[];
+    const state = { events: days.map((d) => ({ kind: 'Skip', dayIndex: d, cents: 1, date: '2026-06-15' })), clock: { dayIndex: 999 } };
+    return { best: bestSkipWeek(state as never) };
   },
 
   // R13

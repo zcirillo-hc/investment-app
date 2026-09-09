@@ -8,6 +8,7 @@ import { LEARN_ITEM_BY_ID } from '../content/learn';
 import { Screen } from '../components/Screen';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { formatCents } from '../domain/money';
 import { Money } from '../components/Money';
 import { Jar } from '../components/Jar';
 import { Tree } from '../components/Tree';
@@ -26,7 +27,10 @@ import {
   currentDate,
   keptSinceStartCents,
   keptThisSummer,
+  bestSkipWeek,
+  keptFromSkipsCents,
   keptThisWeekCents,
+  skipCount,
   ledgerTotal,
   nextLessonId,
   pendingNudge,
@@ -87,6 +91,10 @@ export function Home() {
   const keptAll = keptSinceStartCents(state);
   const week = keptThisWeekCents(state);
   const skips = skipsThisWeek(state);
+  // R17. The habit block: what the user chose to do, counted, never what they missed.
+  const totalSkips = skipCount(state);
+  const skipKept = keptFromSkipsCents(state);
+  const bestWeek = bestSkipWeek(state);
   const today = todayStats(state);
   const stage = tree(state);
   const days = daysSinceFirstKept(state.clock.dayIndex, firstKeptDay(state));
@@ -350,6 +358,28 @@ export function Home() {
           <span data-testid="stat-days-in">{state.clock.dayIndex}</span>
         </StatTile>
       </div>
+
+      {/* R17. The habit block. Theme section 2 makes the repeated choice the measure of
+          success, and section 5 forbids anything that can display a miss, so every number
+          here only ever rises. */}
+      <Card className="mt-4" data-testid="habit-card">
+        <h2 className="text-sm font-semibold text-muted">{S.home.habitTitle}</h2>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <StatTile label={S.home.habitSkips}>
+            <span data-testid="stat-habit-skips">{totalSkips}</span>
+          </StatTile>
+          <StatTile label={S.home.habitKept}>
+            <Money cents={skipKept} testId="stat-habit-kept" />
+          </StatTile>
+          <StatTile label={S.home.habitBestWeek}>
+            <span data-testid="stat-habit-best-week">{bestWeek}</span>
+          </StatTile>
+        </div>
+        <p className="mt-3 text-base font-semibold" data-testid="habit-line">
+          {totalSkips === 0 ? S.home.habitNone : totalSkips === 1 ? S.home.habitOne : S.home.habitSome(totalSkips, formatCents(skipKept))}
+        </p>
+        {bestWeek > 1 && <p className="mt-1 text-sm text-muted" data-testid="habit-best-note">{S.home.habitBestWeekNote(bestWeek)}</p>}
+      </Card>
 
       <div className="mt-4">
         {next ? (

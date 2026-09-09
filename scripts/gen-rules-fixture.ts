@@ -333,6 +333,15 @@ spec('R16.1-b', 'R16.1', 'maturityValue', { principalCents: 100000, yieldBps: 50
 spec('R16.1-c', 'R16.1', 'maturityValue', { principalCents: 100000, yieldBps: 0, termMonths: 12 }, { valueCents: 0, interestCents: 0 });
 
 // ---------------------------------------------------------------------------------------
+// R17 best week. A maximum over history, not a current run.
+spec('R17.3-a', 'R17.3', 'bestSkipWeek', { days: [1, 2, 3, 40] }, { best: 3 });
+// The window is 7 wide: 1 and 7 share it, 1 and 8 do not.
+spec('R17.3-b', 'R17.3', 'bestSkipWeek', { days: [1, 7] }, { best: 2 });
+spec('R17.3-c', 'R17.3', 'bestSkipWeek', { days: [1, 8] }, { best: 1 });
+// No skips at all.
+spec('R17.3-d', 'R17.3', 'bestSkipWeek', { days: [] }, { best: 0 });
+
+// ---------------------------------------------------------------------------------------
 // R13 tick ordering. Floor: 8. Captured: a tick summary is defined by the whole pipeline.
 for (const days of [1, 7, 14, 30]) {
   capture(`R13-n${days}`, 'R13', 'tickSummary', { seed: 42, startDate: '2026-06-15', nudgesEnabled: true, days });

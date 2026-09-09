@@ -40,6 +40,45 @@ export function skipsThisWeek(state: AppState): number {
   return n;
 }
 
+/**
+ * R17. The habit metrics, and the shape of them is the point.
+ *
+ * The theme (.dev-team/06-theme.md section 2) defines success as "I have a habit and I saved
+ * $X", and section 5 forbids a streak that breaks. So these count what the user DID and never
+ * what they missed: a lifetime total that only rises, and a best week that is a high water mark
+ * and can never fall. Nothing here can display a gap, a miss, or a broken run.
+ */
+export function skipCount(state: AppState): number {
+  let n = 0;
+  for (const e of state.events) if (e.kind === 'Skip') n += 1;
+  return n;
+}
+
+/** R17.2. Money that came specifically from skipping, as opposed to a paycheck catch. */
+export function keptFromSkipsCents(state: AppState): Cents {
+  let sum = 0;
+  for (const e of state.events) if (e.kind === 'Skip') sum += e.cents;
+  return sum;
+}
+
+/**
+ * R17.3. The most skips in any 7 day window so far. A record, not a streak: it is a maximum
+ * over history, so a quiet week leaves it untouched rather than resetting it to zero.
+ */
+export function bestSkipWeek(state: AppState): number {
+  const days: number[] = [];
+  for (const e of state.events) if (e.kind === 'Skip') days.push(e.dayIndex);
+  if (days.length === 0) return 0;
+  days.sort((a, b) => a - b);
+  let best = 0;
+  let lo = 0;
+  for (let hi = 0; hi < days.length; hi++) {
+    while (days[hi] - days[lo] >= 7) lo += 1;
+    best = Math.max(best, hi - lo + 1);
+  }
+  return best;
+}
+
 /** Plan v2 R9.3. */
 export function keptSinceStartCents(state: AppState): Cents {
   return totalKeptCents(state);

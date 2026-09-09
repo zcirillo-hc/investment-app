@@ -51,7 +51,7 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 
 ```
 npm run dev          vite dev server, http://localhost:5173
-npm test             vitest, unit  (684 passing)
+npm test             vitest, unit  (696 passing)
 npm run test:db      vitest against real Neon, isolated schema  (93 passing)
 npm run e2e          playwright, 4 viewport profiles  (~9 minutes)
 npm run typecheck    full tsc, includes tests and scripts
@@ -111,6 +111,9 @@ Key ones to know:
 - **R5.5** skipping credits the jar with an estimate drawn from the user's own history at that merchant.
 - **R14** nudge scheduling and delivery, including timezone and the daily cron.
 - **R15** education, not advice. See section 6.
+- **R17** habit metrics on Home: lifetime skips, kept by skipping, and best week. Best week is
+  a maximum over history, not a current run, so a quiet stretch never lowers it. Nothing may
+  render a streak, a broken run, a missed day, or a shortfall. See `.dev-team/06-theme.md`.
 - **R16** bond and CD term and rate on a ledger entry, and what it pays held to maturity.
   Allowed where a stock projection is not, because a CD rate is a contract and this is
   arithmetic on the user's own two numbers rather than a guess about markets.
@@ -181,6 +184,7 @@ This project runs through a four-agent pipeline (Architect, Coder, Tester, Manag
 | `04-test-report.md` | v1 tester report, defects D1 to D12 |
 | `04-test-report-v2.md` | v2 tester report, defects V2-1 to V2-8 |
 | `05-status.md` | v1 manager status |
+| `06-theme.md` | **The theme.** Who this is for, the three blockers it removes, what success means, the voice, and what it forbids. Read before adding a feature or writing copy. |
 
 v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habit nudges. The pivot deleted the entire simulated market.
 
@@ -188,7 +192,7 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-09: 684 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
+Green as of 2026-09-09: 696 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
 
 **Known open items:**
 - The v2 tester found 8 defects. Fixes for all of them plus the advice policy landed on 2026-09-09 and need a tester re-verification pass that has not run.

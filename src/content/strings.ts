@@ -123,6 +123,16 @@ export const S = {
     weekKept: 'This week',
     skipsThisWeek: 'Skips this week',
     daysIn: 'Days in',
+    // R17. The habit block. Success in the theme is "a habit and I saved $X", so this counts
+    // choices the user made. Never a streak, never a gap, never a target they are short of.
+    habitTitle: 'Your habit',
+    habitSkips: 'Skips',
+    habitKept: 'Kept by skipping',
+    habitBestWeek: 'Best week',
+    habitNone: 'No skips yet. The first one starts this, and it can be a $3 coffee.',
+    habitOne: 'One skip down. That is the hard one.',
+    habitSome: (n: number, kept: string) => `${n} skips so far, and ${kept} you would not otherwise have.`,
+    habitBestWeekNote: (n: number) => `Your busiest week was ${n} ${n === 1 ? 'skip' : 'skips'}. That number only ever goes up.`,
     movedLabel: '[[contributions|Moved into investments]]',
     // Plan 9.3. The honest line that replaces the growth figure.
     movedLine: (total: number) =>

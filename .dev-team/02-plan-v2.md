@@ -756,6 +756,22 @@ non negative integers unless stated.
   - Carries the R10.3 disclosure, plus a line stating the app does not know what the user's
     investments are actually worth, so the number is never mistaken for a valuation.
 
+### R17 Habit metrics
+
+The theme (`.dev-team/06-theme.md`) defines success as "I have a habit and I saved $X" and
+forbids anything that can display a miss. These exist to make the repeated choice visible
+without ever showing a gap.
+
+- **R17.1 Skip count.** Lifetime count of `Skip` events. Monotonic: it can only rise.
+- **R17.2 Kept by skipping.** Sum of `Skip` amounts only, so it answers "what did skipping
+  get me" separately from a paycheck catch.
+- **R17.3 Best week.** The most skips inside any 7 day window over the whole history, computed
+  as a maximum rather than a current run. `days[hi] - days[lo] < 7` is the window, so day 1 and
+  day 7 count together and day 1 and day 8 do not. It is a record: a quiet month afterwards
+  leaves it exactly where it was.
+- **R17.4 No streaks.** Nothing may render a consecutive day count, a broken run, a missed day,
+  a target the user is short of, or a comparison to anyone else. Theme section 5.
+
 ### R16 Bond and CD terms
 
 - **R16.1** A ledger entry may carry an optional `termMonths` and `yieldBps`, and only the

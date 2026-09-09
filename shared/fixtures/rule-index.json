@@ -10,6 +10,7 @@
     "R13",
     "R14.2",
     "R16.1",
+    "R17.3",
     "R2.0",
     "R2.4",
     "R3.2",
@@ -90,6 +91,9 @@
     "R16.2": "Range guards on term and rate. Covered by maturity.test.ts for the calculator and by validate.test.ts for the import path.",
     "R16.3": "The reason this number is allowed where a stock projection is not. A copy rule, enforced by lint-advice and the R15 human review gate.",
     "R16.4": "A prohibition: no ranking or recommending of products. Enforced by lint-advice and by the absence of any comparison in the strings.",
-    "R2.1": "RETIRED. Round-ups were removed so that skipping is the only thing that fills the jar. The rule is referenced in R6.1 only to record that it is gone, and nothing implements it, so it has no case."
+    "R2.1": "RETIRED. Round-ups were removed so that skipping is the only thing that fills the jar. The rule is referenced in R6.1 only to record that it is gone, and nothing implements it, so it has no case.",
+    "R17.1": "Lifetime skip count. A sum, covered by habit-metrics.test.ts including that it never decreases.",
+    "R17.2": "Sum of skip amounts only. Covered by habit-metrics.test.ts.",
+    "R17.4": "A prohibition on streaks and shortfalls. Enforced by the absence of any such value and by copy.test.ts."
   }
 }
