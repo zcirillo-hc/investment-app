@@ -1,0 +1,5 @@
+{
+  "// note": "Build-time typecheck. Covers only what is deployed. tests/ is stripped by .vercelignore, so files importing from tests/ (scripts/gen-rules-fixture.ts, vitest.db.config.ts) must not be checked here. Local `npm run typecheck` uses tsconfig.json and still covers everything.",
+  "extends": "./tsconfig.json",
+  "include": ["src", "api", "db", "vite.config.ts", "tailwind.config.ts"]
+}
