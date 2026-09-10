@@ -53,7 +53,7 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 npm run dev          vite dev server, http://localhost:5173
 npm test             vitest, unit  (700 passing)
 npm run test:db      vitest against real Neon, isolated schema  (93 passing)
-npm run e2e          playwright, 4 viewport profiles  (~9 minutes)
+npm run e2e          playwright, 4 viewport profiles  (15 min to over an hour)
 npm run typecheck    full tsc, includes tests and scripts
 npm run build        tsc -p tsconfig.build.json && vite build
 npm run lint:copy    no em or en dashes, banned strings
@@ -171,6 +171,8 @@ Read these before touching the build or the API.
 4. **`Tooltip.tsx` and the color tokens are this codebase's fragile spots.** Two separate fixes to them caused their own regressions. Any change to either needs the full tap sweep in `tests/e2e/tooltip.spec.ts` and the axe run in both themes.
 5. **iOS needs `viewport-fit=cover`** or every `env(safe-area-inset-*)` resolves to zero and the standalone layout silently breaks.
 6. **`apple-touch-icon` must have no alpha channel.** iOS composites transparency onto black.
+7. **Never kill port 5173 while `npm run e2e` is running.** That is the suite's own dev server. Ad-hoc Playwright specs started alongside it fight for the port and killing it corrupts the run. Wait for the suite, or check against the live site.
+8. **After onboarding, an invest-capture prompt overlays Home and swallows clicks, and nudges are off by default.** Use `dismissCapturePrompt` and `clickClear` from `tests/e2e/fixtures.ts`, and run demo `make-habit` before `force-nudge`, or a skip click silently does nothing.
 
 ---
 
@@ -195,13 +197,14 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-10: 700 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
+Green as of 2026-09-10: 700 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end: 328 passing, 28 skipped, 0 failed on 2026-09-10 across mobile, desktop, iPhone Pro and Pro Max.
 
 **Known open items:**
 - The v2 tester found 8 defects. Fixes for all of them plus the advice policy landed on 2026-09-09 and need a tester re-verification pass that has not run.
 - Four tests in `tests/unit/tester-v2-import-impact.test.ts` were inverted on 2026-09-09: they originally asserted the import validator wrongly ACCEPTED four bad shapes, in order to demonstrate the damage. The validator now rejects all four, so they assert rejection instead. Coverage preserved, intent unchanged.
 - Never tested: a real iPhone, real Safari, WebKit, Firefox, screen readers, and an actual push notification arriving on a physical phone.
 - The cron has never been observed firing on its real daily schedule in production.
+- Home still shows "skips this week" and "days in" directly above the R17 habit card. Days in measures time passing rather than a choice, and the row duplicates the card. Flagged, not yet cleaned up.
 
 ---
 
