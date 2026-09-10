@@ -128,15 +128,15 @@ describe('9.8b the restored and new terms are all present', () => {
 });
 
 describe('8.9 the library itself', () => {
-  it('has exactly sixteen pieces across three tracks', () => {
-    expect(LEARN_TOTAL).toBe(16);
+  it('has exactly twenty pieces across three tracks', () => {
+    expect(LEARN_TOTAL).toBe(20);
     expect(LEARN_TRACKS).toHaveLength(3);
   });
 
-  it('splits them six, six and four, as the plan says', () => {
+  it('splits them seven, nine and four, as the plan says', () => {
     const count = (track: string) => LEARN_ITEMS.filter((i) => i.track === track).length;
-    expect(count('getting-started')).toBe(6);
-    expect(count('markets')).toBe(6);
+    expect(count('getting-started')).toBe(7);
+    expect(count('markets')).toBe(9);
     expect(count('staying-sane')).toBe(4);
   });
 

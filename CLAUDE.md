@@ -51,7 +51,7 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 
 ```
 npm run dev          vite dev server, http://localhost:5173
-npm test             vitest, unit  (696 passing)
+npm test             vitest, unit  (700 passing)
 npm run test:db      vitest against real Neon, isolated schema  (93 passing)
 npm run e2e          playwright, 4 viewport profiles  (~9 minutes)
 npm run typecheck    full tsc, includes tests and scripts
@@ -114,6 +114,9 @@ Key ones to know:
 - **R17** habit metrics on Home: lifetime skips, kept by skipping, and best week. Best week is
   a maximum over history, not a current run, so a quiet stretch never lowers it. Nothing may
   render a streak, a broken run, a missed day, or a shortfall. See `.dev-team/06-theme.md`.
+- **R18** the Invest page's "what these actually are" card, plus the Learn library's stock
+  depth. The card is STATIC: all six holding types, same order, same words, whatever the user
+  holds, because R15.4 bans educational content that varies with the ledger.
 - **R16** bond and CD term and rate on a ledger entry, and what it pays held to maturity.
   Allowed where a stock projection is not, because a CD rate is a contract and this is
   arithmetic on the user's own two numbers rather than a guess about markets.
@@ -143,7 +146,7 @@ Why the second list stays banned even with a disclaimer: the owner is not a regi
 
 > This is general information, not personal advice. We are not licensed financial advisors, and nothing here is tailored to you or your money.
 
-`npm run lint:advice` enforces what it can. It cannot catch everything, so **a human must read all 16 Learn pieces and 8 lessons against the list above before a content change ships.** That gate is R15.7 layer 3.
+`npm run lint:advice` enforces what it can. It cannot catch everything, so **a human must read all 20 Learn pieces and 8 lessons against the list above before a content change ships.** That gate is R15.7 layer 3.
 
 ---
 
@@ -192,7 +195,7 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-09: 696 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
+Green as of 2026-09-10: 700 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end was 248 passing before the latest fix batch.
 
 **Known open items:**
 - The v2 tester found 8 defects. Fixes for all of them plus the advice policy landed on 2026-09-09 and need a tester re-verification pass that has not run.

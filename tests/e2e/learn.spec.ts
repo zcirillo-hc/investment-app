@@ -40,7 +40,7 @@ test.describe('the Learn library', () => {
 
     for (const track of learn.tracks) await expect(page.getByTestId(`learn-track-${track.key}`)).toBeVisible();
     for (const id of IDS) await expect(page.getByTestId(`learn-item-${id}`), id).toBeVisible();
-    expect(IDS).toHaveLength(16);
+    expect(IDS).toHaveLength(20);
 
     // R12.5: every one of them opens, with no unlock condition of any kind, on day 0.
     for (const id of IDS) {

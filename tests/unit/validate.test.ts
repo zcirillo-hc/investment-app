@@ -449,7 +449,7 @@ describe('lessons, learn and milestones', () => {
     if (r.ok) {
       // A file cannot lock a piece, because nothing in the library is ever locked.
       for (const id of Object.keys(r.state.learn)) expect(r.state.learn[id].unlockedDay, id).toBe(0);
-      expect(Object.keys(r.state.learn)).toHaveLength(16);
+      expect(Object.keys(r.state.learn)).toHaveLength(20);
     }
   });
 
@@ -471,7 +471,7 @@ describe('lessons, learn and milestones', () => {
     );
     expect(r.ok, r.ok ? '' : r.problems.join('\n')).toBe(true);
     if (r.ok) {
-      expect(Object.keys(r.state.learn)).toHaveLength(16);
+      expect(Object.keys(r.state.learn)).toHaveLength(20);
       expect(r.state.learnSurfaces.dayThirty).toEqual({ firedDay: null, dismissed: false });
     }
   });

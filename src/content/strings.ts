@@ -265,6 +265,11 @@ export const S = {
     // R16. Bond and CD term and rate.
     errTerm: 'Give the length in whole months, up to 50 years.',
     errYield: 'Give the rate as a number, up to 50%.',
+    // R18. The reference card. Static, identical for every user, and it explains what the
+    // six things ARE. It never says which to pick, which is the line R15 draws.
+    typesTitle: 'What these actually are',
+    typesSub: 'Six plain answers, the same for everyone. Nothing here is a suggestion about what to put your money in.',
+    typesReadMore: 'Read more',
     termLabel: 'How long is it for?',
     termUnit: 'months',
     yieldLabel: 'What rate does it pay?',
@@ -381,7 +386,9 @@ export const S = {
   // in here has a locked state, an unlock hint, or a percentage complete.
   learn: {
     title: 'Learn',
-    sub: 'Sixteen short reads. Nothing here is locked, and nothing has to be read in order.',
+    // Takes the count so the copy can never drift from the library again. It said "Sixteen"
+    // while the library held twenty.
+    sub: (total: number) => `${total} short reads. Nothing here is locked, and nothing has to be read in order.`,
     notAdvice: NOT_ADVICE_LINE,
     progress: (read: number, total: number) => `${read} of ${total} read`,
     readBadge: 'Read',

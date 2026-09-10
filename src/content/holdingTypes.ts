@@ -7,6 +7,14 @@ export interface HoldingType {
   key: string;
   label: string;
   requiresLabel: boolean;
+  /**
+   * R18. A neutral one line answer to "what is this". Identical for every user no matter what
+   * they hold, because R15.4 forbids educational content that varies with the ledger. It says
+   * what the thing is and never whether it is a good idea.
+   */
+  what: string;
+  /** R18. The Learn piece that goes deeper on this type. */
+  learnId: string;
 }
 
 export const HOLDING_TYPES: HoldingType[] = raw.holdingTypes as HoldingType[];

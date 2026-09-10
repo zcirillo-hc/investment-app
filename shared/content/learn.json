@@ -120,6 +120,30 @@
       "track": "staying-sane",
       "title": "When to ask a real person",
       "body": "There is a point where this stops being reading and starts being your actual life: an inheritance, a house, a tax situation, a business, a divorce. That is when it is worth sitting down with a real person. They get paid in different ways: some charge you directly and take nothing from anyone else, which is what [[feeOnly|fee only]] means, and some are paid by whoever makes the things they sell. Which one you are sitting with is a fair thing to ask, and they have to tell you. This app is not that, and it is never going to pretend to be."
+    },
+    {
+      "id": "E17",
+      "track": "markets",
+      "title": "What owning a share actually gets you",
+      "body": "Owning a [[stock]] is not just a number that moves. You own a real slice of the company, so you get a vote at the annual meeting (usually one per share, which for most people is a novelty), and if the company pays a [[dividend]] you get your share of it in cash. Most young companies pay nothing and put the money back into the business instead, which is not a snub, it is a choice about where the money is most useful."
+    },
+    {
+      "id": "E18",
+      "track": "markets",
+      "title": "What actually moves a share price",
+      "body": "A price moves when the last two people to trade agreed on a different number than the two before them. What changes their minds is mostly expectations: what people think a company will earn later, not what it earned already. This is why a company can report a good quarter and the price still falls, which looks insane until you know that the good quarter was already what everyone assumed would happen."
+    },
+    {
+      "id": "E19",
+      "track": "markets",
+      "title": "What diversification actually means",
+      "body": "Owning one company means your money does whatever that one company does, including the day its warehouse burns down. Owning hundreds means no single one of them can do that much to you, good or bad. That is the whole idea behind spreading money around, and it is why a fund holding a thousand companies behaves so differently from a single [[ticker]]."
+    },
+    {
+      "id": "E20",
+      "track": "getting-started",
+      "title": "What happens when you want it back",
+      "body": "Selling is a few taps, but the money is not instantly in your bank: the trade settles over a day or so, then the transfer takes its own day or two. If you made money, there is usually tax on the gain, and how much depends on how long you held it and where you live. None of this stops you getting your money, it just means it is a few days, not a few seconds."
     }
   ]
 }

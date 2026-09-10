@@ -14,6 +14,7 @@ import { formatDateLongSafe } from '../domain/dates';
 import { sortedLedger } from '../domain/ledger';
 import { formatTerm, formatYield, maturityOf } from '../domain/maturity';
 import { formatCents } from '../domain/money';
+import { HOLDING_TYPES } from '../content/holdingTypes';
 import { currentDate, ledgerCount, ledgerFirstDate, ledgerTotal } from '../domain/selectors';
 
 /**
@@ -86,6 +87,28 @@ export function Invest() {
       <p className="mt-4 rounded-2xl bg-leaf-soft p-3.5 text-sm leading-snug ring-1 ring-leaf/15" data-testid="invest-not-advice">
         {S.invest.notAdvice}
       </p>
+
+      {/*
+        * R18. What the six holding types are, in plain words. Deliberately STATIC: every user
+        * sees all six in the same order with the same text no matter what their ledger holds,
+        * because R15.4 forbids educational content that varies with what somebody owns. It
+        * explains, it never recommends.
+        */}
+      <Card className="mt-4" data-testid="invest-types-card">
+        <h2 className="text-base font-extrabold">{S.invest.typesTitle}</h2>
+        <p className="mt-1 text-sm text-muted">{S.invest.typesSub}</p>
+        <ul className="mt-3 space-y-3">
+          {HOLDING_TYPES.map((h) => (
+            <li key={h.key} data-testid={`invest-type-${h.key}`} className="rounded-2xl bg-ground p-3">
+              <h3 className="text-sm font-extrabold">{h.label}</h3>
+              <p className="mt-1 text-sm leading-snug">{h.what}</p>
+              <AppLink to={`/learn/${h.learnId}`} className="mt-1.5 inline-block text-sm font-bold text-leaf underline" data-testid={`invest-type-link-${h.key}`}>
+                {S.invest.typesReadMore}
+              </AppLink>
+            </li>
+          ))}
+        </ul>
+      </Card>
 
       {/* Plan 8.7a: the primary action when the ledger is empty, a secondary link once it has entries. */}
       {count === 0 ? (

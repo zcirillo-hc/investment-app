@@ -113,6 +113,10 @@
     "ticker": {
       "label": "ticker",
       "definition": "The short code a market uses to name one traded thing, the way a nickname names a person."
+    },
+    "dividend": {
+      "label": "dividend",
+      "definition": "A share of a company's profit paid out in cash to the people who own it. Plenty of companies pay none and reinvest instead."
     }
   }
 }

@@ -1,12 +1,48 @@
 {
   "version": 2,
-  "note": "Plan v2 section 1.2 and 8.7a. The six holding types the invest capture offers. `key` is stable and is used in test ids; `label` is what is written to a ledger entry's `what` field, except for `other`, where the user types the label. `requiresLabel` marks the row that needs free text before it can be saved.",
+  "note": "Plan v2 section 1.2 and 8.7a. The six holding types the invest capture offers. `key` is stable and is used in test ids; `label` is what is written to a ledger entry's `what` field, except for `other`, where the user types the label. `requiresLabel` marks the row that needs free text before it can be saved. R18: each type also carries a neutral `what` line and a `learnId`. Both are the same for every user regardless of what they hold, because R15.4 forbids educational content that varies with the ledger.",
   "holdingTypes": [
-    { "key": "indexFund", "label": "Broad index fund", "requiresLabel": false },
-    { "key": "bondsCds", "label": "Bonds or CDs", "requiresLabel": false },
-    { "key": "stocks", "label": "Individual stocks", "requiresLabel": false },
-    { "key": "crypto", "label": "Crypto", "requiresLabel": false },
-    { "key": "cash", "label": "Cash savings", "requiresLabel": false },
-    { "key": "other", "label": "Something else", "requiresLabel": true }
+    {
+      "key": "indexFund",
+      "label": "Broad index fund",
+      "requiresLabel": false,
+      "what": "One fund that buys everything on a list and does not try to pick winners. Buying one is buying a sliver of hundreds or thousands of companies at once.",
+      "learnId": "E11"
+    },
+    {
+      "key": "bondsCds",
+      "label": "Bonds or CDs",
+      "requiresLabel": false,
+      "what": "A loan you made, to a government, a company or a bank. You get interest along the way and the loan back at the end of an agreed term.",
+      "learnId": "E09"
+    },
+    {
+      "key": "stocks",
+      "label": "Individual stocks",
+      "requiresLabel": false,
+      "what": "A slice of ownership in one company. What happens to your money is whatever happens to that company.",
+      "learnId": "E07"
+    },
+    {
+      "key": "crypto",
+      "label": "Crypto",
+      "requiresLabel": false,
+      "what": "A digital asset that trades all day, every day, on its own exchanges. It moves for reasons of its own, mostly unrelated to company earnings.",
+      "learnId": "E12"
+    },
+    {
+      "key": "cash",
+      "label": "Cash savings",
+      "requiresLabel": false,
+      "what": "Money sitting in a savings account. It does not move around, and a bank account is where most people keep what they need soon.",
+      "learnId": "E15"
+    },
+    {
+      "key": "other",
+      "label": "Something else",
+      "requiresLabel": true,
+      "what": "Anything else you want to keep a record of. The app never checks what you type here, it just remembers it.",
+      "learnId": "E01"
+    }
   ]
 }

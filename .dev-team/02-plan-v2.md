@@ -756,6 +756,20 @@ non negative integers unless stated.
   - Carries the R10.3 disclosure, plus a line stating the app does not know what the user's
     investments are actually worth, so the number is never mistaken for a valuation.
 
+### R18 What these are, on Invest
+
+- **R18.1** Each holding type carries a neutral `what` line and a `learnId`, both in
+  `shared/content/holdingTypes.json`. The line says what the thing IS and never whether it is
+  a good idea, which is the R15 line.
+- **R18.2 Static, for everyone.** The Invest reference card renders all six types, in the same
+  order, with the same text, regardless of what the user's ledger holds. R15.4 forbids
+  educational content that varies with the ledger, so nothing here may be filtered, reordered,
+  highlighted or hidden based on what somebody owns.
+- **R18.3** The Learn library covers stocks in depth across E07, E08, E11, E17, E18 and E19,
+  and the practical side in E01 to E06 and E20. Adding a piece means updating the counts in
+  `content-tooltips.test.ts`, `validate.test.ts` and `learn.spec.ts`; the Learn subtitle takes
+  the total rather than naming it, because it said "Sixteen" while the library held twenty.
+
 ### R17 Habit metrics
 
 The theme (`.dev-team/06-theme.md`) defines success as "I have a habit and I saved $X" and

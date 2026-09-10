@@ -33,7 +33,7 @@ export function Learn() {
   const total = learnTotal();
   return (
     <Screen id="learn">
-      <ScreenTitle title={S.learn.title} sub={S.learn.sub} />
+      <ScreenTitle title={S.learn.title} sub={S.learn.sub(total)} />
 
       {/* R15.6: once at the top of this screen, and not repeated per piece. */}
       <p className="mt-4 rounded-2xl bg-leaf-soft p-3.5 text-sm leading-snug ring-1 ring-leaf/15" data-testid="learn-not-advice">

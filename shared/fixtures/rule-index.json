@@ -94,6 +94,9 @@
     "R2.1": "RETIRED. Round-ups were removed so that skipping is the only thing that fills the jar. The rule is referenced in R6.1 only to record that it is gone, and nothing implements it, so it has no case.",
     "R17.1": "Lifetime skip count. A sum, covered by habit-metrics.test.ts including that it never decreases.",
     "R17.2": "Sum of skip amounts only. Covered by habit-metrics.test.ts.",
-    "R17.4": "A prohibition on streaks and shortfalls. Enforced by the absence of any such value and by copy.test.ts."
+    "R17.4": "A prohibition on streaks and shortfalls. Enforced by the absence of any such value and by copy.test.ts.",
+    "R18.1": "Neutral per type explainer text. Content, checked by the R15 human review gate and by lint-advice.",
+    "R18.2": "A prohibition: the reference card never varies with the ledger. Enforced by the absence of any state read where it renders.",
+    "R18.3": "Library composition and the counts that follow it. Covered by content-tooltips.test.ts."
   }
 }
