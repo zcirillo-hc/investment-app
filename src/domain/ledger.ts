@@ -167,6 +167,38 @@ function applyEdit(e: LedgerEntry, draft: LedgerDraft): LedgerEntry {
   return next;
 }
 
+/**
+ * R16.8, V2-21 (owner decision, 2026-09-11). A row saved under earlier rules, such as a rate
+ * between 25% and 50% or a term or rate on a row that is not a bond or a CD, keeps its amount
+ * and name and loses only the field today's rules cannot use. The caller tells the user how
+ * many rows changed. Rows that already follow the rules come back as the same objects.
+ */
+export function tidyLedger(ledger: LedgerEntry[]): { ledger: LedgerEntry[]; tidied: number } {
+  let tidied = 0;
+  const out = ledger.map((e) => {
+    const bond = isBondRow(e);
+    const dropTerm = e.termMonths !== undefined && (!bond || !isUsableTerm(e.termMonths));
+    const dropRate = e.yieldBps !== undefined && (!bond || !isUsableYield(e.yieldBps));
+    if (!dropTerm && !dropRate) return e;
+    tidied += 1;
+    const next = { ...e };
+    if (dropTerm) delete next.termMonths;
+    if (dropRate) delete next.yieldBps;
+    return next;
+  });
+  return { ledger: out, tidied };
+}
+
+/**
+ * R16.5, V2-25. `validateDraft` can only see the draft, but an edit keeps the stored type, so
+ * a draft labelled "Bonds or CDs" could put a term on a row stored as stocks. This judges the
+ * entry as it will actually be stored, which is what the import validator will see later.
+ */
+export function editKeepsBondRule(e: LedgerEntry, draft: LedgerDraft): boolean {
+  const next = applyEdit(e, draft);
+  return (next.termMonths === undefined && next.yieldBps === undefined) || isBondRow(next);
+}
+
 export function replaceEntry(ledger: LedgerEntry[], id: string, draft: LedgerDraft): LedgerEntry[] {
   return ledger.map((e) =>
     e.id === id ? applyEdit(e, draft) : e,

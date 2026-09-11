@@ -25,10 +25,10 @@ export function Welcome() {
     if (!file) return;
     const r = parseImport(await file.text());
     if (!r.ok) {
-      setImportError(S.welcome.importBad);
+      setImportError(r.looksLikeExport ? S.welcome.importInvalid(r.problems[0]) : S.welcome.importBad);
       return;
     }
-    await writeImportedState(r.state);
+    await writeImportedState(r.state, r.tidied);
     window.location.reload();
   };
 

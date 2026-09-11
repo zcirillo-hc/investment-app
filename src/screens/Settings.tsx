@@ -83,11 +83,14 @@ export function Settings() {
     const r = parseImport(text);
     if (!r.ok) {
       // Plan 1.4 and A7: a v1 file is refused with its own named message, not migrated.
-      setImportMsg(r.problems.includes(V1_REFUSAL) ? S.settings.importV1 : S.settings.importBad);
+      // V2-21: an export that fails one check says which, instead of claiming it is not an export.
+      setImportMsg(
+        r.problems.includes(V1_REFUSAL) ? S.settings.importV1 : r.looksLikeExport ? S.settings.importInvalid(r.problems[0]) : S.settings.importBad,
+      );
       return;
     }
     setImportMsg(S.settings.importOk);
-    await writeImportedState(r.state);
+    await writeImportedState(r.state, r.tidied);
     window.location.reload();
   };
 

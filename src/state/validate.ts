@@ -6,7 +6,7 @@
 // holdings, history and allocation have no v2 meaning (plan section 3, "Explicitly out of
 // scope").
 import type { AppState, FearOption, LedgerKind, LedgerSource, LessonId, Place, PlaceVisit, Theme } from '../domain/types';
-import { MAX_TERM_MONTHS, MAX_YIELD_BPS, isBondRow, isUsableTerm, isUsableYield } from '../domain/maturity';
+import { tidyLedger } from '../domain/ledger';
 import { HOLDING_TYPES } from '../content/holdingTypes';
 import { initialAppState } from '../domain/types';
 import { LESSON_IDS, emptyLearn, emptyLearnSurfaces, initialPushState } from '../domain/types';
@@ -29,7 +29,8 @@ import {
   V1_SCHEMA_VERSION,
 } from '../config';
 
-export type ValidationResult = { ok: true; state: AppState } | { ok: false; problems: string[] };
+/** `tidied` (R16.8): how many ledger rows lost a term or a rate the current rules cannot use. */
+export type ValidationResult = { ok: true; state: AppState; tidied: number } | { ok: false; problems: string[] };
 
 /** The named message a v1 file is refused with (plan 1.4, A7). */
 export const V1_REFUSAL =
@@ -232,21 +233,14 @@ function validateLedgerEntry(c: Checker, v: unknown, path: string): void {
   c.strMax(v.note, `${path}.note`, LEDGER_NOTE_MAX_LENGTH);
   c.oneOf(v.source, `${path}.source`, LEDGER_SOURCES);
   c.optionalTimestamp(v.createdAt, `${path}.createdAt`);
-  // R16. Optional, but present means valid. A hand edited file carrying a 900 month term or a
-  // 4000% rate would otherwise render a maturity figure that is arithmetically real and
-  // completely absurd, which is the silently wrong output class of defect.
-  if (v.termMonths !== undefined && !isUsableTerm(v.termMonths as number)) {
-    c.fail(`${path}.termMonths`, `expected a whole number of months, 1 to ${MAX_TERM_MONTHS}`);
-  }
-  if (v.yieldBps !== undefined && !isUsableYield(v.yieldBps as number)) {
-    c.fail(`${path}.yieldBps`, `expected whole basis points, 1 to ${MAX_YIELD_BPS}`);
-  }
+  // R16, R16.8 (V2-21, owner decision 2026-09-11). A term or a rate must at least be a number;
+  // anything else is a damaged file and is refused. A number the current rules cannot use (a
+  // 900 month term, a 30% rate, a rate on a stock row) is NOT refused, because an earlier build
+  // could save it: `tidyLedger` removes just that field in the assembly below and the user is
+  // told. Either way no absurd or non bond maturity figure can render (R16.2, R16.5, V2-12).
+  if (v.termMonths !== undefined && typeof v.termMonths !== 'number') c.fail(`${path}.termMonths`, 'expected a number of months');
+  if (v.yieldBps !== undefined && typeof v.yieldBps !== 'number') c.fail(`${path}.yieldBps`, 'expected a number of basis points');
   if (v.holdingType !== undefined) c.oneOf(v.holdingType, `${path}.holdingType`, HOLDING_TYPES.map((h) => h.key));
-  // R16.5, V2-12: a CD rate on an Individual stocks row renders a 30 year "contract" that is not one.
-  if ((v.termMonths !== undefined || v.yieldBps !== undefined) && typeof v.what === 'string'
-    && !isBondRow({ holdingType: typeof v.holdingType === 'string' ? v.holdingType : undefined, what: v.what })) {
-    c.fail(`${path}.${v.termMonths !== undefined ? 'termMonths' : 'yieldBps'}`, 'only a bonds or CDs row may carry a term or a rate');
-  }
 }
 
 function validateEvent(c: Checker, v: unknown, path: string): void {
@@ -617,6 +611,7 @@ export function validateImportedState(input: unknown): ValidationResult {
   const src = input as unknown as AppState;
   const places = src.places.map(cleanPlace);
   const visits = src.visits.map(cleanVisit);
+  const tidy = tidyLedger(src.ledger.map((e) => pick(e, LEDGER_FIELDS)));
   const state: AppState = {
     schemaVersion: SCHEMA_VERSION,
     profile: pick(src.profile, Object.keys(initialAppState().profile)),
@@ -628,7 +623,7 @@ export function validateImportedState(input: unknown): ValidationResult {
     // R3.5: recomputed from the visits, never trusted from the file.
     habits: recomputeHabits(places, visits, src.clock.dayIndex),
     nudges: src.nudges.map((n) => pick(n, NUDGE_FIELDS)),
-    ledger: src.ledger.map((e) => pick(e, LEDGER_FIELDS)),
+    ledger: tidy.ledger,
     events: src.events.map((e) => pick(e, EVENT_FIELDS[e.kind] ?? EVENT_BASE)),
     pendingPaychecks: src.pendingPaychecks.map((p) => pick(p, PAYCHECK_FIELDS)),
     lessons: Object.fromEntries(Object.entries(src.lessons).map(([k, l]) => [k, pick(l, LESSON_FIELDS)])) as AppState['lessons'],
@@ -649,5 +644,5 @@ export function validateImportedState(input: unknown): ValidationResult {
     push: initialPushState(),
     demo: pick(src.demo, Object.keys(initialAppState().demo)),
   };
-  return { ok: true, state };
+  return { ok: true, state, tidied: tidy.tidied };
 }

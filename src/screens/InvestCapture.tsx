@@ -10,7 +10,8 @@ import { HOLDING_TYPES } from '../content/holdingTypes';
 import { formatCents, parseDollarInput } from '../domain/money';
 import { BONDS_CDS_KEY, formatTerm, formatYield, maturityOf, parseRateBps, parseTermMonths } from '../domain/maturity';
 import { currentDate } from '../domain/selectors';
-import { LEDGER_WHAT_MAX_LENGTH } from '../config';
+import { validateDraft, type LedgerDraft, type LedgerProblem } from '../domain/ledger';
+import { LEDGER_MAX_AMOUNT_CENTS, LEDGER_WHAT_MAX_LENGTH } from '../config';
 
 interface Row {
   key: string;
@@ -42,10 +43,11 @@ const CHIP_ICON: Record<string, string> = {
  * the deleted risk quiz and allocation builder (plan 1.2).
  *
  * It is a capture, not a quiz: it records what the user says is true about their own
- * holdings and computes nothing from it. On save it makes one `addLedgerEntry` call per row,
- * which is R7 and nothing more. There is no new domain module, no new ledger field, no
- * percent, no computed value, no risk label and no chart anywhere on this screen, including
- * at the moment of saving (criterion 11a).
+ * holdings and computes nothing from it. On save it checks every row, then makes one
+ * `addLedgerEntry` call per row, which is R7 and nothing more. There is no percent, no risk
+ * label and no chart anywhere on this screen, including at the moment of saving (criterion
+ * 11a). The one computed figure is R16's maturity line on a bond or CD row, which is
+ * arithmetic on the user's own two numbers.
  *
  * Visual polish pass, 2026-09-09: the chips carry a glyph and a real selected state, the rows
  * look like a short list you are filling in rather than a stack of forms, and the count of
@@ -97,9 +99,15 @@ export function InvestCapture() {
     return maturityOf(cents, cd.rate, cd.term);
   };
 
+  /** V2-20: over the cap shows its own reason on the row, since it also keeps Save disabled. */
+  const rowOverCap = (r: Row): boolean => {
+    const cents = parseDollarInput(r.amount);
+    return cents !== null && cents > LEDGER_MAX_AMOUNT_CENTS;
+  };
+
   const rowReady = (r: Row): boolean => {
     const cents = parseDollarInput(r.amount);
-    if (cents === null || cents <= 0) return false;
+    if (cents === null || cents <= 0 || cents > LEDGER_MAX_AMOUNT_CENTS) return false;
     if (rowCd(r).invalid) return false;
     if (!r.requiresLabel) return true;
     const label = r.typedLabel.trim();
@@ -111,29 +119,54 @@ export function InvestCapture() {
   // being silently dropped, so nothing is written that the user did not fill in.
   const canSave = rows.length > 0 && rows.every(rowReady);
 
+  const rowDraft = (r: Row): LedgerDraft => {
+    const cd = rowCd(r);
+    return {
+      date,
+      amountCents: parseDollarInput(r.amount) ?? 0,
+      what: r.requiresLabel ? r.typedLabel.trim() : r.label,
+      note: '',
+      source: 'manual',
+      // R16.5: stored so the edit form knows to offer a length and a rate, and so no layer
+      // can put a rate on a row that is not a bond or a CD.
+      holdingType: r.key,
+      ...(cd.term !== null ? { termMonths: cd.term } : {}),
+      ...(cd.rate !== null ? { yieldBps: cd.rate } : {}),
+    };
+  };
+
+  const problemMessage = (problems: LedgerProblem[]): string => {
+    if (problems.includes('amountTooLarge')) return S.invest.errAmountTooLarge;
+    if (problems.includes('whatTooLong')) return S.capture.errLabelTooLong;
+    if (problems.includes('term')) return S.invest.errTerm;
+    if (problems.includes('yield')) return S.invest.errYield;
+    return S.invest.errAmount;
+  };
+
   const save = () => {
     if (!canSave) return;
-    let added = 0;
+    // V2-20: every row is checked before any is written. Before, the rows ahead of a refused
+    // one were already in the ledger, and each retry of Save wrote them again.
     for (const r of rows) {
-      const cents = parseDollarInput(r.amount) ?? 0;
-      const what = r.requiresLabel ? r.typedLabel.trim() : r.label;
-      const cd = rowCd(r);
-      const result = addLedgerEntry({
-        date,
-        amountCents: cents,
-        what,
-        note: '',
-        source: 'manual',
-        // R16.5: stored so the edit form knows to offer a length and a rate, and so no layer
-        // can put a rate on a row that is not a bond or a CD.
-        holdingType: r.key,
-        ...(cd.term !== null ? { termMonths: cd.term } : {}),
-        ...(cd.rate !== null ? { yieldBps: cd.rate } : {}),
-      });
-      if (!result.ok) {
-        setError(r.requiresLabel && what.length > LEDGER_WHAT_MAX_LENGTH ? S.capture.errLabelTooLong : S.invest.errAmount);
+      const v = validateDraft(rowDraft(r), date);
+      if (!v.ok) {
+        setError(problemMessage(v.problems));
         return;
       }
+    }
+    let added = 0;
+    const saved = new Set<string>();
+    for (const r of rows) {
+      const result = addLedgerEntry(rowDraft(r));
+      if (!result.ok) {
+        // Not reachable after the check above, but if it ever is, the rows already written
+        // leave the list so a retry cannot write them twice, and the user is told they landed.
+        setRows((current) => current.filter((x) => !saved.has(x.key)));
+        setError(S.invest.errAmount);
+        if (added > 0) showToast(S.capture.savedToast(added));
+        return;
+      }
+      saved.add(r.key);
       added += 1;
     }
     markFlag('investCapturePromptSeen');
@@ -229,6 +262,11 @@ export function InvestCapture() {
                     />
                   </div>
                 </label>
+                {rowOverCap(r) && (
+                  <p role="alert" data-testid={`invest-capture-amount-error-${r.key}`} className="mt-2 text-sm font-semibold text-coral-ink">
+                    {S.invest.errAmountTooLarge}
+                  </p>
+                )}
                 {r.key === 'bondsCds' && (
                   <div className="mt-3" data-testid={`invest-capture-cd-${r.key}`}>
                     <div className="grid gap-3 sm:grid-cols-2">

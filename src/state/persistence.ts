@@ -240,7 +240,11 @@ export function exportStateJson(state: AppState): string {
   return JSON.stringify(rest, null, 2);
 }
 
-export type ImportResult = { ok: true; state: AppState } | { ok: false; error: string; problems: string[] };
+/**
+ * `looksLikeExport` (V2-21): true when the file parsed and carries this version's schema but a
+ * field failed a check. Only a file that is not an export may be told it is not one.
+ */
+export type ImportResult = { ok: true; state: AppState; tidied: number } | { ok: false; error: string; problems: string[]; looksLikeExport: boolean };
 
 /**
  * Plan 5.4 (Cycle 2): full shape and range validation via `validateImportedState`.
@@ -251,16 +255,49 @@ export function parseImport(text: string): ImportResult {
   try {
     raw = JSON.parse(text);
   } catch {
-    return { ok: false, error: 'not-json', problems: ['root: not valid JSON'] };
+    return { ok: false, error: 'not-json', problems: ['root: not valid JSON'], looksLikeExport: false };
   }
   const r = validateImportedState(raw);
-  if (!r.ok) return { ok: false, error: r.problems[0] ?? 'invalid', problems: r.problems };
-  return { ok: true, state: r.state };
+  if (!r.ok) {
+    const first = r.problems[0] ?? '';
+    const looksLikeExport =
+      !first.startsWith('root') && !first.startsWith('schemaVersion') && !r.problems.every((p) => p.endsWith(': missing'));
+    return { ok: false, error: first || 'invalid', problems: r.problems, looksLikeExport };
+  }
+  return { ok: true, state: r.state, tidied: r.tidied };
 }
 
 /** Writes an AppState directly into the persist envelope so a reload picks it up. */
-export async function writeImportedState(state: AppState): Promise<void> {
-  const envelope = { state: pickAppState(state), version: 1 };
+/**
+ * The zustand persist version. 2 (2026-09-11): loading a version 1 envelope tidies its ledger
+ * once (R16.8), so rows an earlier build saved never block an edit or an export.
+ */
+export const PERSIST_VERSION = 2;
+
+const TIDY_NOTICE_KEY = 'sc-tidy-notice';
+
+/** R16.8: kept across the reload that follows an import or a migration, then said once. */
+export function noteTidied(n: number): void {
+  try {
+    sessionStorage.setItem(TIDY_NOTICE_KEY, String(n));
+  } catch {
+    // Storage blocked: the notice is lost, the tidy is not.
+  }
+}
+
+export function takeTidyNotice(): number {
+  try {
+    const n = Number(sessionStorage.getItem(TIDY_NOTICE_KEY) ?? 0);
+    sessionStorage.removeItem(TIDY_NOTICE_KEY);
+    return Number.isInteger(n) && n > 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function writeImportedState(state: AppState, tidied = 0): Promise<void> {
+  const envelope = { state: pickAppState(state), version: PERSIST_VERSION };
+  if (tidied > 0) noteTidied(tidied);
   await idbStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
   // The caller reloads next; the running store still holds the pre-import state (C4-1).
   freezePersistence();

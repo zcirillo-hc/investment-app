@@ -3,7 +3,7 @@ import type { LedgerEntry, LedgerSource } from '../domain/types';
 import type { LedgerDraft, LedgerProblem } from '../domain/ledger';
 import { formatCents, parseDollarInput } from '../domain/money';
 import { LEDGER_NOTE_MAX_LENGTH, LEDGER_WHAT_MAX_LENGTH } from '../config';
-import { LEDGER_WHAT_SUGGESTIONS } from '../content/holdingTypes';
+import { HOLDING_TYPES, LEDGER_WHAT_SUGGESTIONS } from '../content/holdingTypes';
 import { S } from '../content/strings';
 import { Button } from './Button';
 import { Card } from './Card';
@@ -51,22 +51,40 @@ export function LedgerForm({ initial, currentDate, source, lockAmount = false, t
   const [date, setDate] = useState(initial?.date ?? currentDate);
   const [what, setWhat] = useState(initial?.what ?? '');
   const [note, setNote] = useState(initial?.note ?? '');
-  // R16.2, V2-10. A bond or CD row's edit form shows its length and rate, prefilled, so saving
-  // a note no longer erases them and emptying a field is a real way to clear it.
-  const bond = initial?.what !== undefined && isBondRow({ holdingType: initial.holdingType, what: initial.what });
+  // R16.5, V2-23 (owner decision, 2026-09-11). The type is a choice made here, never read from
+  // the free text name, so the two cannot quietly disagree. A row saved before types were
+  // stored starts on Bonds or CDs if its name says so.
+  const initialType = initial?.holdingType ?? (initial?.what !== undefined && isBondRow({ what: initial.what }) ? BONDS_CDS_KEY : undefined);
+  const [type, setType] = useState<string | undefined>(initialType);
+  // R16.2, V2-10. A bond or CD row shows its length and rate, prefilled, so saving a note no
+  // longer erases them and emptying a field is a real way to clear it.
+  const bond = type === BONDS_CDS_KEY;
   const [term, setTerm] = useState(initial?.termMonths !== undefined ? String(initial.termMonths) : '');
   const [rate, setRate] = useState(initial?.yieldBps !== undefined ? (initial.yieldBps / 100).toFixed(2) : '');
   const [error, setError] = useState<string | null>(null);
 
+  const pickType = (key: string) => {
+    const next = HOLDING_TYPES.find((h) => h.key === key);
+    if (!next) return;
+    const prev = HOLDING_TYPES.find((h) => h.key === type);
+    // Fill the name only while it is empty or still the previous type's own label, so a name
+    // the user typed is never overwritten.
+    if (what.trim() === '' || (prev !== undefined && what.trim() === prev.label)) setWhat(next.requiresLabel ? '' : next.label);
+    setType(key);
+  };
+
   const submit = () => {
     const cents = lockAmount ? (initial?.amountCents ?? 0) : (parseDollarInput(amount) ?? 0);
-    let cd: Pick<LedgerDraft, 'termMonths' | 'yieldBps' | 'holdingType'> = {};
+    let cd: Pick<LedgerDraft, 'termMonths' | 'yieldBps' | 'holdingType'> = type !== undefined ? { holdingType: type } : {};
     if (bond) {
       const t = parseTermMonths(term);
       const y = parseRateBps(rate);
       if (t.kind === 'invalid') return setError(S.invest.errTerm);
       if (y.kind === 'invalid') return setError(S.invest.errYield);
-      cd = { holdingType: initial?.holdingType ?? BONDS_CDS_KEY, termMonths: t.kind === 'ok' ? t.value : null, yieldBps: y.kind === 'ok' ? y.value : null };
+      cd = { holdingType: BONDS_CDS_KEY, termMonths: t.kind === 'ok' ? t.value : null, yieldBps: y.kind === 'ok' ? y.value : null };
+    } else if (initial?.termMonths !== undefined || initial?.yieldBps !== undefined) {
+      // Moving a row off Bonds or CDs removes its length and rate instead of stranding them.
+      cd = { ...cd, termMonths: null, yieldBps: null };
     }
     const r = onSave({ date, amountCents: cents, what, note, source, ...cd });
     if (!r.ok) {
@@ -111,6 +129,25 @@ export function LedgerForm({ initial, currentDate, source, lockAmount = false, t
           />
         </label>
       </div>
+      <fieldset className="mt-3" data-testid={`${testIdPrefix}-type`}>
+        <legend className="text-sm font-semibold">{S.invest.typeLabel}</legend>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {HOLDING_TYPES.map((h) => (
+            <button
+              key={h.key}
+              type="button"
+              data-testid={`${testIdPrefix}-type-${h.key}`}
+              aria-pressed={type === h.key}
+              onClick={() => pickType(h.key)}
+              className={`press inline-flex min-h-[44px] items-center rounded-full px-3.5 text-sm font-semibold ring-1 ${
+                type === h.key ? 'bg-leaf text-on-leaf ring-leaf elev-1' : 'bg-card text-ink ring-line hover:bg-leaf-soft'
+              }`}
+            >
+              {h.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <label className="mt-3 block text-sm">
         <span className="font-semibold">{S.invest.what}</span>
         <input

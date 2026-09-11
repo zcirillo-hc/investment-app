@@ -206,6 +206,72 @@ test.describe('the v2 loop', () => {
     for (const shame of ['wasted', 'should have', 'unfortunately', 'lost']) expect(body).not.toContain(shame);
   });
 
+  test('capture: a row over the cap blocks Save, says why, and writes nothing (V2-20)', async ({ page }) => {
+    await onboard(page);
+    await dismissCapturePrompt(page);
+    await page.goto(START.replace('/?', '/invest/capture?'));
+    await clickClear(page, 'invest-capture-chip-indexFund');
+    await page.getByTestId('invest-capture-amount-indexFund').fill('10');
+    await clickClear(page, 'invest-capture-chip-bondsCds');
+    await page.getByTestId('invest-capture-amount-bondsCds').fill('2000000');
+    await expect(page.getByTestId('invest-capture-amount-error-bondsCds')).toBeVisible();
+    await expect(page.getByTestId('invest-capture-save')).toBeDisabled();
+    await clickClear(page, 'invest-capture-cancel');
+    await expect(page.getByTestId('invest-empty')).toBeVisible();
+  });
+
+  test('edit: the type is picked, a renamed CD still shows its type, and leaving Bonds or CDs clears the rate (V2-23)', async ({ page }) => {
+    await onboard(page);
+    await dismissCapturePrompt(page);
+    await page.goto(START.replace('/?', '/invest/capture?'));
+    await clickClear(page, 'invest-capture-chip-bondsCds');
+    await page.getByTestId('invest-capture-amount-bondsCds').fill('1000');
+    await page.getByTestId('invest-capture-term').fill('12');
+    await page.getByTestId('invest-capture-rate').fill('4.5');
+    await clickClear(page, 'invest-capture-save');
+    const id = await page.getByTestId('ledger-row').first().getAttribute('data-id');
+    await expect(page.getByTestId(`ledger-maturity-${id}`)).toBeVisible();
+
+    // Renaming alone keeps the picked type, and the row now says which type it is.
+    await clickClear(page, `ledger-edit-${id}`);
+    await expect(page.getByTestId('ledger-edit-type-bondsCds')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('ledger-edit-what').fill('Individual stock');
+    await clickClear(page, 'ledger-edit-save');
+    await expect(page.getByTestId(`ledger-row-type-${id}`)).toHaveText('Bonds or CDs');
+    await expect(page.getByTestId(`ledger-maturity-${id}`)).toBeVisible();
+
+    // Picking another type hides the length and the rate, and saving clears them.
+    await clickClear(page, `ledger-edit-${id}`);
+    await clickClear(page, 'ledger-edit-type-stocks');
+    await expect(page.getByTestId('ledger-edit-term')).toHaveCount(0);
+    await clickClear(page, 'ledger-edit-save');
+    await expect(page.getByTestId(`ledger-maturity-${id}`)).toHaveCount(0);
+  });
+
+  test('a toast sits inside the screen and centered once it settles', async ({ page }) => {
+    // Found on production 2026-09-11: framer-motion's inline transform replaced the class that
+    // centered the toast, so it started at mid-screen and ran 163 px off a 390 px phone. The
+    // horizontal scroll check never saw it, because a fixed element off-screen does not scroll.
+    await onboard(page);
+    await dismissCapturePrompt(page);
+    await page.goto(START.replace('/?', '/invest/capture?'));
+    await clickClear(page, 'invest-capture-chip-indexFund');
+    await page.getByTestId('invest-capture-amount-indexFund').fill('10');
+    await clickClear(page, 'invest-capture-save');
+    const toast = page.getByTestId('auto-advance-toast');
+    await expect(toast).toBeVisible();
+    const vw = page.viewportSize()?.width ?? 0;
+    await expect
+      .poll(async () => {
+        const b = await toast.boundingBox();
+        if (!b) return 'no box';
+        const left = Math.round(b.x);
+        const right = Math.round(vw - (b.x + b.width));
+        return left >= 0 && right >= 0 && Math.abs(left - right) <= 1 ? 'ok' : `left gap ${left}, right gap ${right}`;
+      })
+      .toBe('ok');
+  });
+
   test('criterion 11: Invest shows contributions and never a value, a percent or a chart', async ({ page }) => {
     await onboard(page);
     await dismissCapturePrompt(page);

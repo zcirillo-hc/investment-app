@@ -794,3 +794,261 @@ a labelled log line. When a defect is fixed its case goes green with no edit to 
 3. **R15.5 against the Summer screen**, open since cycle 2.
 4. **R15.7 layer 3 still has not run.** The plan makes it a condition of the next deploy, and
    the site is already serving this content.
+
+## Cycle 4, 2026-09-11: re-verification of V2-9 to V2-19 (b143bdf, 563fbb1)
+
+Machine: darwin 25.6, Node 24, Playwright Chromium, much quieter than cycle 3 (load average
+about 2.7; vite built in 1.1 s). Scope: `01a134b..563fbb1`, i.e. everything b143bdf and
+563fbb1 changed, re-run against the code and the running app rather than the commit message.
+**Production serves this code.** `npm run build` on HEAD emits `assets/index-C7if6nyQ.js`, the
+exact bundle `sparechangeinvesting.vercel.app` serves (fetched read only), and that bundle
+contains both the fixes and the defects below.
+
+### Verdict
+
+**SHIP WITH RISK.** All eleven cycle 3 defects are fixed in the code and on screen, and I found
+nothing Critical or Major. The fixes introduced or exposed six Minor defects (V2-20 to V2-25),
+three of them in what the fixes touched. The one I would fix before anything else is V2-20: a
+capture batch with one over-cap row saves the other rows, then saves them again on every retry,
+silently inflating Invest's total and Your money. The second risk is process, not code:
+**none of the new code has a committed test.** The committed unit count is 700 before and after
+b143bdf, and `rule-index.json` names my uncommitted files as the coverage for R16.5, R16.6 and
+R16.7.
+
+**New defects: 0 Critical, 0 Major, 6 Minor.**
+
+### V2-9 to V2-19, re-verified
+
+| id | ruling | evidence, this pass |
+|---|---|---|
+| V2-9 | **FIXED, regressed its copy (V2-22)** | Unit: `putAsideCents` is 435 after a $4.35 skip, still 435 after moving it, 0 after "I spent it". E2e mobile: after the move Home reads kept $4.35, moved $4.35, jar $0.00 and Summer "You have kept $4.35 so far." The words around the figure were not updated (V2-22). |
+| V2-10 | **FIXED, opened V2-23** | E2e: the edit form now has `ledger-edit-term` and `ledger-edit-rate`, prefilled "12" and "4.50". A note-only edit keeps 12/450 and the $1,045.00 line. "about 4" is refused with a message and nothing changes. Emptying both removes both keys (no `null` in storage), and 24 months at 5 re-prices to $1,102.50. Unit: `undefined` keeps, a number sets, `null` removes; a pre-R16.5 bond row is stamped `bondsCds` on its first edit and keeps its rate. The same form now lets a bond row be relabelled a stock (V2-23). |
+| V2-11 | **FIXED** | E2e, all ten cases: "4.5%" and "4,5" store 450; "12" with no rate stores the term alone; "1.005" stores 101; 25 stores 2500. "60", "700", "12.5", "50" and "25.01" disable Save and show the row error. Unit: 37 rate cases, including the float traps 2.675 → 268, 1.0049999 → 100 and 1.9951 → 200, plus 25.005 refused. Every whole percent from 1 to 25, and every 7th basis point up to 2500, parses exactly. |
+| V2-12 | **FIXED on import and on Invest; symptom reachable again through the edit form (V2-23)** | E2e: the stock-row file is refused and the ledger is unchanged. The same row labelled Bonds or CDs with `holdingType` imports and renders $17,449.40, so the refusal is caused by the label alone. The refusal message is false (V2-21). |
+| V2-13 | **FIXED** | Rendered at 375 px: all six `invest-type-link-*` are 74x44, and every other control this cycle added is at least 44 tall. |
+| V2-14 | **FIXED for every walk-around I filed** | The interpolated L7, the interpolated advice, the three "usually / generally / most people" sentences, "risk-free", "can’t lose" and "beats the market" are all flagged now. An AST cross-check of `src/` (TypeScript's parser against the lint's own scanner) finds **0 of 2,825** prose-like literals unseen. No false positives on shipped copy: `lint:advice ok (89 files)`. New holes are recorded below, not filed, because none has exposure today. |
+| V2-15 | **FIXED as filed; a fifth stale line remains (V2-24)** | The toast, L5, the jar tooltip and L1's hint are clean. Home's empty-jar line still names round-ups. My cycle 3 test missed it too. |
+| V2-16 | **FIXED** | Unit, through the real tick: L1 "How it spotted your usual stop" unlocks on the day the first habit forms, L3 stays locked with 0 skips, and a later skip does not move L1. E2e: `L1 unlockedDay=1, L3=null, skips=0`. Recorded: the demo make-habit and an import leave L1 locked until the next state change (one tick). The plan text was not updated (gaps below). |
+| V2-17 | **FIXED, and `pick()` drops nothing the app needs** | The coordinate and address keys no longer reach an export. A rich real profile survives export, import and export again **with zero differences**, habits included: every event kind the app writes, a jar move, "I spent it", a bond row, a term-only bond row, other and crypto rows, read lessons, read Learn, dark theme, muted places, age, summer override, all five flags. The same profile plus 120 legacy RoundUp events keeps every RoundUp field; the only key dropped is `settings.roundUpsPaused`. |
+| V2-18 | **FIXED, opened V2-21** | $1,000,000 at 25% for 50 years is 7,006,492,321,624 cents, a safe integer, rendered "$70,064,923,216.24" with no overflow at 320 px. Rows saved at 25% to 50% under the old ceiling are now refused on the way back in (V2-21). |
+| V2-19 | **FIXED** | L4: "A single company is different: it can fall and never recover". `dip`: "Some come back and some do not". Layer 3 is the owner's read, not mine. |
+
+### The four disagreements, resolved
+
+1. **`tester-v3-cycle3.test.ts`, the two R10.4 cases: I concede, the test was wrong.** They
+   recomputed the screen's formula inline instead of calling what the screen calls, so they kept
+   testing a retired formula after the owner changed it. They now call `putAsideCents`. A new
+   control pins that `SummerMoney.tsx` computes `putInCents = putAsideCents(state)` and never
+   calls `keptSinceStartCents`, so the test and the screen cannot drift apart again. Both cases
+   are now green regression tests, retitled "V2-9 regression".
+2. **E2e capture case "600 at 50%": I concede.** The 2500 bps ceiling was my own V2-18
+   recommendation. The case now asserts 50% is refused. I added 25% stored as exactly 2500 and
+   25.01 refused. I also tightened every refusal in the table to require a visible error
+   (`saved || !error` is a violation). The old `saved && !error` would have passed a Save that
+   was silently disabled with no reason given. The error is detected under both `invest-capture-error`
+   and b143bdf's new `invest-capture-cd-error`. Green.
+3. **E2e 320 px case: I concede.** It captures at 25%, the largest rate allowed, and checks the
+   largest possible line. Green, no overflow.
+4. **E2e stock-row import: I agree that the refusal is the fix, and I am filing the message.** The
+   test now asserts that the file is refused, the ledger is unchanged, and no maturity line
+   exists. A control half imports the same row as a bond and sees it render, which proves why the
+   file was refused. Green. But the user is told "That file is not a Spare Change export.
+   Nothing changed." `Settings.tsx` maps every refusal except a v1 file to `importBad`, so the
+   same sentence greets the app's own backup when the app refuses it (V2-21).
+
+### New defects
+
+#### V2-20. Minor. A capture batch with one row over the $1,000,000 cap saves the other rows, then saves them again on every retry
+
+- **What breaks:** the capture writes rows one at a time and stops at the first failure, so the
+  rows before it are already in the ledger. The error sends the user back to Save, which writes
+  them again.
+- **Repro:** `npx playwright test tests/e2e/tester-v4-cycle4.spec.ts --project=mobile -g "over the"`.
+  By hand: Invest > capture, tap Broad index fund and enter 10, tap Bonds or CDs and enter
+  2000000, then Save. Save is enabled.
+- **Observed:** error "Enter an amount over zero." for a $2,000,000 row. The ledger size after
+  each of three taps is `1,2,3`, i.e. `["Broad index fund 1000" x3]`. No toast; the user is not
+  told anything was saved.
+- **Expected:** Save refuses up front (`rowReady` checks `LEDGER_MAX_AMOUNT_CENTS`), or every row
+  is validated before any is written. A failed save writes nothing, and the message is
+  `errAmountTooLarge`.
+- **Violates:** the screen's own contract ("nothing is written that the user did not fill in"),
+  plan 8.7a (Save disabled until every row is valid), and R7.2's total. The duplicate rows now
+  also inflate R10.4 Your money, because it adds `ledgerTotal`.
+- **Cause:** `InvestCapture.save` calls `addLedgerEntry` per row (plan 8.7a prescribes that) and
+  returns on the first `!ok`. `rowReady` never checks the cap, and the error branch maps every
+  failure other than a long label to `errAmount`. The loop dates from 76c4737; b143bdf edited it.
+- **Why Minor:** it needs one row over $1,000,000. The realistic path is one extra zero, seeing
+  the error, correcting it, and saving, which leaves exactly one silent duplicate.
+
+#### V2-21. Minor. Rows the previous build saved legally make the app refuse its own backup, and tell the user it is not an export
+
+- **What breaks:** R16.2 and R16.5 tightened validation with no migration. `store.ts` rehydrates
+  with `migrate: (persisted) => persisted`, so old rows load, but anything that round-trips
+  through validation now fails.
+- **Repro:** unit `npx vitest run tests/unit/tester-v4-cycle4.test.ts -t "previous build saved"`;
+  e2e `-g "30% under the old ceiling"`. The e2e plants a row exactly as 90bd963's capture wrote
+  it (Bonds or CDs, $1,000, 12 months, `yieldBps: 3000`, no `holdingType`) into IndexedDB.
+- **Observed** (mobile): the row's maturity line is gone, with no message (`maturityOf` now
+  returns null above 2500). Editing only its note is refused with "Give the rate as a number, up
+  to 25%." for a field the user never touched, and the note is not saved. Settings > Export
+  downloads a file containing the row; importing that file gives **"That file is not a Spare
+  Change export. Nothing changed."** Unit: the same holds for a stock row carrying a term, which
+  the previous validator accepted (V2-12) — the app's own export is refused with
+  `ledger[0].termMonths: only a bonds or CDs row may carry a term or a rate`.
+- **Expected:** a file the app wrote imports back; or, if the architect decides these rows must
+  go, they are migrated on load with the user told what changed. Either way, the refusal of a
+  file that is an export must not say it is not one.
+- **Why Minor:** exposure is small. It needs a 25% to 50% rate entered on production between
+  90bd963 (2026-09-09) and b143bdf, or a hand-edited import in that window. For anyone it hits,
+  the backup is unrestorable without hand-editing the file.
+
+#### V2-22. Minor. After V2-9, the Your money card's words describe the old figure: "Your first skip starts this line" to someone who has skipped, and "You have kept" for money Home does not call kept
+
+- **Repro:** unit `-t "the words around it"`; e2e `-g "first skip starts"` and `-g "504.35"`.
+- **Observed:** one $4.35 skip, then "I spent it": Home reads kept $4.35, habit skips 1, jar $0.00,
+  while Summer reads "Nothing in here yet. **Your first skip starts this line**, and it really does
+  not have to be much." One skip plus a manual $500 "Retirement account": Home reads "Kept this
+  summer" $4.35, while Summer reads "**You have kept $504.35 so far.**" The note underneath says
+  "This only counts what you kept and what you told us you moved", but after "I spent it" what
+  you kept is exactly what it does not count.
+- **Violates:** R10.4 ("the money the user really has set aside"; the copy calls it kept),
+  CLAUDE.md section 1 ("shows what it knows"), theme 3.3. Two screens now use "kept" for two
+  different figures computed from the same state.
+- **Fix is copy, not the formula:** `yourMoneyPutIn`, `yourMoneyEmpty` and `yourMoneyNote` were
+  written for `keptSinceStart + ledger` and not revisited when the owner changed the figure.
+- **Why Minor:** the numbers are right and the words are wrong. It is the most frequently hit
+  item in this report, since "I spent it" is one of the two jar actions.
+
+#### V2-23. Minor. Relabelling a bond row "Individual stock" in the edit form keeps a 30 year projection on a row that reads Individual stock
+
+- **Repro:** e2e `-g "relabelling"`; unit `-t "relabelling a bond row"`. By hand: capture Bonds or
+  CDs, $1,000, 360 months, 10%, then Edit and set What to "Individual stock" (one of the form's
+  own suggestions), then Save.
+- **Observed:** row "Individual stock" with "At 10.00% for 30 years, holding it to the end pays
+  $16,449.40, so you would have $17,449.40."
+- **Violates:** R16.3's distinction (a stock number is a guess about markets), and it is exactly
+  V2-12's symptom, which now needs no hand-edited file. Before b143bdf this path erased the rate
+  (V2-10), so the V2-10 fix opened it.
+- **Cause, and why it is also a plan question:** R16.5 lets `holdingType` decide alone, and the
+  edit form carries the type forward while leaving `what` free. The plan permits this. The
+  architect should decide whether the type or the label wins, or whether a bond row's label is
+  fixed. Filed Minor because the user typed both the rate and the new label.
+
+#### V2-24. Minor. A new user's empty jar still says round-ups land there (V2-15, a fifth line)
+
+- **Repro:** e2e `-g "empty jar says round-ups"`. Onboard, look at Home.
+- **Observed:** jar $0.00 with "Nothing in the jar yet. **Round-ups**, catches and skips all land
+  here." (`S.home.jarEmpty`, `strings.ts:145`), in the live bundle. This is on every new user's
+  first Home screen.
+- **Violates:** R6.1 and R2.1 (retired), and CLAUDE.md section 1 ("It does not do round-ups").
+  My cycle 3 V2-15 test checked the four strings I listed and missed this one; the fix did the same.
+
+#### V2-25. Minor (domain API only, no UI path found). `updateLedgerEntry` can put a term on a row stored as stocks, leaving a state the app's own import refuses
+
+- **Repro:** unit `-t "domain API only"`.
+- **Observed:** a row stored `holdingType: 'stocks'` plus the draft `{ what: 'Bonds or CDs',
+  termMonths: 360, yieldBps: 1000 }` (no type) gives `ok: true`. The stored row is then
+  `holdingType=stocks what="Bonds or CDs" term=360 rate=1000`, and its export is refused:
+  `ledger[0].termMonths: only a bonds or CDs row may carry a term or a rate`.
+- **Cause:** `validateDraft` judges bond-ness from the draft alone, while `applyEdit` keeps the
+  stored type. The check needs the merged entry.
+- **Why Minor:** `LedgerForm` only sends a term or a rate for a row that was a bond row when the
+  form opened, and Invest hides the line (`isBondRow` is false), so nothing wrong renders. The
+  domain layer, which CLAUDE.md calls the crown jewel, accepts a state its own validator rejects.
+
+### Plan-vs-build gaps
+
+- **None of the new code has a committed test.** `parseRateBps`, `parseTermMonths`, `isBondRow`,
+  `putAsideCents`, `notBond`, `applyEdit`'s `null`/`undefined` semantics and `pick()` are
+  referenced by no committed test (grep over `tests/`, excluding `tester-v3-*` and
+  `tester-v4-*`). b143bdf touched one committed test (`tick.test.ts`, 3 lines), and the
+  committed unit count is 700 before and after. `rule-index.json` says R16.5 is "Covered by
+  ledger and validate tests and the tester V2-12 case", R16.6 "by the tester V2-10 unit and e2e
+  cases", and R16.7 "by maturity.test.ts and the tester V2-11 e2e case". No committed ledger,
+  validate or maturity test mentions either parser, `notBond` or `holdingType`, and the tester
+  cases are uncommitted. `rules:check` counts that prose, so it stays green. **If my files are
+  not committed, R16.5 to R16.7 have zero coverage.** CLAUDE.md section 5 asks for a fixture
+  case per behavior change. Owner's call: commit the tester files, or have the coder write
+  committed equivalents.
+- **R12.1, the rule authority, still says "L1 on the first RoundUp."** The code and the fixes log
+  say first habit. CLAUDE.md section 5 says change the rule, not just the code.
+- **Plan 8.7a still says "No new ledger field"**, which R16.5's `holdingType` contradicts, and
+  still lists a "target date fund" chip. The app has Bonds or CDs instead.
+- **R16.2 changed a ceiling with no rule for values already stored** (V2-21), and **R16.5 lets
+  the type and the label disagree** (V2-23). Both are architect decisions.
+- **Still open from cycle 3:** 22 mentions of "sixteen" Learn pieces in the plan (there are
+  twenty); R10.1 still says "from 19"; CLAUDE.md still calls habit detection R4 (it is R3.2).
+- **Pre-existing, found by the coverage scan:** seven JSX text nodes are inline UI copy, against
+  CLAUDE.md section 7. They are `LessonVisual.tsx` ("paycheck", "kept", "you're here", "Put in
+  early", "Later"), `ProgressRing.tsx` ("of") and `Toast.tsx` ("OK"). lint-advice cannot see JSX
+  text at all: a scratch plant `<p>Honestly, you should buy NVDA now, it will grow.</p>` passes
+  it. None of the seven is advice today.
+
+### Recorded, not filed (lint-advice holes with no exposure today)
+
+All confirmed by running them; none exists in shipped copy.
+- A banned phrase with a no-break space, a soft hyphen or a zero-width space inside it passes, and
+  so does "cannot lose". U+2011 and U+02BC are caught.
+- A sentence split across `+` passes: `'Putting away $20 a week ' + 'beats waiting…'`, and
+  `'…will ' + 'grow…'`. `strings.ts` has no `+` concatenation today.
+- **One unbalanced brace inside an interpolation hides the rest of the file.**
+  `` `${x ? '{' : ''} …` `` throws the depth count off, and a control plant on the next line,
+  "We recommend this fund for you.", then passes. The AST scan finds 0 unbalanced interpolations
+  and 0 regex literals containing a quote in `src/`, so nothing is hidden today.
+
+### Unverified concerns
+
+- **`pick()` is safe today but fragile.** profile, settings, clock, milestones and demo are
+  whitelisted by `Object.keys(initialAppState().x)`, so any future optional field that
+  `initialAppState` omits would be silently dropped on import. From reading the code; no such
+  field exists now.
+- **The capture's row error is `role="alert"` and shows mid-typing.** "4." and ".5" are invalid,
+  so typing "4.5" announces an error at the second keystroke. I did not run a screen reader.
+
+### What held up
+
+- The rich-profile round trip and the legacy RoundUp round trip (above): nothing dropped, added
+  or changed, apart from the retired `roundUpsPaused`.
+- All 43 cycle 3 unit cases pass, with the 14 former DEFECT cases green. The four reconciled or
+  retitled e2e cases, and all 13 cycle 3 e2e cases, pass on mobile.
+- R16.7 parsing (above). A term with no rate saves alone and renders no line. The capture
+  preview matches what is stored.
+- L1 through the real tick. R17 best week, R18 card identity, and R15.6 disclosure on all 32
+  surfaces, all still green (cycle 3 spec).
+- Typecheck, lint:copy (104 files), lint:advice (89 files), rules:check (30 rules, 111 cases),
+  build and the bundle secret check are all clean.
+
+### Gate counts, observed this pass
+
+| gate | result |
+|---|---|
+| `npm test` | 35 files, **814 tests: 809 passed, 5 failed.** 700 committed, all pass. `tester-v3-cycle3` 43/43. `tester-v4-cycle4` 66 of 71; the 5 failures are V2-21, V2-22 (two cases), V2-23 and V2-25, failing on purpose. |
+| `npm run typecheck` | clean, 7 tester files included (`--listFilesOnly`) |
+| `npm run build` | clean: lint:copy ok (104), lint:advice ok (89), rules:check ok (30 rules, 111 cases), vite build, check-bundle-secrets ok |
+| `npm run test:db` | real Neon, isolated schema: **7 files, 96 passed** (93 committed + 3 `tester-v3-backend`), 141 s |
+| e2e, 11 committed specs, 4 projects, retries 1 | **348 passed, 28 skipped**, no `failed` or `flaky` line in Playwright's summary (11.3 min). Read from the count lines, not the tail (gotcha 9). This includes `tester-v2-regression`'s "44 px" case, which failed in cycle 3 (V2-13) and now passes on all four projects. |
+| e2e, tester specs, mobile, retries 0 | 21 tests: **15 passed, 6 failed**, the 6 being V2-20, V2-21, V2-22 (two cases), V2-23 and V2-24 |
+| e2e, tester specs, desktop, retries 0 | 21 tests: **15 passed, 6 failed**, the same six DEFECT cases as on mobile, with identical audit lines (at 1280 px every new control is 44 tall) |
+
+### What I could not test
+
+- A real push subscription, a real iPhone, Safari or WebKit, Firefox, screen readers, and the
+  cron firing on its real schedule. None of these was touched by this cycle, and none is covered here.
+- My own two specs on iphone-pro and iphone-pro-max. The committed suite ran on all four projects.
+- The owner's R15.7 layer 3 read, which is theirs by decision.
+
+### Tester files this cycle (uncommitted)
+
+| file | cases | covers |
+|---|---|---|
+| `tests/unit/tester-v3-cycle3.test.ts` | 43 | Reconciled (disagreement 1); one-past-ceiling moved to `MAX_YIELD_BPS + 1`. All green. |
+| `tests/e2e/tester-v3-cycle3.spec.ts` | 13 | Reconciled (disagreements 2, 3, 4). All green on mobile. |
+| `tests/unit/tester-v4-cycle4.test.ts` | 71 | Parsers, isBondRow, applyEdit, round trips, legacy data, putAsideCents copy, L1, lint. 5 fail on purpose. |
+| `tests/e2e/tester-v4-cycle4.spec.ts` | 8 | Edit form, relabel, capture batch, copy, old saved data, L1. 6 fail on purpose. |
+| `tests/fixtures/tester-v4-lint-plants.ts` | n/a | Concatenation and brace plants for the lint CLI. |
+
+```bash
+npx vitest run tests/unit/tester-v3-cycle3.test.ts tests/unit/tester-v4-cycle4.test.ts   # 5 fail = V2-21, V2-22 x2, V2-23, V2-25
+npx playwright test tests/e2e/tester-v3-cycle3.spec.ts tests/e2e/tester-v4-cycle4.spec.ts --project=mobile --retries=0   # 6 fail = V2-20 to V2-24
+```

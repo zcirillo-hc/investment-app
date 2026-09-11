@@ -51,7 +51,7 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 
 ```
 npm run dev          vite dev server, http://localhost:5173
-npm test             vitest, unit  (700 passing)
+npm test             vitest, unit  (720 committed, all passing)
 npm run test:db      vitest against real Neon, isolated schema  (93 passing)
 npm run e2e          playwright, 4 viewport profiles  (15 min to over an hour)
 npm run typecheck    full tsc, includes tests and scripts
@@ -121,7 +121,10 @@ Key ones to know:
   Allowed where a stock projection is not, because a CD rate is a contract and this is
   arithmetic on the user's own two numbers rather than a guess about markets. Only a bonds or
   CDs row may carry them (R16.5); entries store `holdingType`, and an edit keeps any field its
-  form did not show (R16.6).
+  form did not show (R16.6). The type is picked from chips in the ledger form, never read from
+  the free text name, and Invest shows it beside a name that differs (V2-23). Rows an earlier
+  build saved under looser rules are tidied on load and on import, never refused, and the user
+  is told once (R16.8, persist version 2).
 
 Money is **integer cents** everywhere. Never floats.
 
@@ -176,6 +179,7 @@ Read these before touching the build or the API.
 7. **Never kill port 5173 while `npm run e2e` is running.** That is the suite's own dev server. Ad-hoc Playwright specs started alongside it fight for the port and killing it corrupts the run. Wait for the suite, or check against the live site.
 8. **After onboarding, an invest-capture prompt overlays Home and swallows clicks, and nudges are off by default.** Use `dismissCapturePrompt` and `clickClear` from `tests/e2e/fixtures.ts`, and run demo `make-habit` before `force-nudge`, or a skip click silently does nothing.
 9. **Read Playwright's `N failed` and `N flaky` lines, not the last lines of the log.** With the list reporter the tail is the last test to finish, and a run can end on a pass while tests failed earlier. That is how three pushes in September went out reported as "0 failed" while four committed specs had been failing since `0ab8031`. Grep the log for `^\s+[0-9]+ (passed|failed|flaky)` before calling a run green.
+10. **Never center a framer-motion element with a Tailwind `translate` class.** Animating `x`, `y` or `scale` makes framer-motion write an inline `transform`, which silently replaces `-translate-x-1/2` and friends. The toast shipped half off every phone screen for two days that way. Center with `inset-x-*` plus `mx-auto`, or animate `x: '-50%'` yourself. The horizontal scroll check does not catch it, because a fixed element off-screen does not scroll the page.
 
 ---
 
@@ -200,12 +204,12 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-11: 700 unit, typecheck, both lints, rules:check (30 rules, 111 cases), build, axe clean in both themes at four viewports. End-to-end on the 11 committed specs: 348 passed, 28 skipped, 0 failed, 0 flaky across mobile, desktop, iPhone Pro and Pro Max. The db suite (93) was last run 2026-09-10; cycle 3 did not touch `api/` or `db/`.
+Green as of 2026-09-11, after the cycle 4 fixes: 720 unit, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build, axe clean in both themes at four viewports. End-to-end on the 11 committed specs: 360 passed, 28 skipped, 0 failed, 0 flaky across mobile, desktop, iPhone Pro and Pro Max. The db suite (93 committed) was last run by the tester on 2026-09-11; cycles 3 and 4 did not touch `api/` or `db/`.
 
 The e2e figures reported for `0ab8031`, `352d618` and `01a134b` ("0 failed") were wrong: four committed specs were failing and the reports were read from the end of the log. See gotcha 9. The four specs were fixed in `563fbb1`.
 
 **Known open items:**
-- The tester's cycle 3 pass (2026-09-10) verified V2-1 to V2-8 and filed V2-9 to V2-19. Fixes for all eleven landed on 2026-09-10 and need a tester re-verification pass. Four of its tests (still uncommitted, `tester-v3-*`) encode assumptions the fixes change on purpose; see the plan's Cycle 3 fixes log. They are the tester's to reconcile, not the coder's to edit.
+- The tester's cycle 4 pass (2026-09-11) confirmed V2-9 to V2-19 fixed and filed V2-20 to V2-25, all Minor. Fixes for all six, plus a toast that sat half off every phone screen, landed the same day with the owner's two decisions (R16.8 tidy on load; the type is picked in the form). They need a tester re-verification pass. Four of the tester's uncommitted cases (`tester-v3-*`, `tester-v4-*`) encode behavior the owner changed; see the plan's Cycle 4 fixes log. They are the tester's to reconcile, not the coder's to edit. Once they pass, commit them, as was done with `tester-v2-*`.
 - Four tests in `tests/unit/tester-v2-import-impact.test.ts` were inverted on 2026-09-09: they originally asserted the import validator wrongly ACCEPTED four bad shapes, in order to demonstrate the damage. The validator now rejects all four, so they assert rejection instead. Coverage preserved, intent unchanged.
 - Never tested: a real iPhone, real Safari, WebKit, Firefox, screen readers, and an actual push notification arriving on a physical phone.
 - The cron has never been observed firing on its real daily schedule in production.

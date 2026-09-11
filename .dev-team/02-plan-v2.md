@@ -797,7 +797,8 @@ without ever showing a gap.
   `round(principal * (1 + yieldBps / 10000) ^ (termMonths / 12))`. An APY already accounts
   for the bank's compounding, so raising it to the term in years is the whole calculation.
 - **R16.2** Both are optional, but a value that is present and out of range is rejected rather
-  than dropped, on save and on import. Ceilings: 2500 basis points and 600 months (the rate ceiling was 5000 until V2-18, where 50% for 50 years on a $1,000,000 entry matured past 2^53 cents, the point where cents stop being exact), which are
+  than dropped when it is typed, in the ledger form and in the capture. A value an earlier build
+  already stored is tidied instead (R16.8). Ceilings: 2500 basis points and 600 months (the rate ceiling was 5000 until V2-18, where 50% for 50 years on a $1,000,000 entry matured past 2^53 cents, the point where cents stop being exact), which are
   sanity bounds against a typo, not opinions about what a good rate is.
 - **R16.3** This is allowed where a stock projection is not, and the distinction is the point.
   A stock number is a guess about markets. A CD's rate is a contract, and this is arithmetic
@@ -807,13 +808,24 @@ without ever showing a gap.
   own stated rate pays, and nothing else. R15's second list still applies in full.
 - **R16.5** Only a bonds or CDs row may carry a term and a rate. Entries store `holdingType`
   (the capture's key) from 2026-09-10; an entry without one counts as a bond row only when its
-  `what` is the Bonds or CDs label. Enforced in `validateDraft` (`notBond`), on import, and on
-  Invest before a maturity line renders. (V2-12)
+  `what` is the Bonds or CDs label. Enforced in `validateDraft` (`notBond`), on an edit against
+  the row as it will be stored (`editKeepsBondRule`, V2-25), by R16.8 on load and import, and on
+  Invest before a maturity line renders. (V2-12) The type is picked from the six types in the
+  ledger form, never read from the free text name, and picking any type but Bonds or CDs clears
+  the term and rate. Invest shows the type beside the name whenever the two differ (except
+  Something else, whose name is always typed), so a CD named "Individual stock" still reads as
+  a CD. (V2-23, owner decision 2026-09-11)
 - **R16.6** An edit keeps what its form did not show. In a draft, `undefined` keeps the stored
   term or rate and `null` clears it. The edit form shows both fields on a bond row. (V2-10)
 - **R16.7** The capture reads "4.5", "4.5%" and "4,5" alike, rounds to a whole basis point half
   away from zero from the exact decimal string, and refuses rather than drops a value it cannot
   use, fractional months included. A term with no rate is saved on its own. (V2-11)
+- **R16.8** Data an earlier build saved under looser rules is tidied, never refused. On load
+  (persist version 2) and on import, a term or rate that is out of range, or that sits on a row
+  that is not a bond or a CD, is removed from that row; its amount, name and date are kept. The
+  user is told once how many rows changed. A term or rate that is not a number at all is a
+  damaged file and is still refused, and an import that fails any check says what failed
+  rather than claiming the file is not an export. (V2-21, owner decision 2026-09-11)
 
 ### R11 Privacy and deletion
 
@@ -840,7 +852,9 @@ without ever showing a gap.
 
 ### R12 Lesson triggers
 
-- **R12.1** L1 on the first RoundUp. L2 on the first Catch. **L3 on the first Skip.**
+- **R12.1** L1 on the first habit spotted (changed 2026-09-10, V2-16: round-ups are gone, and
+  L1 is now its own lesson about how a usual stop is spotted). L2 on the first Catch. **L3 on
+  the first Skip.**
   **L4 on the first ledger entry.** L5 on day 30.
 - **R12.2** The fear check unlocks its mapped lesson (rent to L6, pointless to L7,
   confused to L8, losing to L4) at day 0, unchanged.
@@ -2158,17 +2172,21 @@ onboarding covered by acceptance criterion 1; skipping it dismisses it permanent
 same screen stays reachable from Invest at any time afterward.
 
 Components: six tappable holding type chips read from `shared/content/holdingTypes.json`
-(broad index fund, target date fund, individual stocks, crypto, cash savings, something
-else). Tapping a chip adds a row to a working list on screen. Each row has an amount field,
-and the something else row also has a required free text label (1 to 60 characters, the same
-bound as R7.1's `what`). Rows can be removed before saving. A "Save" button is disabled
-until at least one row has a positive amount, and, for a something else row, a non empty
-label.
+(broad index fund, bonds or CDs, individual stocks, crypto, cash savings, something else).
+Tapping a chip adds a row to a working list on screen. Each row has an amount field, the
+something else row also has a required free text label (1 to 60 characters, the same bound
+as R7.1's `what`), and the bonds or CDs row has an optional length and rate (R16.7). Rows can
+be removed before saving. A "Save" button is disabled until every row has a positive amount
+no larger than the R7.1 cap, a usable length and rate if either was typed, and, for a
+something else row, a non empty label. An amount over the cap says so on its row.
 
-Data: on save, one call to the existing `addLedgerEntry` action per row, each with `date`
-set to the current simulated date, `source: "manual"`, `what` set to the chip's canonical
-label (or the typed label for something else), and `note` empty. No new store action, no new
-ledger field, and no new domain module.
+Data: on save, every row is validated first, and only if all pass is there one call to the
+existing `addLedgerEntry` action per row, each with `date` set to the current simulated date,
+`source: "manual"`, `what` set to the chip's canonical label (or the typed label for
+something else), `note` empty, and `holdingType` set to the chip's key (R16.5). A refused
+save writes nothing, so a retry cannot duplicate a row (V2-20, 2026-09-11). No new store
+action. The ledger fields this screen can set beyond R7.1's are `holdingType`, `termMonths`
+and `yieldBps` (R16).
 
 Copy constraints: everything in the header of section 8, plus, specifically for this screen,
 no percent, no computed value, no risk label, no color coded read, and no chart anywhere on
@@ -3213,3 +3231,24 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
   stored" card and the server-row message when no row exists, which V2-1 made honest. Earlier
   reports of "0 failed" for `0ab8031`, `352d618` and `01a134b` were wrong: they were read
   from the log's last lines, not its failure count.
+
+### Cycle 4 fixes, 2026-09-11: V2-20 to V2-25, and the toast
+
+- Changed: the capture checks every row before writing any, and names an amount over the cap
+  on its row (V2-20). New R16.8: rows an earlier build saved are tidied on load and on import,
+  and the user is told; a failed import says what failed (V2-21). Your money says "set aside",
+  not "kept", and its empty state and note describe what it counts (V2-22). The ledger form
+  picks the type from six chips, and Invest shows the type beside a name that differs (V2-23,
+  R16.5). The empty jar no longer mentions round-ups (V2-24). An edit is judged on the row as
+  it will be stored (V2-25). Found in passing on production: every toast sat half off a phone
+  screen from 76c4737, because framer-motion's inline transform replaced the class that
+  centered it; it is now centered with insets, and a v2-loop e2e case holds it there.
+- Because: tester cycle 4, and the owner's two decisions on 2026-09-11 (tidy on load and say
+  so; the type is a choice in the form).
+- Impact on downstream: the tester's cycle 4 DEFECT cases now fail because the defects they
+  demonstrate are gone, and need flipping to assertions. Three of its cases encode behavior
+  the owner changed: the cycle 3 import case asserts the refusal of a stock row carrying a
+  rate, which now imports with the rate removed and a notice; the V2-23 case expects a renamed
+  bond row to lose its line, which by decision keeps it and shows its type; and the cycle 3
+  control case pins the old "You have kept" copy. b143bdf's code now has committed unit
+  coverage in `tests/unit/cycle3-fixes.test.ts`.

@@ -2645,3 +2645,75 @@ Run on darwin 25.6, Node 24, against the same Neon isolated schema harness.
 | `npm run test:db` | **93 passed / 93** (57 existing + 32 tester + 4 new). All three tester defect cases green. |
 | `npm test` | **666 passed, 4 failed of 670.** The 4 are `tester-v2-import-impact.test.ts`, all asserting the V2-6 defect is accepted. See the caveat above. |
 | `npm run typecheck` | **1 error, pre-existing and not mine**: `tests/e2e/tester-v2-product.spec.ts(7,51): TS6133: 'openTray' is declared but its value is never read`. It is an unused import in a `tester-*` file I am not permitted to edit; `tsconfig.build.json` excludes `tests/`, so `npm run build` is unaffected. |
+
+## Cycle 3 and 4 fixes, 2026-09-10 to 2026-09-11
+
+Commits b143bdf (V2-9 to V2-19), 563fbb1 (four e2e specs that had gone stale), and this pass
+(V2-20 to V2-25, plus a toast defect found on production). The rule changes are in the plan's
+"Cycle 3 fixes" and "Cycle 4 fixes" logs and in R16.5 to R16.8; this records how they were built.
+
+### What changed in cycle 4
+
+- **V2-20.** `InvestCapture` runs `validateDraft` on every row before any `addLedgerEntry`, and
+  `rowReady` checks `LEDGER_MAX_AMOUNT_CENTS`, so Save stays disabled and the row says why. If an
+  add still failed partway (not reachable after the check), the rows already written leave the
+  list and a toast says how many landed, so a retry cannot duplicate them.
+- **V2-21, owner decision "tidy on load, say so".** `tidyLedger` in `domain/ledger.ts`. The
+  import validator still refuses a term or rate that is not a number, but no longer refuses a
+  number the rules cannot use; the assembly tidies it and reports `tidied`. Persist version 2,
+  with a `migrate` that tidies a version 1 envelope once. The count rides `sessionStorage`
+  across the reload, and `App` says `S.invest.tidyNotice` once. A real export that fails any
+  check now says what failed (`importInvalid`) instead of "not a Spare Change export".
+- **V2-22.** The Your money copy says "set aside right now", its empty state says "the next
+  skip", and its note names the jar.
+- **V2-23, owner decision "the type is a choice in the form".** `LedgerForm` shows the six type
+  chips. The length and rate follow the Bonds or CDs chip, and leaving it sends `null` for both,
+  which clears them. Picking a type fills the name only while it is empty or still the previous
+  type's label. Invest shows the type beside a name that differs from it, except Something else.
+- **V2-24.** The empty jar copy no longer mentions round-ups.
+- **V2-25.** `editKeepsBondRule` judges the entry as it will be stored, and `updateLedgerEntry`
+  refuses with `notBond` when it fails.
+- **Toast.** Centered with `inset-x-4 mx-auto` instead of `left-1/2 -translate-x-1/2`, which
+  framer-motion's inline transform had been replacing since 76c4737. CLAUDE.md gotcha 10.
+- **Tests.** `tests/unit/cycle3-fixes.test.ts` is the first committed coverage of b143bdf's code
+  (parsers, bond rule, edit semantics, `putAsideCents`, the import whitelist) and of R16.8. Three
+  v2-loop e2e cases: V2-20, V2-23 and the toast position at every viewport.
+
+### Deviations and judgement calls
+
+- The tidy notice uses `sessionStorage`, not a new `AppState` field, to avoid a schema change for
+  a message said once. If storage is blocked the notice is lost; the tidy still happens.
+- The type chips appear in all three ledger forms (add, edit, and the jar move on Home), not only
+  in edit, so a new entry can carry a type from the start. The add form starts with no type
+  picked, so a free text entry with no type is still possible, as it was before.
+- `tidyLedger` also removes a term or rate that is a number but not a usable one, such as 12.5
+  months, which the old validator refused outright. Anything that is not a number is still a
+  damaged file and refused.
+- The toast defect predates cycle 3. I found it on production while taking screenshots; the
+  tester did not file it.
+
+### What the tester should re-check, near each fix
+
+- **V2-21 by the load path, not only import:** plant a version 1 envelope with a 30% bond row in
+  IndexedDB, reload, and confirm the rate is gone, the notice shows once, and a second reload
+  says nothing. Also a version 1 envelope arriving through the localStorage mirror.
+- **V2-23:** the chips at 320 px in the jar move form on Home, axe on each ledger form with a
+  chip picked, and a legacy row named "Bonds or CDs" with no stored type: it should open on the
+  Bonds or CDs chip, keep its rate through a note edit, and be stamped with the type on save.
+- **V2-20:** the capture with a Something else row whose label is too long next to a valid row,
+  which takes the same check-first path.
+
+### Real test results, this pass
+
+Run on darwin 25.6 on 2026-09-11. Counts read from each tool's summary lines, not the log tail.
+
+| gate | result |
+|---|---|
+| `npm run lint:copy` | **ok**, 104 files |
+| `npm run lint:advice` | **ok**, 89 files |
+| `npm run rules:check` | **ok**, 30 arithmetic rules, 111 cases, every rule id classified (R16.8 added) |
+| `npm run typecheck` | **clean**, tester files included |
+| `npm run build` | **green**, bundle secret check ok (14 files) |
+| `npm test` | **720 committed, all passing.** 834 run in total with the tester's uncommitted files; the 4 failures are all tester cases that encode behavior the owner changed, listed in the plan's Cycle 4 fixes log. |
+| e2e, the 11 committed specs, 4 projects | **360 passed, 28 skipped, 0 failed, 0 flaky** (13.0 min). Includes the three new v2-loop cases at every viewport. |
+| `npm run test:db` | not re-run: nothing under `api/` or `db/` changed. The tester ran it on 2026-09-11: 96 passed (93 committed). |

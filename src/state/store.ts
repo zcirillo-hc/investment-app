@@ -42,7 +42,8 @@ import { syncSchedule } from '../lib/push';
 import { STORAGE_KEY } from '../config';
 import { deps } from './deps';
 import { getUrlParams } from './urlParams';
-import { clearPersistedState, idbStorage, installMirrorFlush, pickAppState } from './persistence';
+import { PERSIST_VERSION, clearPersistedState, idbStorage, installMirrorFlush, noteTidied, pickAppState } from './persistence';
+import { tidyLedger } from '../domain/ledger';
 import { useUiStore, type Outcome } from './uiStore';
 import { runAutoAdvance } from './bootstrap';
 import { clearThemeMirror, writeThemeMirror } from '../lib/theme';
@@ -296,10 +297,22 @@ export function createAppStore() {
       },
       {
         name: STORAGE_KEY,
-        version: 1,
+        version: PERSIST_VERSION,
         storage: createJSONStorage(() => idbStorage),
         partialize: (s) => pickAppState(s),
-        migrate: (persisted) => persisted as AppStore,
+        // R16.8 (V2-21): a ledger an earlier build saved is tidied once on load, rather than
+        // left to block an edit or make the app refuse its own export later. Told on boot.
+        migrate: (persisted, version) => {
+          const p = persisted as AppStore;
+          if (version < 2 && p && Array.isArray(p.ledger)) {
+            const t = tidyLedger(p.ledger);
+            if (t.tidied > 0) {
+              noteTidied(t.tidied);
+              return { ...p, ledger: t.ledger } as AppStore;
+            }
+          }
+          return p;
+        },
         onRehydrateStorage: () => () => {
           useUiStore.getState().setHydrated(true);
         },
@@ -316,7 +329,7 @@ export const useAppStore = createAppStore();
  * the one zustand's `createJSONStorage` writes.
  */
 export function persistedEnvelopeJson(): string {
-  return JSON.stringify({ state: pickAppState(useAppStore.getState()), version: 1 });
+  return JSON.stringify({ state: pickAppState(useAppStore.getState()), version: PERSIST_VERSION });
 }
 
 if (typeof window !== 'undefined') installMirrorFlush(persistedEnvelopeJson);

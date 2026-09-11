@@ -65,6 +65,8 @@ export const S = {
     demoNote: 'This is a demo. Your spending here is made up, and no real money moves.',
     importLink: 'Have a backup? Import it',
     importBad: 'That file is not a Spare Change export. Nothing changed.',
+    importInvalid: (detail: string) =>
+      `That looks like a Spare Change export, but part of it did not pass the app's checks, so nothing changed. What it found: ${detail}`,
   },
 
   summer: {
@@ -96,11 +98,13 @@ export const S = {
     // kept and recorded, on its own scale. Wording stays an assumption, never a promise (R15).
     yourMoneyTitle: 'Your money',
     yourMoneyChartTitle: 'What you have put in so far, if you left it alone',
-    yourMoneyPutIn: (cents: number) => `You have kept ${formatCents(cents)} so far.`,
+    // V2-22: this is the jar plus what the user recorded moving (R10.4), not what Home calls
+    // kept, so it must not use the same word for a different figure.
+    yourMoneyPutIn: (cents: number) => `You have ${formatCents(cents)} set aside right now.`,
     yourMoneyHeadline: (end: number, age: number) =>
       `If you left that alone it could be about ${formatDollars(end)} by the time you are 65. You are ${age}, so it has a long time to sit there and grow.`,
-    yourMoneyEmpty: 'Nothing in here yet. Your first skip starts this line, and it really does not have to be much.',
-    yourMoneyNote: 'This only counts what you kept and what you told us you moved. It cannot see your real accounts, so it does not know what that is worth today.',
+    yourMoneyEmpty: 'Nothing set aside right now. The next skip starts this line, and it really does not have to be much.',
+    yourMoneyNote: 'This counts what is in your jar now and what you told us you moved. It cannot see your real accounts, so it does not know what that is worth today.',
   },
 
   fear: {
@@ -142,7 +146,7 @@ export const S = {
     jarGoalReached: 'Jar goal reached. Nothing has to happen next.',
     moveToInvestment: 'I moved this into an investment',
     spentIt: 'I spent it',
-    jarEmpty: 'Nothing in the jar yet. Round-ups, catches and skips all land here.',
+    jarEmpty: 'Nothing in the jar right now. Skips and paycheck catches land here.',
     treeTitle: 'Your tree',
     treeCaption: (stageName: string, days: number | null) =>
       days === null ? 'A seed. It sprouts the first time you keep something.' : `${stageName}, ${days} ${days === 1 ? 'day' : 'days'} of keeping`,
@@ -267,6 +271,13 @@ export const S = {
     errTerm: 'Give the length in whole months, up to 50 years.',
     errYield: 'Give the rate as a number, up to 25%.',
     errNotBond: 'Only a Bonds or CDs entry can carry a length and a rate.',
+    // V2-23: the type is picked, the name is typed, and the row shows both when they differ.
+    typeLabel: 'What kind is it?',
+    // R16.8, V2-21: said once, after rows saved under earlier rules were tidied.
+    tidyNotice: (n: number) =>
+      n === 1
+        ? 'One entry had a length or a rate this version cannot use, so the app removed just that. Its amount and name are unchanged.'
+        : `${n} entries had a length or a rate this version cannot use, so the app removed just those. Their amounts and names are unchanged.`,
     cdInvalid: 'Check the length and the rate. The length is whole months, up to 600, and the rate is a number up to 25%.',
     // R18. The reference card. Static, identical for every user, and it explains what the
     // six things ARE. It never says which to pick, which is the line R15 draws.
@@ -358,6 +369,8 @@ export const S = {
     dataNote: 'Your places, your jar, your ledger and your lessons live in this browser. Export to keep a copy or move it to another device.',
     importOk: 'Imported. Reloading.',
     importBad: 'That file is not a Spare Change export. Nothing changed.',
+    importInvalid: (detail: string) =>
+      `That looks like a Spare Change export, but part of it did not pass the app's checks, so nothing changed. What it found: ${detail}`,
     importV1: 'That is a Spare Change v1 backup. v1 saved a simulated portfolio that v2 does not have, so it cannot be brought across. Nothing changed.',
     deletePlaces: 'Delete every place and visit',
     reset: 'Reset demo',

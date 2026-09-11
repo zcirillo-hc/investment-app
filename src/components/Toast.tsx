@@ -17,7 +17,10 @@ export function Toast() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
-          className="elev-3 fixed left-1/2 z-[60] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl bg-ink px-4 py-3 text-sm text-ground dark:bg-card dark:text-ink dark:ring-1 dark:ring-line"
+          /* Centered with insets and auto margins, never a translate: framer-motion writes its
+             own inline transform for `y`, which silently replaced `-translate-x-1/2` and pushed
+             every toast half off a phone screen from 76c4737 until 2026-09-11. */
+          className="elev-3 fixed inset-x-4 z-[60] mx-auto max-w-md rounded-2xl bg-ink px-4 py-3 text-sm text-ground dark:bg-card dark:text-ink dark:ring-1 dark:ring-line"
           /* Plan v2 6.13: a fixed overlay at the top of a standalone launch clears the Dynamic Island. */
           style={{ top: 'calc(0.75rem + env(safe-area-inset-top))' }}
           role="status"

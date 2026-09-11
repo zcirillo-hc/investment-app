@@ -16,7 +16,7 @@ import {
   selectNudgeIgnoringTime,
   setPlaceMuted,
 } from './nudges';
-import { makeEntry, removeEntry, replaceEntry, validateDraft, type LedgerDraft } from './ledger';
+import { editKeepsBondRule, makeEntry, removeEntry, replaceEntry, validateDraft, type LedgerDraft } from './ledger';
 import { evaluateLearnSurfaces, evaluateLessonTriggers, evaluateMilestones } from './triggers';
 import { hadKeptEventsInSummerEndingAt } from './summer';
 import { FEAR_LESSON } from '../content/lessons';
@@ -263,6 +263,9 @@ export function updateLedgerEntry(state: AppState, id: string, draft: LedgerDraf
   const currentDate = simDate(state.clock.startDate || '1970-01-01', state.clock.dayIndex);
   const v = validateDraft(draft, state.clock.startDate ? currentDate : '');
   if (!v.ok) return { ok: false, state, problems: v.problems };
+  // V2-25: the draft alone can pass while the stored row would not, because an edit keeps the
+  // stored type. Refuse any state the app's own import would refuse.
+  if (!editKeepsBondRule(existing, v.draft)) return { ok: false, state, problems: ['notBond'] };
   const ledger = replaceEntry(state.ledger, id, v.draft);
   return { ok: true, state: { ...state, ledger }, entry: ledger.find((e) => e.id === id) as LedgerEntry };
 }

@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { useAppStore } from './state/store';
 import { useUiStore } from './state/uiStore';
 import { getUrlParams } from './state/urlParams';
+import { takeTidyNotice } from './state/persistence';
 import { todayLocal } from './domain/dates';
 import { applyTheme, readThemeMirror, useTheme } from './lib/theme';
 import { S } from './content/strings';
@@ -33,6 +34,10 @@ export default function App() {
     const params = getUrlParams();
     const ticks = useAppStore.getState().autoAdvance(todayLocal(), params.freeze);
     if (ticks > 0) useUiStore.getState().showToast(S.home.autoAdvance(ticks));
+    // R16.8: after an import or a migration tidied rows, say so once. It wins over the
+    // auto-advance line because it is about the user's own data.
+    const tidied = takeTidyNotice();
+    if (tidied > 0) useUiStore.getState().showToast(S.invest.tidyNotice(tidied));
     if (params.demo) useUiStore.getState().setTrayOpen(true);
     // Plan v2 section 5.4: ?nudge=1 performs "Force a nudge now" once at boot, so one
     // navigation can reach a nudge. `forceNudge` turns nudges on first, because R4.1 would

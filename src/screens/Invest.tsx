@@ -211,6 +211,18 @@ export function Invest() {
                         <div className="mt-0.5 text-sm text-muted" data-testid="ledger-row-date">
                           {formatDateLongSafe(e.date)}
                         </div>
+                        {(() => {
+                          // R16.5, V2-23: the picked type shows whenever the typed name differs
+                          // from it, so a CD named "Individual stock" still reads as a CD.
+                          // Something else is skipped: its name is always the user's own.
+                          const t = HOLDING_TYPES.find((h) => h.key === e.holdingType);
+                          if (!t || t.requiresLabel || t.label.toLowerCase() === e.what.trim().toLowerCase()) return null;
+                          return (
+                            <p className="mt-1 inline-flex rounded-full bg-ground px-2.5 py-0.5 text-xs font-semibold text-muted ring-1 ring-line" data-testid={`ledger-row-type-${e.id}`}>
+                              {t.label}
+                            </p>
+                          );
+                        })()}
                         {e.note && <p className="mt-1.5 rounded-xl bg-ground px-2.5 py-1.5 text-sm">{e.note}</p>}
                         {(() => {
                           // R16. Only shows when the entry actually carries both, so every
