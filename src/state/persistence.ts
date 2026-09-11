@@ -311,10 +311,21 @@ export function migratePersisted(persisted: unknown, version: number): unknown {
   try {
     const p = persisted as { ledger?: unknown } | null;
     if (!p || !Array.isArray(p.ledger)) return persisted;
-    const t = tidyLedger(p.ledger as LedgerEntry[]);
-    if (t.tidied === 0) return persisted;
-    noteTidied(t.tidied);
-    return { ...p, ledger: t.ledger };
+    // V2-30: one row at a time, so a row that cannot be read is kept exactly as stored and
+    // does not stop every other row from being tidied.
+    let tidied = 0;
+    const ledger = p.ledger.map((row: unknown) => {
+      try {
+        const t = tidyLedger([row as LedgerEntry]);
+        tidied += t.tidied;
+        return t.ledger[0];
+      } catch {
+        return row;
+      }
+    });
+    if (tidied === 0) return persisted;
+    noteTidied(tidied);
+    return { ...p, ledger };
   } catch {
     return persisted;
   }

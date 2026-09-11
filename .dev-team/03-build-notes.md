@@ -2766,3 +2766,18 @@ Run on darwin 25.6 on 2026-09-11. Counts read from each tool's summary lines.
 | `npm test`, every file including the tester's v3, v4 and v5 | **848 passed / 848**. Every tester case passes, the cycle 5 DEFECT cases included. |
 | e2e, the 11 committed specs, 4 projects | **368 passed, 28 skipped, 0 failed, 0 flaky** (13.4 min), with the new V2-26 and V2-28 cases |
 | `npm run test:db` | not re-run: nothing under `api/` or `db/` changed |
+
+## Cycle 6 fix, 2026-09-11: V2-30
+
+The tester's cycle 6 pass found V2-26 to V2-29 fixed, including every item on the re-check list
+above, and called the build SHIP. It filed one Minor defect, which was a gap in my V2-27 fix.
+
+- **V2-30.** `migratePersisted` wrapped the whole ledger in one try/catch, and `tidyLedger` maps
+  the rows, so the first row it could not read aborted the pass and every other row, including
+  ones that needed tidying, was left as it was. It now tidies one row at a time: a row it cannot
+  read is kept exactly as stored, and the rest are still tidied and counted. Committed unit case
+  in `cycle3-fixes.test.ts`: an unreadable row next to a 30% bond row comes back unchanged while
+  the bond row loses its rate.
+- **The tester's AUDIT case for V2-30** in `tests/unit/tester-v6-cycle6.test.ts` asserts the old
+  behavior (0 of 2 rows tidied), so it now fails because the defect is gone. It is the tester's
+  file; the tester updates it.

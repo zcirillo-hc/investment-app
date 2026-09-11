@@ -3268,3 +3268,11 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
 - Impact on downstream: the tester's cycle 5 DEFECT cases for V2-26 to V2-28 assert the fixed
   behavior, so they should now pass. R16.8's load path and the chips outside the edit
   form now have committed tests (`cycle3-fixes.test.ts`, `v2-loop.spec.ts`).
+
+### Cycle 6 fix, 2026-09-11: V2-30
+
+- Changed: `migratePersisted` tidies one row at a time, so a row it cannot read is kept exactly
+  as stored and no longer stops every other row from being tidied (V2-30, Minor: the cycle 5
+  try/catch wrapped the whole ledger, so one unreadable row cancelled the tidy for all of them).
+- Because: tester cycle 6, which otherwise found V2-26 to V2-29 fixed and called the build SHIP.
+- Impact on downstream: a committed unit case in `cycle3-fixes.test.ts`; nothing else changes.

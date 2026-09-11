@@ -51,8 +51,8 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 
 ```
 npm run dev          vite dev server, http://localhost:5173
-npm test             vitest, unit  (723 committed, all passing)
-npm run test:db      vitest against real Neon, isolated schema  (93 passing)
+npm test             vitest, unit  (868, tester files included, all passing)
+npm run test:db      vitest against real Neon, isolated schema  (96 passing)
 npm run e2e          playwright, 4 viewport profiles  (15 min to over an hour)
 npm run typecheck    full tsc, includes tests and scripts
 npm run build        tsc -p tsconfig.build.json && vite build
@@ -200,16 +200,19 @@ This project runs through a four-agent pipeline (Architect, Coder, Tester, Manag
 
 v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habit nudges. The pivot deleted the entire simulated market.
 
+Tester files (`tests/**/tester-*`) are the tester's to write and edit, never the coder's. When the coder's fix makes a tester case fail on purpose, the tester updates it. Once every case in a tester file passes, the file is committed and becomes part of every gate (owner decision, 2026-09-11).
+
 ---
 
 ## 10. Current state
 
-Green as of 2026-09-11, after the cycle 5 fixes: 723 unit, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build, axe clean in both themes at four viewports. End-to-end on the 11 committed specs: 368 passed, 28 skipped, 0 failed, 0 flaky across mobile, desktop, iPhone Pro and Pro Max. The db suite (93 committed) was last run by the tester on 2026-09-11; cycles 3 and 4 did not touch `api/` or `db/`.
+Green as of 2026-09-11, after the cycle 5 fixes: 723 unit, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build, axe clean in both themes at four viewports. End-to-end on the 11 committed specs: 368 passed, 28 skipped, 0 failed, 0 flaky across mobile, desktop, iPhone Pro and Pro Max. The db suite: 96 passed on 2026-09-11, the tester's backend file included; no cycle since 3 has touched `api/` or `db/`.
 
 The e2e figures reported for `0ab8031`, `352d618` and `01a134b` ("0 failed") were wrong: four committed specs were failing and the reports were read from the end of the log. See gotcha 9. The four specs were fixed in `563fbb1`.
 
 **Known open items:**
-- The tester's cycle 5 pass (2026-09-11) confirmed V2-20 to V2-25 and the toast fixed, and filed V2-26 (Major: the jar move form showed the type chips, a length and a rate, then saved none of them) and V2-27 to V2-29 (Minor). All four were fixed the same day and need a tester re-verification pass. The tester reconciled its v3 and v4 cases to the owner's decisions, and every tester case (v3, v4, v5) now passes. The tester files are still uncommitted: whether to commit them, as was done with `tester-v2-*`, is the owner's call and has not been made.
+- The tester's cycle 6 pass (2026-09-11) found V2-26 to V2-29 fixed and called the build SHIP. It filed one Minor, V2-30 (the load-time tidy stopped at the first row it could not read), fixed the same day. The tester files for cycles 3 to 6 (`tester-v3-*` to `tester-v6-*`) were committed on 2026-09-11 at the owner's request, so they are part of every gate from then on.
+- `tests/e2e/push-delivery.spec.ts:198` is intermittently flaky on the mobile project: it failed first and passed on retry in two tester runs on 2026-09-11, and passed first time in two coder runs. No change touched push code. A follow-up task to find the race was offered to the owner.
 - Four tests in `tests/unit/tester-v2-import-impact.test.ts` were inverted on 2026-09-09: they originally asserted the import validator wrongly ACCEPTED four bad shapes, in order to demonstrate the damage. The validator now rejects all four, so they assert rejection instead. Coverage preserved, intent unchanged.
 - Never tested: a real iPhone, real Safari, WebKit, Firefox, screen readers, and an actual push notification arriving on a physical phone.
 - The cron has never been observed firing on its real daily schedule in production.

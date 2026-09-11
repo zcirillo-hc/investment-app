@@ -1296,3 +1296,155 @@ v3 and v4 now and v5 after those fixes. V2-29 has only a RECORD case, which does
 npx vitest run tests/unit/tester-v3-cycle3.test.ts tests/unit/tester-v4-cycle4.test.ts tests/unit/tester-v5-cycle5.test.ts   # 1 fails = V2-27
 npx playwright test tests/e2e/tester-v3-cycle3.spec.ts tests/e2e/tester-v4-cycle4.spec.ts tests/e2e/tester-v5-cycle5.spec.ts --project=mobile --retries=0   # 3 fail = V2-26, V2-27, V2-28
 ```
+
+## Cycle 6, 2026-09-11: re-verification of V2-26 to V2-29 (64d619b)
+
+Machine: darwin 25.6, Node 24, Playwright Chromium (headless shell 1243). Scope: re-ran my own
+cycle 5 repros against 64d619b and worked the build notes' "What the tester should re-check"
+list item by item, then probed the immediate neighbourhood of each fix. This was a focused
+re-verification, not a full sweep; the plan-vs-build audit and the copy desk gate were out of
+scope this pass.
+
+### Verdict
+
+**SHIP.** V2-26, V2-28 and V2-29 are fixed with no residue found anywhere I looked, including
+every item on the re-check list. V2-27 is fixed for its stated purpose (a throw in the load-time
+migrate can no longer wipe a profile) and holds on every re-check shape (ledger not an array, a
+null row, a row whose `holdingType` is a number). Looking one layer past the re-check list found
+one new Minor defect in the same code (V2-30): the fix's safety net is envelope-wide rather than
+per-row, so one unreadable row silently blocks tidying of every other row in the same ledger,
+forever. It needs the same hand-corrupted precondition V2-27 itself needed and costs no data,
+only precision, which is why it does not change the ship call.
+
+**New defects: 0 Critical, 0 Major, 1 Minor (V2-30).**
+
+### V2-26 to V2-29, re-verified against my cycle 5 repros and the re-check list
+
+| id | ruling | evidence, this pass |
+|---|---|---|
+| V2-26 | **FIXED, including both re-check cases** | `Home.tsx:319` now passes `holdingType`, `termMonths` and `yieldBps` from the jar move draft to `moveJarToLedger`. Domain: a jar move drafted as a CD stores `holdingType: "bondsCds", termMonths, yieldBps`; drafted as Individual stocks stores `holdingType: "stocks"` with neither key present (not `null`, not missing-but-implied: the key is absent, exactly as `makeEntry` only spreads a defined value). **Re-check, Something else + a typed name:** stores `holdingType: "other"` and the typed name; on screen (`tester-v6-cycle6.spec.ts`) the row shows the typed name, no maturity line and, by the app's own by-design rule for "other" rows, no type pill either (Invest.tsx's own comment: an "other" row's name is always the user's own, so the pill that disambiguates a renamed CD does not apply); opening it for edit shows the "Something else" chip pressed and every other chip unpressed. **Re-check, no type picked at all:** stores no `holdingType` key at all (verified it is absent, not `""` or `null`); on screen no chip is pressed on a later edit. |
+| V2-27 | **FIXED for the wipe; opened V2-30** | `migratePersisted` never throws: a version 1 ledger is tidied once (unchanged from cycle 5), a version 2 envelope comes back as the same object, and a row it cannot read returns the envelope exactly as stored. **Re-check, ledger not an array** (`ledger: "not-an-array"`): `Array.isArray` guard trips first, returns the envelope unchanged, no throw. **Re-check, a null row** (`ledger: [bondRow(), null]`): `isBondRow(null)` throws inside `tidyLedger`, caught by `migratePersisted`'s try/catch, envelope unchanged, no throw escapes. **Re-check, a row whose `holdingType` is a number:** does not throw; `isBondRow` compares `5 === "bondsCds"`, false, so the row is treated as non-bond and its term/rate are tidied away; the bad-typed value itself passes through unchanged (`HOLDING_TYPES.find` degrades to `undefined` downstream, so this renders safely as untyped, not a crash). All three confirmed in `tester-v6-cycle6.test.ts`, 8 cases. |
+| V2-28 | **FIXED, plus one neighbour case** | `errLabelTooLong` shows on the row (`invest-capture-label-error-other`) the moment the trimmed label exceeds 60 characters, and Save stays disabled. Neighbour, not on the re-check list: a label 61 characters AND an amount over the cap on the same row show **both** errors at once and Save stays off; fixing the label alone (61 to 60 chars) clears that error and re-enables Save with no page reload needed. `tester-v6-cycle6.spec.ts`, 2 cases. |
+| V2-29 | **FIXED, including both re-check keys** | **Re-check, section `"constructor"`:** `S.settings.importInvalid('constructor')` returns the generic "one part of it" phrase, not `Object.prototype.constructor` or anything derived from it (`Object.prototype.hasOwnProperty.call` in `importPart` is the guard). **Re-check, section `"__proto__"`:** same fallback; `IMPORT_PARTS` is a plain object literal, so `IMPORT_PARTS.__proto__` never became an own property and `hasOwnProperty` correctly says no. Also tried `toString`, `hasOwnProperty`, `valueOf`, `isPrototypeOf`, `propertyIsEnumerable`: all five fall back safely. Every one of the 16 real section keys the validator can actually produce maps to its own words, not the fallback. End to end, on the real Settings screen (`tester-v6-cycle6.spec.ts`): exported a real profile, planted `ledger[0].termMonths = "DROP TABLE users;--"`, re-imported through the actual hidden file input; the shown message is exactly "That looks like a Spare Change export, but an investment entry did not pass the app's checks, so nothing changed." with none of `DROP TABLE`, `termMonths`, `led:` or a bracketed array index anywhere in it. **Note, not a defect:** neither re-check key is reachable through `parseImport` today. `validateImportedState`'s dynamic, user-controlled key paths (`lessons.<key>`, `learn.<key>`, `learnSurfaces.<key>`) always carry a dot before the user's key, so the leading-letters regex that derives `section` stops at the dot and never returns a bare `constructor` or `__proto__`; a top-level extraneous key of either name is simply ignored by the schema and, if anything else is missing, is refused with `importBad` (every problem ends `: missing`, so `looksLikeExport` is false) rather than `importInvalid`. Confirmed both ways in `tester-v6-cycle6.test.ts`. The defensive lookup is real hardening, just not load-bearing on any path I could find. |
+
+### New defect
+
+#### V2-30. Minor (same "no realistic trigger found" precondition as V2-27; costs precision, not data). `migratePersisted`'s safety net is whole-envelope, not per-row: one unreadable row blocks tidying of every other row in the ledger too, silently and permanently
+
+- **What breaks:** `tidyLedger` builds its tidied array with `Array.prototype.map`. If the
+  callback throws on any one row (an `isBondRow` call reading a property of `null`, or `.trim()`
+  on a non-string `what`), `map` does not return the rows it already processed; it throws, and
+  the throw propagates out of `tidyLedger` entirely. `migratePersisted`'s try/catch, which V2-27
+  added specifically so a throw could never reach zustand's unguarded write, catches this at the
+  whole-envelope level and returns the **entire stored state unchanged** — including every good
+  row that should have been tidied.
+- **Repro:** `npx vitest run tests/unit/tester-v6-cycle6.test.ts -t "one unreadable row blocks tidying"`.
+  Plant a version 1 ledger with two rows: row 1 is a bond row carrying a stale 30% rate
+  (`yieldBps: 3000`, over the current 2500 ceiling and exactly the shape R16.8/V2-21 says should
+  be tidied away on load), row 2 is `{ id: 'led:2', what: 42 }` (a row with no readable `what`,
+  the same unreadable shape the committed `cycle3-fixes.test.ts` already uses for its own V2-27
+  case). Call `migratePersisted(envelope, 1)`.
+- **Observed:** the returned object `=== ` the input object (`toBe`, not `toEqual`): nothing was
+  tidied. Row 1 still carries `yieldBps: 3000`, a value R16.8 says a build with today's rules
+  would never accept and should have removed on load.
+- **Expected (per R16.8's own wording, "a term or rate ... is removed from **that row**"):**
+  row 1's stale rate is removed and the user is told one row changed; row 2, being unreadable,
+  is either skipped on its own or (per V2-27's already-accepted trade-off) left exactly as
+  stored, but row 1's fate should not depend on row 2's shape.
+- **Violates:** R16.8's "removed from that row" language, which reads as per-row, not
+  per-ledger; and, less directly, R16.8's promise that a tidied user is "told once how many rows
+  changed" — with this shape they are never told anything, because `noteTidied` is never reached.
+- **Why Minor, not worse:** it needs the exact same precondition V2-27 itself needed — a row a
+  real build never writes (no `what` at all, or a non-object row) — so the same "no realistic
+  trigger found" note applies. Unlike V2-27, nothing is lost: amounts, names and every other
+  field of every row, including the untidied one, survive intact forever. The cost is that a
+  user who is unlucky enough to also have one corrupted row never gets R16.8's tidy, on that row
+  or any other, and the app cannot tell them why, because it does not know either. The fix is
+  inside `tidyLedger`: wrap the per-row work so one row's exception is caught and that row is
+  left alone, rather than letting `Array.prototype.map` abort the whole pass.
+- **Not reachable via import:** `validateImportedState` runs full schema checks (`c.str(v.what, ...)`
+  etc.) on every ledger row before ever calling `tidyLedger`, so a row shaped like the repro above
+  is refused outright on import, long before it could reach the same unguarded `.map`. This is a
+  load-path-only finding, exactly like V2-27 was.
+
+### Tester file correction
+
+`tests/e2e/tester-v5-cycle5.spec.ts`, the "a stock row with a term and a rate imports..." case
+(line 321), asserted the **pre-V2-29** refusal shape: `/^refused: ... but part of it did not
+pass/` and `msg2.includes('ledger[')`. That is exactly the message V2-29 was written to remove,
+so on 64d619b it failed (observed: `msg2: false`). This is not a new defect; it is a cycle 5 test
+that predates the cycle 5 fix it was bundled next to. Reconciled in place (inverted the assertion
+to require the old shape's absence and the new shape's presence, both confirmed against the real
+screen: `"refused: That looks like a Spare Change export, but an investment entry did not pass
+the app's checks, so nothing changed."`), retitled with a `(cycle 6: reconciled to V2-29)` tag,
+and re-run green on mobile and desktop. No other case in tester-v3, v4 or v5 needed a change.
+
+### Tester cases this cycle (uncommitted)
+
+| file | cases | state |
+|---|---|---|
+| `tests/unit/tester-v6-cycle6.test.ts` | 19 | all pass |
+| `tests/e2e/tester-v6-cycle6.spec.ts` | 5 | all pass (mobile and desktop) |
+
+**Every case in tester-v3, v4 and v5 now passes, with no DEFECT case left red:** the four cases
+that failed on purpose in cycle 5 (V2-26, V2-27, V2-28 in `tester-v5-cycle5.spec.ts`, V2-27 in
+`tester-v5-cycle5.test.ts`) now pass unedited, exactly as the build notes predicted, and the one
+stale assertion found above is fixed. Ready to commit as-is: v3 (13 e2e + 43 unit), v4 (8 e2e +
+71 unit), v5 (12 e2e + 11 unit, one line corrected), plus this cycle's v6 (5 e2e + 19 unit) if the
+owner wants this cycle's re-check coverage kept too.
+
+```bash
+npx vitest run tests/unit/tester-v3-cycle3.test.ts tests/unit/tester-v4-cycle4.test.ts tests/unit/tester-v5-cycle5.test.ts tests/unit/tester-v6-cycle6.test.ts   # 0 fail
+npx playwright test tests/e2e/tester-v3-cycle3.spec.ts tests/e2e/tester-v4-cycle4.spec.ts tests/e2e/tester-v5-cycle5.spec.ts tests/e2e/tester-v6-cycle6.spec.ts --project=mobile --retries=0   # 0 fail
+```
+
+### What held (this cycle's re-checks, beyond V2-26 to V2-29 themselves)
+
+- The add and edit ledger forms are untouched by this commit and still save every field
+  (confirmed by reading `Invest.tsx`'s `onSave` callsites: both pass the whole `draft` object
+  through, unlike the jar move form before V2-26).
+- `HOLDING_TYPES.find` degrades safely (`undefined`, no throw) for a `holdingType` that is not
+  one of the six real keys, whatever its type, on both the read side (Invest's pill, LedgerForm's
+  chip highlighting) and the tidy side (`isBondRow`).
+- A `schemaVersion` mismatch or a file missing every required key never reaches `importInvalid`
+  at all: `looksLikeExport` is false for both, so the UI shows the generic `importBad` instead,
+  which cannot leak anything because it takes no argument.
+
+### Gate counts, observed this pass
+
+Read from each tool's summary lines. For Playwright, the "N passed / failed / flaky" lines, never
+the log tail (gotcha 9).
+
+| gate | result |
+|---|---|
+| `npm test` (every `.test.ts` under `tests/unit`, committed plus every tester file) | **38 files, 867 passed, 867 total.** 723 committed + 144 tester (43 v3 + 71 v4 + 11 v5 + 19 v6, this cycle's new file), 0 failed. |
+| `npm run typecheck` | clean, exit 0, tester-v6-cycle6.test.ts included |
+| `npm run lint:copy` | ok, 104 files scanned |
+| `npm run lint:advice` | ok, 89 files scanned |
+| `npm run rules:check` | ok, 30 arithmetic rules, 111 cases, 30 rules covered |
+| `npm run build` | exit 0: `tsc -p tsconfig.build.json && vite build` in 1.32s, `check-bundle-secrets` ok (14 files) |
+| `npm run test:db` | not re-run: nothing under `api/` or `db/` changed this commit (same call as cycle 5) |
+| e2e, the 11 committed specs, 4 projects, default retries | **367 passed, 1 flaky, 28 skipped, no `failed` line** (17.2 min). The flaky one is again `push-delivery.spec.ts:198` on mobile, the exact same test cycle 5 flagged as flaky and unrelated to this commit (nothing under `api/`, `src/lib/push.ts` or `public/sw.js` changed in 64d619b either). Failed once (`Timeout 15000ms exceeded` waiting for one notification), passed on retry. |
+| e2e, tester v3 + v4 + v5, mobile, retries 0 | **33 tests, 33 passed, 0 failed.** All four cycle 5 DEFECT cases (V2-26, V2-27, V2-28 in the spec file) are green with no edit, as the build notes predicted. |
+| e2e, tester v3 + v4 + v5, desktop, retries 0 | **33 tests, 33 passed, 0 failed.** |
+| e2e, tester v6, mobile and desktop, retries 0 | **5 tests each, 10 passed, 0 failed.** |
+
+### What I could not test
+
+Same boundary as cycle 5: a real iPhone, Safari, WebKit, Firefox, screen readers, a real push
+notification arriving, and the cron on its real schedule. This was a focused re-verification of
+one commit, not a full sweep: I did not re-walk the whole plan-vs-build audit, re-run the copy
+desk gate, or re-check production against this commit's bundle hash.
+
+### V2-30 fixed (re-verified, uncommitted coder change to `migratePersisted`)
+
+`migratePersisted` now tidies one ledger row at a time (`p.ledger.map` with a per-row try/catch)
+instead of handing the whole array to `tidyLedger` in one shot, so a single unreadable row can no
+longer block the tidy of every other row. Confirmed directly: a ledger with a bond row carrying a
+stale `yieldBps: 3000` next to an unreadable `{ id: 'led:2', what: 42 }` row now comes back with
+the bond row's rate dropped (other fields intact) and the unreadable row returned as the identical
+object, no throw. The old case ("AUDIT: one unreadable row blocks tidying of every OTHER row...",
+`tests/unit/tester-v6-cycle6.test.ts` ~line 137) asserted the pre-fix `0 of 2 tidied` behavior and
+is retitled "V2-30 regression guard" with the assertions flipped to the fixed behavior; no other
+case in the file was touched. `npx vitest run tests/unit/tester-v6-cycle6.test.ts`: 19 passed, 19
+total, 0 failed.

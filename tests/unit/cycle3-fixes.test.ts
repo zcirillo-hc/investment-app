@@ -200,6 +200,14 @@ describe('R16.8 on load: migratePersisted (persist version 2), and V2-27', () =>
     const p = { ...onboarded(), ledger: [bondRow({ yieldBps: 3000 })] };
     expect(migratePersisted(p, 2)).toBe(p);
   });
+  it('still tidies every readable row when another row cannot be read (V2-30)', () => {
+    const unreadable = { id: 'led:9', what: 42 };
+    const p = { ...onboarded(), ledger: [unreadable, bondRow({ yieldBps: 3000 })] };
+    const out = migratePersisted(p, 1) as { ledger: unknown[] };
+    expect(out.ledger[0]).toBe(unreadable);
+    expect('yieldBps' in (out.ledger[1] as object)).toBe(false);
+    expect(out.ledger[1]).toMatchObject({ termMonths: 12, amountCents: 100000 });
+  });
   it('never throws on a row it cannot read, and hands the state back unchanged', () => {
     const p = { ...onboarded(), ledger: [{ id: 'led:1', what: 42 }] };
     expect(() => migratePersisted(p, 1)).not.toThrow();
