@@ -1052,3 +1052,247 @@ All confirmed by running them; none exists in shipped copy.
 npx vitest run tests/unit/tester-v3-cycle3.test.ts tests/unit/tester-v4-cycle4.test.ts   # 5 fail = V2-21, V2-22 x2, V2-23, V2-25
 npx playwright test tests/e2e/tester-v3-cycle3.spec.ts tests/e2e/tester-v4-cycle4.spec.ts --project=mobile --retries=0   # 6 fail = V2-20 to V2-24
 ```
+
+## Cycle 5, 2026-09-11: re-verification of V2-20 to V2-25 and the toast (e7bb37f)
+
+Machine: darwin 25.6, Node 24, Playwright Chromium (headless shell 1243), one worker. Scope:
+`57c7330..e7bb37f`, re-run against the code and the running app, not the commit message, and
+walked through the build notes' "What the tester should re-check" list item by item.
+
+### Verdict
+
+**SHIP WITH RISK.** The V2-20, V2-21, V2-22, V2-24 and V2-25 fixes and the toast fix hold in the
+code and on screen. V2-23 holds in two of its three forms. The load-path tidy the owner asked for
+works through IndexedDB and through the mirror, and says so once. But the fixes opened one Major
+defect, and it is live: production serves `assets/index-sX1V4cLs.js`, the exact bundle
+`npm run build` emits at e7bb37f. **V2-26:** the jar move form on Home shows the new type chips and
+a length and a rate, validates them, and then saves none of them. Moving the jar is how kept money
+leaves it, so V2-23's decision is silently undone on the product's main path. The fix is one call
+site. The second risk is V2-27. The new migrate added a way to throw in front of zustand's
+unguarded write, and any throw there turns into a total wipe of the user's data. I found no trigger
+a real build can produce, which is why it is Minor, but the consequence is the worst in this report.
+
+**New defects: 0 Critical, 1 Major, 3 Minor.**
+
+### V2-20 to V2-25 and the toast, re-verified
+
+| id | ruling | evidence, this pass |
+|---|---|---|
+| V2-20 | **FIXED; a sibling remains (V2-28)** | E2e: Broad index fund $10 plus Bonds or CDs $2,000,000 disables Save and shows `S.invest.errAmountTooLarge` on that row; nothing is written (my cycle 4 case, now green, and the coder's v2-loop case). A double tap on Save writes one row. Code: `save` runs `validateDraft` on every row before any `addLedgerEntry`, with the same current date `addLedgerEntry` uses, so the pre-check and the write cannot disagree; the partial-write branch is unreachable as claimed. The build notes' re-check item, a Something else label that is too long, never reaches that path: `rowReady` disables Save first and nothing says why (V2-28). |
+| V2-21 | **FIXED on both load paths and on import; opened V2-27** | Load, IndexedDB: a version 1 envelope holding a 30% bond row, a stock row with 360 months at 10% and a good untyped bond row loads with only the 30% rate and the stock row's term and rate removed; amounts, names, dates and every other part of the envelope are byte-identical (unit deep-equal); the envelope is rewritten at version 2; the toast reads "2 entries had a length or a rate..." and, at 320 px, sits at x=16, width 288; a second load says nothing; the old symptom is gone (the note edit that was refused now saves). Load, localStorage mirror: a version 1 mirror newer than IndexedDB wins, is tidied, the notice says "One entry...", and both IndexedDB and the mirror end at version 2. Import: the stock-row file imports with both fields removed, the notice shows once, no line renders, and a second load is silent; a string term is refused with "That looks like a Spare Change export, but part of it did not pass the app's checks... What it found: ledger[0].termMonths: expected a number of months". 4,284 import variants (17 numeric extremes including -0, 1e21, 2^53, Number.MAX_VALUE and JSON `1e400`, 7 type paths, 2 amounts) produce 0 absurd lines, remove 0 usable values, and leave 0 terms or rates on a non-bond row. A throw inside the new migrate wipes the profile (V2-27). |
+| V2-22 | **FIXED** | "You have $4.35 set aside right now."; after "I spent it", "Nothing set aside right now. The next skip starts this line..."; the note names the jar. My two cycle 4 cases are green on screen and in unit. |
+| V2-23 | **FIXED in the add and edit forms; NOT in the jar move form (V2-26)** | Edit: a renamed CD keeps its line and Invest shows "Bonds or CDs" beside "Individual stock" (by decision); picking Individual stocks clears the term and rate keys. Add: the name follows a chip only while empty or still the previous chip's label (sequence Bonds or CDs, Crypto, typed "My coins" kept, Individual stocks, "" for Something else, Cash savings, Bonds or CDs), and the picked type, 12 months and 450 bps are stored. Legacy row "Bonds or CDs" with no stored type, planted as version 1: no notice (nothing to tidy), opens with the Bonds or CDs chip pressed, prefilled "12" and "4.50", a note edit keeps the rate, the row is stamped `bondsCds`, the line stays, and no type pill shows. The jar move form shows the same chips, length and rate and throws all of them away (V2-26). At 320 px all six chips are at least 44 x 44 and on screen in all three forms; axe is clean in both themes with a chip picked in each form. |
+| V2-24 | **FIXED** | "Nothing in the jar right now. Skips and paycheck catches land here." Both are true: `takeSkip` and `acceptCatch` (`addToJar`) are the only jar credits. |
+| V2-25 | **FIXED** | Unit: a stocks row given a draft labelled "Bonds or CDs" with a term is refused `notBond`; a bond row can still change its term. |
+| Toast | **FIXED** | At 320 px the long tidy notice is fully on screen (x=16, width 288, height 124). The coder's v2-loop case checks the position at every viewport. |
+
+### New defects
+
+#### V2-26. Major. The jar move form offers the six type chips and a length and a rate, and the save throws all of them away
+
+- **What breaks:** `Home.tsx:319` passes only `{ date, what, note }` to `moveJarToLedger`, so the
+  `holdingType`, `termMonths` and `yieldBps` that `LedgerForm` puts in the draft never reach the
+  store. The form validates the length and rate, accepts them, closes, and stores neither.
+- **Repro:** `npx playwright test tests/e2e/tester-v5-cycle5.spec.ts --project=mobile -g "jar move form on Home"`.
+  By hand: make a habit, skip once (jar $4.35), Home > "I moved this into an investment", tap
+  Bonds or CDs (the name fills "Bonds or CDs" and Length and Rate appear), enter 12 and 4.5, Save.
+  Next day, skip again, move the jar, tap Individual stocks, type "My brokerage", Save.
+- **Observed:** stored `{"id":"led:1","amountCents":435,"what":"Bonds or CDs","source":"jar"}` with no
+  `holdingType`, no `termMonths`, no `yieldBps`; Invest shows no maturity line. The second move is
+  stored `{"what":"My brokerage","source":"jar"}` with no `holdingType`, so Invest shows no type
+  beside it and its edit form opens with no chip picked.
+- **Expected:** the stored row carries `holdingType: "bondsCds", termMonths: 12, yieldBps: 450`, and
+  `holdingType: "stocks"` on the second; Invest shows the line and the "Individual stocks" pill.
+- **Violates:** R16.5 ("The type is picked from the six types in the ledger form"), R6.4 (the jar
+  move "Opens the ledger form"), R16.7's principle that a typed value is refused or kept, never
+  dropped, and the build notes' own claim that "The type chips appear in all three ledger forms
+  (add, edit, and the jar move on Home) ... so a new entry can carry a type from the start."
+- **Why Major, not Critical:** amount, date, name and source are stored correctly and no money is
+  wrong. What is lost silently is what the user typed about it, on the one path by which kept
+  money leaves the jar. `moveJarToLedger` in the domain accepts all three fields; the fix is the
+  call site. The committed v2-loop V2-23 case covers only the edit form, which is why no gate saw it.
+
+#### V2-27. Minor (no realistic trigger found; the consequence is total loss). A throw inside the new persist migrate boots the app as a brand new user, and the first state change overwrites everything stored
+
+- **What breaks:** `store.ts` `migrate` calls `tidyLedger`, which calls `isBondRow(e)` on every row and
+  reads `e.what.trim()` on rows with no type. A row it cannot read throws. zustand 4.5.7 catches
+  the throw, `onRehydrateStorage` still sets `hydrated`, the store keeps its initial state, and
+  zustand's `setState` wrapper persists on every change with no hydration guard.
+- **Repro:** unit `npx vitest run tests/unit/tester-v5-cycle5.test.ts -t "migrate cannot read"`; e2e
+  `-g "migrate cannot read"`. Plant a version 1 envelope whose ledger holds one row without `what`.
+- **Observed:** unit: the same envelope at version 2 loads "Sam"; at version 1 the app boots as
+  `{name:"", onboarded:false}`, and one theme tap stores `events 0, ledger 0, dayIndex 0` over
+  `events 10, ledger 1, dayIndex 3`. E2e: boots to Welcome; after the first Welcome step storage
+  holds `onboarded:false, events 0, visits 0, dayIndex 0` where it held `onboarded:true, events 10,
+  visits 9, dayIndex 3`. Nothing is logged.
+- **Expected:** the migrate never throws (a row it cannot read is left as it is), or a failed
+  hydration never lets a write through.
+- **Why Minor:** no build writes a row without a string `what`, so the trigger is corruption or a
+  hand edit. Before e7bb37f the migrate was the identity and the same envelope loaded. The new
+  migrate added a throw site in front of an unguarded write, and the cost of any future throw
+  there is every byte of the user's data. A try/catch in `migrate` that returns `p` closes it.
+
+#### V2-28. Minor (pre-existing; the V2-20 fix did not reach it). A Something else label over 60 characters disables Save and nothing on screen says why
+
+- **Repro:** e2e `-g "one character too long"`. Capture: Broad index fund $10, Something else $5,
+  label of 61 characters (the input's `maxLength` is 61, so it types).
+- **Observed:** `saveEnabled=false`, `role="alert"` elements on screen: none, ledger 0.
+- **Expected:** the row says why, as V2-20 now does for an amount over the cap
+  (`S.capture.errLabelTooLong` exists and is only reachable from a Save that cannot be pressed).
+- **Violates:** the capture's own contract that a row that is not ready "blocks the save rather than
+  being silently dropped", with a reason; the build notes' re-check item, which says this case
+  "takes the same check-first path". It never reaches `save`.
+
+#### V2-29. Minor. An import refusal quotes the validator's internal problem string to the user, including text taken from the file
+
+- **Repro:** unit `-t "refusal message for each kind"`; e2e `-g "string term is refused"`.
+- **Observed:** "... What it found: ledger[0].termMonths: expected a number of months". For a file
+  with an unknown Learn key, the key itself: "... What it found: learn.Buy NVDA now, it will double
+  by spring: unknown learn id".
+- **Violates:** CLAUDE.md section 7 (all UI copy lives in `strings.ts`): this sentence tail comes
+  from `validate.ts` and from the file, so `lint:copy` and `lint:advice` never see it; the voice
+  rule (a zero-based array path is not how a friend a year ahead talks). The advice text in the
+  example is shown inside the app's own sentence.
+- **Why Minor:** it needs a damaged or hand-edited file, and it is the user's own file.
+
+### The conflicting cases, reconciled
+
+Each case below encoded behavior the owner changed on purpose on 2026-09-11. None of them is a
+defect in the new code, so I rewrote each one to the decision, kept the inputs, and marked the
+rewrite inline. I am not arguing against either decision. The one defect around the V2-23 decision
+is in how it was built (V2-26), not in the decision itself.
+
+1. **`tester-v3-cycle3.test.ts`, "import rejects every present-but-unusable term or rate".** It
+   encoded R16.2's old import rule. Now "R16.8: import removes every present number the rules cannot
+   use and keeps the row, still refuses every non-number, and accepts the ceilings untouched". The
+   same 12 inputs: the 8 numbers (601, 0, -12, 12.5 months; 2501, 5001, 0, 4.5 bps) import with
+   `tidied 1`. The field is removed, and amount, name, date and the other field are unchanged. The
+   4 non-numbers ("12", null, "450", null) are refused with the field's path. The ceilings import
+   with `tidied 0`. Green.
+2. **`tester-v3-cycle3.test.ts`, "DEFECT (import only): a CD rate and term on an Individual stocks
+   row".** Now "V2-12 regression under R16.8". The file imports, `tidied 1`, and the term and rate
+   are gone, so no line can render. The symptom V2-12 was about stays impossible. Green.
+3. **`tester-v3-cycle3.test.ts`, control "You have kept $4.35 so far."** It pinned the copy my own
+   V2-22 asked to change. Now it expects "You have $4.35 set aside right now." Green.
+4. **`tester-v4-cycle4.test.ts`, the V2-23 relabel DEFECT.** It is now the decision: the renamed CD
+   keeps its $17,449.40 figure, and Invest's pill condition holds ("Bonds or CDs" beside "Individual
+   stock"). The form's draft for picking Individual stocks (`holdingType: "stocks"`, both `null`)
+   removes both keys and the line. I accept the decision: the pill means the row can no longer pass
+   for a stock, which was the harm V2-23 described. Green.
+5. **`tester-v3-cycle3.spec.ts`, the stock-row import.** This is the e2e twin of 1 and 2. The file
+   imports, "One entry had a length or a rate..." shows, the row is kept without either field, and
+   no line renders. The bond control is unchanged ($17,449.40). Green.
+6. **`tester-v3-cycle3.spec.ts`, "DEFECT R10.4: moving the jar into an investment doubles Your
+   money".** This one was not on the coordinator's list. It asserted the old "You have kept"
+   sentence. The figure it guards (V2-9) is unchanged: $4.35 before and after the move. It now
+   expects V2-22's copy and is retitled "V2-9 regression". Green on mobile and desktop.
+7. **`tester-v4-cycle4.spec.ts`, the relabel DEFECT and the 30% plant.** The relabel test now asserts
+   the decision: the line stays, and "Bonds or CDs" shows beside "Individual stock". The 30% test
+   needed a correction to my harness, not to the assertion. My cycle 4 `plant()` copied the current
+   envelope's persist version, and since e7bb37f that is 2. A version 2 envelope holding a 30% row
+   is a state no build writes, so the migrate rightly skips it and the case would have kept failing
+   on an unreachable state. The plant now writes version 1, which is what the previous build wrote.
+   The case then passes as the V2-21 regression it is: tidied on load, the note edit saves, and the
+   app re-imports its own export.
+8. **Retitles.** Every cycle 4 DEFECT case that is now green is retitled as a regression guard, in
+   both v4 files. The v3 files keep their cycle 3 titles, with a header note that every DEFECT case
+   there is a green guard.
+
+### Plan-vs-build gaps
+
+- **R16.8's load path has no committed test.** `rule-index.json` says R16.8, "tidied on load and on
+  import", is "Covered by cycle3-fixes.test.ts (tidyLedger and the import path)". Nothing committed
+  drives `store.ts` `migrate`, `PERSIST_VERSION` or `takeTidyNotice`. The three committed tests that
+  mention a version 1 envelope are about v1 product files (A7). The owner's decision was "tidy on
+  load, say so", and the load half is covered only by my uncommitted `tester-v5-cycle5` files.
+- **Nothing committed covers the type chips outside the edit form.** The v2-loop V2-23 case opens
+  only the edit form, which is how V2-26 passed every gate.
+- **A truncated real export is still told "That file is not a Spare Change export."** R16.8 says an
+  import that fails any check "says what failed rather than claiming the file is not an export".
+  JSON that has been cut off fails the first check, and the app cannot know it was an export without
+  sniffing the text. Architect's call.
+- **The build notes' re-check list describes a path the code never takes** (V2-28).
+- **Closed since cycle 4:** R12.1 now says L1 unlocks on the first habit, and 8.7a no longer says "No
+  new ledger field". **Still open:** "sixteen" appears 22 times in the plan (the library is twenty),
+  R10.1 still says "from 19", and CLAUDE.md section 5 still calls habit detection R4.
+
+### Unverified concerns
+
+- **A corrupt envelope string likely takes V2-27's path too.** A `JSON.parse` failure inside
+  `createJSONStorage.getItem` rejects into the same zustand `.catch`, so the app would boot as a new
+  user and the first write would replace the data. I read this in zustand 4.5.7's source; I did not
+  run it. It predates this cycle.
+- **The tidy notice says how many rows changed, not which, for 6 seconds, once.** That is R16.8 as
+  written and it is built that way. A user with two such rows cannot tell afterwards which rates were
+  removed, and the values are gone. I am recording this for the architect, not filing it.
+- **An old build left open in another tab after a deploy keeps writing version 1 envelopes.** The
+  new build then tidies again and shows the notice again. Reasoned from the code, not run; harmless.
+
+### What held
+
+- **R16.8 on load:** both envelope sources, the IndexedDB record and the localStorage mirror, when
+  the mirror is newer. The envelope is rewritten at version 2, and a second load is silent. Every
+  part of the envelope except the ledger fields the rules cannot use comes back deep-equal. A
+  version 1 envelope that needs nothing leaves no notice.
+- **R16.8 on import:** 4,284 variants and 0 problems (see V2-21). Every non-number is refused with
+  the field named, and `tidyLedger` counts a row once and is idempotent. The app's own export of a
+  tidied state re-imports with nothing left to tidy.
+- **V2-23, as decided, in the add and edit forms:** the name fill follows the exact sequence, the
+  type is stored, a rename keeps the type, and picking another type clears both keys. The legacy
+  untyped bond row passes through a note edit. At 320 px all six chips are at least 44 x 44 and on
+  screen in all three forms, with no sideways scroll. **axe is clean** (0 serious, 0 critical) in
+  light and dark on the add form with Bonds or CDs and then Crypto picked, on the edit form with
+  Individual stocks picked, and on the jar move form with Bonds or CDs picked.
+- **V2-20:** Save is disabled with a reason on the row, nothing is written, and a double tap on Save
+  writes once.
+- **The toast** sits inside a 320 px screen with the longest message the app now shows.
+- **Everything from cycles 3 and 4** still passes on mobile and desktop: all 13 cycle 3 and 8 cycle 4
+  e2e tests, and all 43 and 71 unit cases.
+
+### Gate counts, observed this pass
+
+Read from each tool's summary lines. For Playwright, the "N passed / failed / flaky" lines, never
+the log tail (gotcha 9).
+
+| gate | result |
+|---|---|
+| `npm test` | 37 files, **845 tests: 844 passed, 1 failed.** All 720 committed pass (845 minus my 125). `tester-v3-cycle3` 43/43, `tester-v4-cycle4` 71/71, `tester-v5-cycle5` 10/11; the 1 is the V2-27 DEFECT case, failing on purpose. |
+| `npm run typecheck` | clean, exit 0, every tester file included |
+| `npm run build` | exit 0: lint:copy ok (104 files), lint:advice ok (89 files), rules:check ok (30 arithmetic rules, 111 cases, 30 rules covered), vite built in 1.43 s, check-bundle-secrets ok (14 files) |
+| `npm run test:db` | real Neon, isolated schema: **7 files, 96 passed** (93 committed + 3 `tester-v3-backend`), 27.9 s |
+| e2e, the 11 committed specs, 4 projects, retries 1 | 388 tests: **359 passed, 1 flaky, 28 skipped**; Playwright printed no `failed` line (15.2 min). The flaky one is `push-delivery.spec.ts:198` on mobile ("an unparseable payload, a wrong version and a wrong type each show one fallback"). It failed once in 16.9 s and passed on retry in 2.8 s. e7bb37f touched nothing under `api/`, `src/lib/push.ts` or `public/sw.js`. The coder's run had 360 passed and 0 flaky; this one retry is the whole difference. |
+| e2e, tester v3 + v4 + v5, mobile, retries 0 | 33 tests: **29 passed, 4 failed**. The 4 were the three DEFECT cases (V2-26, V2-27, V2-28) plus the v3 R10.4 case (reconciliation 6), whose fix landed after this run had loaded the file. Rerun of that case alone: **1 passed**. |
+| e2e, tester v3 + v4 + v5, desktop, retries 0 | 33 tests: **30 passed, 3 failed**, the same three DEFECT cases |
+| production | `sparechangeinvesting.vercel.app` serves `assets/index-sX1V4cLs.js`, identical to the local build of e7bb37f (fetched read only) |
+
+### What I could not test
+
+- A real iPhone, Safari or WebKit, Firefox, screen readers, a real push arriving, and the cron on its
+  real schedule. None of these was touched by this cycle, and none is covered here.
+- My three tester specs on the iphone-pro and iphone-pro-max projects. They ran on mobile (375 px
+  plus 320 px checks) and desktop only. The committed suite ran on all four projects.
+- Production beyond one read-only fetch of its `index.html` to learn which bundle it serves. I
+  read no user data there and wrote nothing.
+
+### Tester files this cycle (uncommitted)
+
+| file | cases | state |
+|---|---|---|
+| `tests/unit/tester-v3-cycle3.test.ts` | 43 | all pass (3 reconciled) |
+| `tests/unit/tester-v4-cycle4.test.ts` | 71 | all pass (1 reconciled, 4 retitled) |
+| `tests/unit/tester-v5-cycle5.test.ts` | 11 | 10 pass; 1 DEFECT fails on purpose (V2-27) |
+| `tests/e2e/tester-v3-cycle3.spec.ts` | 13 | all pass (2 reconciled) |
+| `tests/e2e/tester-v4-cycle4.spec.ts` | 8 | all pass (1 reconciled, plant fixed, 5 retitled) |
+| `tests/e2e/tester-v5-cycle5.spec.ts` | 12 | 9 pass; 3 DEFECT fail on purpose (V2-26, V2-27, V2-28) |
+| `tests/db/tester-v3-backend.test.ts` | 3 | pass (within 96) |
+| `tests/fixtures/tester-v3-lint-plants.ts`, `tester-v4-lint-plants.ts` | n/a | unchanged |
+
+**Ready to commit, as was done with tester-v2-\*:** all of v3 and v4 (unit, e2e, db, fixtures)
+pass today. The two v5 files pass except for their four DEFECT cases, which fail until V2-26, V2-27
+and V2-28 are fixed and then go green with no edit. If the owner wants a green commit today, commit
+v3 and v4 now and v5 after those fixes. V2-29 has only a RECORD case, which does not fail.
+
+```bash
+npx vitest run tests/unit/tester-v3-cycle3.test.ts tests/unit/tester-v4-cycle4.test.ts tests/unit/tester-v5-cycle5.test.ts   # 1 fails = V2-27
+npx playwright test tests/e2e/tester-v3-cycle3.spec.ts tests/e2e/tester-v4-cycle4.spec.ts tests/e2e/tester-v5-cycle5.spec.ts --project=mobile --retries=0   # 3 fail = V2-26, V2-27, V2-28
+```

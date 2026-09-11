@@ -2717,3 +2717,52 @@ Run on darwin 25.6 on 2026-09-11. Counts read from each tool's summary lines, no
 | `npm test` | **720 committed, all passing.** 834 run in total with the tester's uncommitted files; the 4 failures are all tester cases that encode behavior the owner changed, listed in the plan's Cycle 4 fixes log. |
 | e2e, the 11 committed specs, 4 projects | **360 passed, 28 skipped, 0 failed, 0 flaky** (13.0 min). Includes the three new v2-loop cases at every viewport. |
 | `npm run test:db` | not re-run: nothing under `api/` or `db/` changed. The tester ran it on 2026-09-11: 96 passed (93 committed). |
+
+## Cycle 5 fixes, 2026-09-11
+
+### A correction first
+
+The cycle 4 notes above say the type chips work "in all three ledger forms". They rendered in
+all three, but the jar move form's `onSave` on Home passed only the date, name and note to
+`moveJarToLedger`, so a picked type, length and rate were silently dropped. That shipped in
+e7bb37f and the tester filed it as V2-26, Major. I had checked the form, not what its caller
+saved, and no committed test covered the chips outside the edit form.
+
+### What changed
+
+- **V2-26.** Home passes `holdingType`, `termMonths` and `yieldBps` through to
+  `moveJarToLedger`. A v2-loop e2e case funds the jar with a skip, moves it as a CD with a
+  length and a rate, and checks the row is jar sourced and shows its maturity line.
+- **V2-27.** The migrate moved out of `store.ts` into `migratePersisted` in `persistence.ts`,
+  wrapped so that any throw returns the stored state unchanged. Unit cases: a version 1 ledger
+  is tidied once, a version 2 envelope comes back as the same object, and a row it cannot read
+  neither throws nor changes anything.
+- **V2-28.** A Something else label over the limit shows `errLabelTooLong` on its row. A
+  v2-loop e2e case.
+- **V2-29.** `parseImport` returns only the letters of the failing top level key, and
+  `importInvalid` maps that through a fixed list in `strings.ts`, with a generic phrase for
+  anything else. `importBad` now says "not a complete Spare Change export", which is also true
+  of a truncated file.
+
+### What the tester should re-check
+
+- **V2-29** with a file whose failing top level key is `constructor` or `__proto__`: the lookup
+  is own-property only, so both should get "one part of it".
+- **V2-27** with other unreadable version 1 shapes: `ledger` not an array, a `null` row, a row
+  whose `holdingType` is a number.
+- **V2-26** with Something else picked and a typed name, and with no type picked at all.
+
+### Real test results, this pass
+
+Run on darwin 25.6 on 2026-09-11. Counts read from each tool's summary lines.
+
+| gate | result |
+|---|---|
+| `npm run lint:copy` / `lint:advice` | **ok**, 104 and 89 files |
+| `npm run rules:check` | **ok**, 30 arithmetic rules, 111 cases |
+| `npm run typecheck` | **clean**, tester files included |
+| `npm run build` | **green**, bundle secret check ok (14 files) |
+| `npm test`, committed plus `cycle3-fixes` | **723 passed / 723** (the 3 new are the `migratePersisted` cases) |
+| `npm test`, every file including the tester's v3, v4 and v5 | **848 passed / 848**. Every tester case passes, the cycle 5 DEFECT cases included. |
+| e2e, the 11 committed specs, 4 projects | **368 passed, 28 skipped, 0 failed, 0 flaky** (13.4 min), with the new V2-26 and V2-28 cases |
+| `npm run test:db` | not re-run: nothing under `api/` or `db/` changed |

@@ -3245,10 +3245,26 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
   centered it; it is now centered with insets, and a v2-loop e2e case holds it there.
 - Because: tester cycle 4, and the owner's two decisions on 2026-09-11 (tidy on load and say
   so; the type is a choice in the form).
-- Impact on downstream: the tester's cycle 4 DEFECT cases now fail because the defects they
-  demonstrate are gone, and need flipping to assertions. Three of its cases encode behavior
+- Impact on downstream: the tester's cycle 4 DEFECT cases assert the fixed behavior, so they
+  should now pass. Three of its cases encode behavior
   the owner changed: the cycle 3 import case asserts the refusal of a stock row carrying a
   rate, which now imports with the rate removed and a notice; the V2-23 case expects a renamed
   bond row to lose its line, which by decision keeps it and shows its type; and the cycle 3
   control case pins the old "You have kept" copy. b143bdf's code now has committed unit
   coverage in `tests/unit/cycle3-fixes.test.ts`.
+
+### Cycle 5 fixes, 2026-09-11: V2-26 to V2-29
+
+- Changed: the jar move form on Home saves the type, length and rate it shows (V2-26, Major:
+  its save passed only the date, name and note, although the cycle 4 notes said the chips
+  worked in all three forms). The load-time migrate is now `migratePersisted` in
+  `src/state/persistence.ts`, and hands back the stored state unchanged if anything in it
+  cannot be read, because a throw there makes zustand boot on the initial state and its next
+  write erases the user's data (V2-27). A Something else label over the limit says so on its
+  row (V2-28). A refused import names the failing part from a fixed list in `strings.ts` and
+  never shows validator text or anything read from the file; the generic refusal now says "not
+  a complete Spare Change export", which is also true of a truncated one (V2-29).
+- Because: tester cycle 5.
+- Impact on downstream: the tester's cycle 5 DEFECT cases for V2-26 to V2-28 assert the fixed
+  behavior, so they should now pass. R16.8's load path and the chips outside the edit
+  form now have committed tests (`cycle3-fixes.test.ts`, `v2-loop.spec.ts`).

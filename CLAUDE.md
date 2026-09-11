@@ -51,7 +51,7 @@ Secrets live in Vercel env vars and `.env.local` (gitignored): `VAPID_PUBLIC_KEY
 
 ```
 npm run dev          vite dev server, http://localhost:5173
-npm test             vitest, unit  (720 committed, all passing)
+npm test             vitest, unit  (723 committed, all passing)
 npm run test:db      vitest against real Neon, isolated schema  (93 passing)
 npm run e2e          playwright, 4 viewport profiles  (15 min to over an hour)
 npm run typecheck    full tsc, includes tests and scripts
@@ -204,12 +204,12 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-11, after the cycle 4 fixes: 720 unit, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build, axe clean in both themes at four viewports. End-to-end on the 11 committed specs: 360 passed, 28 skipped, 0 failed, 0 flaky across mobile, desktop, iPhone Pro and Pro Max. The db suite (93 committed) was last run by the tester on 2026-09-11; cycles 3 and 4 did not touch `api/` or `db/`.
+Green as of 2026-09-11, after the cycle 5 fixes: 723 unit, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build, axe clean in both themes at four viewports. End-to-end on the 11 committed specs: 368 passed, 28 skipped, 0 failed, 0 flaky across mobile, desktop, iPhone Pro and Pro Max. The db suite (93 committed) was last run by the tester on 2026-09-11; cycles 3 and 4 did not touch `api/` or `db/`.
 
 The e2e figures reported for `0ab8031`, `352d618` and `01a134b` ("0 failed") were wrong: four committed specs were failing and the reports were read from the end of the log. See gotcha 9. The four specs were fixed in `563fbb1`.
 
 **Known open items:**
-- The tester's cycle 4 pass (2026-09-11) confirmed V2-9 to V2-19 fixed and filed V2-20 to V2-25, all Minor. Fixes for all six, plus a toast that sat half off every phone screen, landed the same day with the owner's two decisions (R16.8 tidy on load; the type is picked in the form). They need a tester re-verification pass. Four of the tester's uncommitted cases (`tester-v3-*`, `tester-v4-*`) encode behavior the owner changed; see the plan's Cycle 4 fixes log. They are the tester's to reconcile, not the coder's to edit. Once they pass, commit them, as was done with `tester-v2-*`.
+- The tester's cycle 5 pass (2026-09-11) confirmed V2-20 to V2-25 and the toast fixed, and filed V2-26 (Major: the jar move form showed the type chips, a length and a rate, then saved none of them) and V2-27 to V2-29 (Minor). All four were fixed the same day and need a tester re-verification pass. The tester reconciled its v3 and v4 cases to the owner's decisions, and every tester case (v3, v4, v5) now passes. The tester files are still uncommitted: whether to commit them, as was done with `tester-v2-*`, is the owner's call and has not been made.
 - Four tests in `tests/unit/tester-v2-import-impact.test.ts` were inverted on 2026-09-09: they originally asserted the import validator wrongly ACCEPTED four bad shapes, in order to demonstrate the damage. The validator now rejects all four, so they assert rejection instead. Coverage preserved, intent unchanged.
 - Never tested: a real iPhone, real Safari, WebKit, Firefox, screen readers, and an actual push notification arriving on a physical phone.
 - The cron has never been observed firing on its real daily schedule in production.

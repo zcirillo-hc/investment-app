@@ -249,6 +249,12 @@ export function InvestCapture() {
                     />
                   </label>
                 )}
+                {/* V2-28: a label one past the limit keeps Save disabled, so it has to say why. */}
+                {r.requiresLabel && r.typedLabel.trim().length > LEDGER_WHAT_MAX_LENGTH && (
+                  <p role="alert" data-testid={`invest-capture-label-error-${r.key}`} className="mt-2 text-sm font-semibold text-coral-ink">
+                    {S.capture.errLabelTooLong}
+                  </p>
+                )}
                 <label className="mt-3 block text-sm">
                   <span className="font-semibold">{S.capture.amountLabel}</span>
                   <div className="relative mt-1">

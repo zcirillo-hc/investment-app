@@ -25,7 +25,7 @@ export function Welcome() {
     if (!file) return;
     const r = parseImport(await file.text());
     if (!r.ok) {
-      setImportError(r.looksLikeExport ? S.welcome.importInvalid(r.problems[0]) : S.welcome.importBad);
+      setImportError(r.looksLikeExport ? S.welcome.importInvalid(r.section) : S.welcome.importBad);
       return;
     }
     await writeImportedState(r.state, r.tidied);

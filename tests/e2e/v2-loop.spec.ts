@@ -248,6 +248,36 @@ test.describe('the v2 loop', () => {
     await expect(page.getByTestId(`ledger-maturity-${id}`)).toHaveCount(0);
   });
 
+  test('jar move: the type, length and rate picked in the form are saved (V2-26)', async ({ page }) => {
+    await onboard(page);
+    await dismissCapturePrompt(page);
+    await demoClick(page, 'demo-make-habit');
+    await demoClick(page, 'demo-force-nudge');
+    await clickClear(page, 'nudge-skip');
+    await expect(page.getByTestId('jar-amount')).not.toHaveText('$0.00');
+    await clickClear(page, 'jar-move');
+    await clickClear(page, 'jar-ledger-type-bondsCds');
+    await page.getByTestId('jar-ledger-term').fill('12');
+    await page.getByTestId('jar-ledger-rate').fill('4.5');
+    await clickClear(page, 'jar-ledger-save');
+    await page.getByTestId('nav-invest').click();
+    const row = page.getByTestId('ledger-row').first();
+    await expect(row).toHaveAttribute('data-source', 'jar');
+    const id = await row.getAttribute('data-id');
+    await expect(page.getByTestId(`ledger-maturity-${id}`)).toBeVisible();
+  });
+
+  test('capture: a Something else label one past the limit says why Save is off (V2-28)', async ({ page }) => {
+    await onboard(page);
+    await dismissCapturePrompt(page);
+    await page.goto(START.replace('/?', '/invest/capture?'));
+    await clickClear(page, 'invest-capture-chip-other');
+    await page.getByTestId('invest-capture-label-other').fill('x'.repeat(61));
+    await page.getByTestId('invest-capture-amount-other').fill('10');
+    await expect(page.getByTestId('invest-capture-label-error-other')).toBeVisible();
+    await expect(page.getByTestId('invest-capture-save')).toBeDisabled();
+  });
+
   test('a toast sits inside the screen and centered once it settles', async ({ page }) => {
     // Found on production 2026-09-11: framer-motion's inline transform replaced the class that
     // centered the toast, so it started at mid-screen and ran 163 px off a 390 px phone. The

@@ -316,7 +316,16 @@ export function Home() {
           source="jar"
           lockAmount
           onSave={(draft) => {
-            const r = moveJarToLedger({ date: draft.date, what: draft.what, note: draft.note });
+            // V2-26: the type, length and rate picked in this form are saved too. Before, only
+            // the date, name and note reached the ledger, so the chips did nothing here.
+            const r = moveJarToLedger({
+              date: draft.date,
+              what: draft.what,
+              note: draft.note,
+              holdingType: draft.holdingType,
+              termMonths: draft.termMonths,
+              yieldBps: draft.yieldBps,
+            });
             if (r.ok) setMovingJar(false);
             return r;
           }}

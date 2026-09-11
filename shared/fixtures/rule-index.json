@@ -101,6 +101,6 @@
     "R16.5": "Bond-only term and rate, with the type picked in the form and shown on the row when the name differs. Covered by cycle3-fixes.test.ts (isBondRow, validateDraft, the V2-25 edit check).",
     "R16.6": "Edit keeps unshown fields. Covered by cycle3-fixes.test.ts (replaceEntry keep, clear and legacy stamp).",
     "R16.7": "Capture parsing and refusal. Covered by cycle3-fixes.test.ts (parseRateBps, parseTermMonths) and the v2-loop V2-20 e2e case.",
-    "R16.8": "Rows saved under earlier rules are tidied on load and on import, never refused, and the user is told once. Covered by cycle3-fixes.test.ts (tidyLedger and the import path)."
+    "R16.8": "Rows saved under earlier rules are tidied on load and on import, never refused, and the user is told once. Covered by cycle3-fixes.test.ts (tidyLedger, the import path, and migratePersisted on load, including a row it cannot read)."
   }
 }

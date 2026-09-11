@@ -42,8 +42,7 @@ import { syncSchedule } from '../lib/push';
 import { STORAGE_KEY } from '../config';
 import { deps } from './deps';
 import { getUrlParams } from './urlParams';
-import { PERSIST_VERSION, clearPersistedState, idbStorage, installMirrorFlush, noteTidied, pickAppState } from './persistence';
-import { tidyLedger } from '../domain/ledger';
+import { PERSIST_VERSION, clearPersistedState, idbStorage, installMirrorFlush, migratePersisted, pickAppState } from './persistence';
 import { useUiStore, type Outcome } from './uiStore';
 import { runAutoAdvance } from './bootstrap';
 import { clearThemeMirror, writeThemeMirror } from '../lib/theme';
@@ -302,17 +301,8 @@ export function createAppStore() {
         partialize: (s) => pickAppState(s),
         // R16.8 (V2-21): a ledger an earlier build saved is tidied once on load, rather than
         // left to block an edit or make the app refuse its own export later. Told on boot.
-        migrate: (persisted, version) => {
-          const p = persisted as AppStore;
-          if (version < 2 && p && Array.isArray(p.ledger)) {
-            const t = tidyLedger(p.ledger);
-            if (t.tidied > 0) {
-              noteTidied(t.tidied);
-              return { ...p, ledger: t.ledger } as AppStore;
-            }
-          }
-          return p;
-        },
+        // V2-27: `migratePersisted` never throws, because a throw here wipes the user's data.
+        migrate: (persisted, version) => migratePersisted(persisted, version) as AppStore,
         onRehydrateStorage: () => () => {
           useUiStore.getState().setHydrated(true);
         },

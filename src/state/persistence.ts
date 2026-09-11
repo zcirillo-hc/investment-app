@@ -1,8 +1,9 @@
 import { del, get, set } from 'idb-keyval';
 import type { StateStorage } from 'zustand/middleware';
-import type { AppState } from '../domain/types';
+import type { AppState, LedgerEntry } from '../domain/types';
 import { STORAGE_KEY } from '../config';
 import { validateImportedState } from './validate';
+import { tidyLedger } from '../domain/ledger';
 
 export { validateImportedState } from './validate';
 export type { ValidationResult } from './validate';
@@ -243,8 +244,12 @@ export function exportStateJson(state: AppState): string {
 /**
  * `looksLikeExport` (V2-21): true when the file parsed and carries this version's schema but a
  * field failed a check. Only a file that is not an export may be told it is not one.
+ * `section` (V2-29): the letters of the top level key that failed, such as `ledger`, and
+ * nothing else from the file. The screen maps it to fixed words; it is never shown as is.
  */
-export type ImportResult = { ok: true; state: AppState; tidied: number } | { ok: false; error: string; problems: string[]; looksLikeExport: boolean };
+export type ImportResult =
+  | { ok: true; state: AppState; tidied: number }
+  | { ok: false; error: string; problems: string[]; looksLikeExport: boolean; section: string };
 
 /**
  * Plan 5.4 (Cycle 2): full shape and range validation via `validateImportedState`.
@@ -255,14 +260,14 @@ export function parseImport(text: string): ImportResult {
   try {
     raw = JSON.parse(text);
   } catch {
-    return { ok: false, error: 'not-json', problems: ['root: not valid JSON'], looksLikeExport: false };
+    return { ok: false, error: 'not-json', problems: ['root: not valid JSON'], looksLikeExport: false, section: '' };
   }
   const r = validateImportedState(raw);
   if (!r.ok) {
     const first = r.problems[0] ?? '';
     const looksLikeExport =
       !first.startsWith('root') && !first.startsWith('schemaVersion') && !r.problems.every((p) => p.endsWith(': missing'));
-    return { ok: false, error: first || 'invalid', problems: r.problems, looksLikeExport };
+    return { ok: false, error: first || 'invalid', problems: r.problems, looksLikeExport, section: /^[A-Za-z]+/.exec(first)?.[0] ?? '' };
   }
   return { ok: true, state: r.state, tidied: r.tidied };
 }
@@ -292,6 +297,26 @@ export function takeTidyNotice(): number {
     return Number.isInteger(n) && n > 0 ? n : 0;
   } catch {
     return 0;
+  }
+}
+
+/**
+ * R16.8 and V2-27: zustand's `migrate` for a persisted envelope. A version 1 ledger is tidied
+ * once. If anything in it cannot be read, the state comes back exactly as stored instead of
+ * throwing: a throw here makes zustand boot on the initial state, and its next write would
+ * erase everything the user had.
+ */
+export function migratePersisted(persisted: unknown, version: number): unknown {
+  if (version >= PERSIST_VERSION) return persisted;
+  try {
+    const p = persisted as { ledger?: unknown } | null;
+    if (!p || !Array.isArray(p.ledger)) return persisted;
+    const t = tidyLedger(p.ledger as LedgerEntry[]);
+    if (t.tidied === 0) return persisted;
+    noteTidied(t.tidied);
+    return { ...p, ledger: t.ledger };
+  } catch {
+    return persisted;
   }
 }
 

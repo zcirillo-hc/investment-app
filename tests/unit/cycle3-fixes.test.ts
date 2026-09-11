@@ -16,6 +16,7 @@ import { putAsideCents } from '../../src/domain/selectors';
 import { addLedgerEntry, completeOnboarding, moveJarToLedger, updateLedgerEntry } from '../../src/domain/tick';
 import { initialAppState, type AppState, type LedgerEntry } from '../../src/domain/types';
 import { validateImportedState } from '../../src/state/validate';
+import { migratePersisted } from '../../src/state/persistence';
 import { LEDGER_MAX_AMOUNT_CENTS } from '../../src/config';
 
 const DAY = '2026-06-15';
@@ -185,6 +186,24 @@ describe('R16.8 rows saved under earlier rules are tidied, not refused (V2-21)',
     const r = tidyLedger(ledger);
     expect(r.tidied).toBe(0);
     expect(r.ledger[0]).toBe(ledger[0]);
+  });
+});
+
+describe('R16.8 on load: migratePersisted (persist version 2), and V2-27', () => {
+  it('tidies a version 1 ledger once', () => {
+    const p = { ...onboarded(), ledger: [bondRow({ yieldBps: 3000 })] };
+    const out = migratePersisted(p, 1) as AppState;
+    expect('yieldBps' in out.ledger[0]).toBe(false);
+    expect(out.ledger[0]).toMatchObject({ termMonths: 12, amountCents: 100000, what: 'Bonds or CDs' });
+  });
+  it('leaves a version 2 envelope exactly as stored', () => {
+    const p = { ...onboarded(), ledger: [bondRow({ yieldBps: 3000 })] };
+    expect(migratePersisted(p, 2)).toBe(p);
+  });
+  it('never throws on a row it cannot read, and hands the state back unchanged', () => {
+    const p = { ...onboarded(), ledger: [{ id: 'led:1', what: 42 }] };
+    expect(() => migratePersisted(p, 1)).not.toThrow();
+    expect(migratePersisted(p, 1)).toBe(p);
   });
 });
 

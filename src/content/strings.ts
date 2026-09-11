@@ -6,6 +6,35 @@ import { formatCents, formatDollars } from '../domain/money';
 import { formatMinuteOfDay } from '../domain/dates';
 import { LEARN_SURFACE_LINE, NOT_ADVICE_LINE } from './learn';
 
+/**
+ * V2-29. The words for the part of an export that failed a check. The key comes from the file,
+ * so it is only ever looked up here and never shown, and anything not listed (including
+ * `constructor` or `__proto__`) gets the generic phrase.
+ */
+const IMPORT_PARTS: Record<string, string> = {
+  profile: 'your profile',
+  settings: 'your settings',
+  flags: 'your settings',
+  clock: 'the date',
+  jarCents: 'the jar',
+  places: 'a saved place',
+  visits: 'a saved visit',
+  habits: 'a habit',
+  nudges: 'a nudge',
+  ledger: 'an investment entry',
+  events: 'the activity history',
+  pendingPaychecks: 'a paycheck',
+  lessons: 'the lesson progress',
+  learn: 'the reading progress',
+  learnSurfaces: 'the reading progress',
+  milestones: 'the milestones',
+  demo: 'the demo settings',
+};
+
+function importPart(section: string): string {
+  return Object.prototype.hasOwnProperty.call(IMPORT_PARTS, section) ? IMPORT_PARTS[section] : 'one part of it';
+}
+
 export const S = {
   appName: 'Spare Change',
   mission: 'Keep a little. It goes a long way.',
@@ -64,9 +93,9 @@ export const S = {
     emailInvalid: 'That does not look like an email. You can also leave it blank.',
     demoNote: 'This is a demo. Your spending here is made up, and no real money moves.',
     importLink: 'Have a backup? Import it',
-    importBad: 'That file is not a Spare Change export. Nothing changed.',
-    importInvalid: (detail: string) =>
-      `That looks like a Spare Change export, but part of it did not pass the app's checks, so nothing changed. What it found: ${detail}`,
+    importBad: 'That file is not a complete Spare Change export, so nothing changed.',
+    importInvalid: (section: string) =>
+      `That looks like a Spare Change export, but ${importPart(section)} did not pass the app's checks, so nothing changed.`,
   },
 
   summer: {
@@ -368,9 +397,9 @@ export const S = {
     importBtn: 'Import JSON',
     dataNote: 'Your places, your jar, your ledger and your lessons live in this browser. Export to keep a copy or move it to another device.',
     importOk: 'Imported. Reloading.',
-    importBad: 'That file is not a Spare Change export. Nothing changed.',
-    importInvalid: (detail: string) =>
-      `That looks like a Spare Change export, but part of it did not pass the app's checks, so nothing changed. What it found: ${detail}`,
+    importBad: 'That file is not a complete Spare Change export, so nothing changed.',
+    importInvalid: (section: string) =>
+      `That looks like a Spare Change export, but ${importPart(section)} did not pass the app's checks, so nothing changed.`,
     importV1: 'That is a Spare Change v1 backup. v1 saved a simulated portfolio that v2 does not have, so it cannot be brought across. Nothing changed.',
     deletePlaces: 'Delete every place and visit',
     reset: 'Reset demo',
