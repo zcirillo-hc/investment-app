@@ -2778,6 +2778,24 @@ above, and called the build SHIP. It filed one Minor defect, which was a gap in 
   read is kept exactly as stored, and the rest are still tidied and counted. Committed unit case
   in `cycle3-fixes.test.ts`: an unreadable row next to a 30% bond row comes back unchanged while
   the bond row loses its rate.
-- **The tester's AUDIT case for V2-30** in `tests/unit/tester-v6-cycle6.test.ts` asserts the old
-  behavior (0 of 2 rows tidied), so it now fails because the defect is gone. It is the tester's
-  file; the tester updates it.
+- **The tester's AUDIT case for V2-30** in `tests/unit/tester-v6-cycle6.test.ts` asserted the old
+  behavior (0 of 2 rows tidied), so it failed once the defect was gone. The tester converted it to
+  a regression guard before the commit; the coder did not edit it.
+- **Tester files committed.** At the owner's request, the tester's files for cycles 3 to 6 (unit,
+  e2e, db and the lint plant fixtures) went in with 7f8daaa, so every gate now includes them.
+
+### Real test results, this pass
+
+Run on darwin 25.6 on 2026-09-11. Counts read from each tool's summary lines.
+
+| gate | result |
+|---|---|
+| `npm run lint:copy` / `lint:advice` | **ok**, 104 and 89 files |
+| `npm run rules:check` | **ok**, 30 arithmetic rules, 111 cases |
+| `npm run typecheck` | **clean** |
+| `npm run build` | **green**, bundle secret check ok (14 files) |
+| `npm test` | **868 passed / 868**, 38 files, tester files included |
+| `npm run test:db` | **96 passed / 96**, 7 files, the tester's backend file included |
+| e2e, the 11 previously committed specs, while the machine was loaded | **364 passed, 1 failed, 3 flaky** in 45 min (13 to 17 min is normal). Every failure was a 10 s render wait or a test timeout, not a wrong value. The unit, db and a tester vitest run were going at the same time. Not accepted as a gate. |
+| e2e re-run, no retries, idle machine: the four affected tests plus all four tester specs, 4 projects | **168 passed, 0 failed** (12.4 min) |
+| e2e, all 15 committed specs (the tester specs now included), 4 projects, idle machine | **519 passed, 28 skipped, 0 failed, 1 flaky** (32.8 min). The flaky one is the dark theme axe scan on mobile, which passed on retry. This is the gate for 7f8daaa. |
