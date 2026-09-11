@@ -2,7 +2,7 @@
 
 **Read this file first. It is the single entry point for this repo. You should not need to search the folder to get oriented.**
 
-Last updated 2026-09-09. Keep it that way: when you change how this project works, update this file in the same commit.
+Last updated 2026-09-11. Keep it that way: when you change how this project works, update this file in the same commit.
 
 ---
 
@@ -175,6 +175,7 @@ Read these before touching the build or the API.
 6. **`apple-touch-icon` must have no alpha channel.** iOS composites transparency onto black.
 7. **Never kill port 5173 while `npm run e2e` is running.** That is the suite's own dev server. Ad-hoc Playwright specs started alongside it fight for the port and killing it corrupts the run. Wait for the suite, or check against the live site.
 8. **After onboarding, an invest-capture prompt overlays Home and swallows clicks, and nudges are off by default.** Use `dismissCapturePrompt` and `clickClear` from `tests/e2e/fixtures.ts`, and run demo `make-habit` before `force-nudge`, or a skip click silently does nothing.
+9. **Read Playwright's `N failed` and `N flaky` lines, not the last lines of the log.** With the list reporter the tail is the last test to finish, and a run can end on a pass while tests failed earlier. That is how three pushes in September went out reported as "0 failed" while four committed specs had been failing since `0ab8031`. Grep the log for `^\s+[0-9]+ (passed|failed|flaky)` before calling a run green.
 
 ---
 
@@ -189,7 +190,7 @@ This project runs through a four-agent pipeline (Architect, Coder, Tester, Manag
 | `02-plan-v2.md` | **Current plan and the authority on rules.** ~2600 lines, several amendments. |
 | `03-build-notes.md` | Every build pass: deviations, assumptions, self-declared weak points |
 | `04-test-report.md` | v1 tester report, defects D1 to D12 |
-| `04-test-report-v2.md` | v2 tester report, defects V2-1 to V2-8 |
+| `04-test-report-v2.md` | v2 tester report, defects V2-1 to V2-19 across three cycles |
 | `05-status.md` | v1 manager status |
 | `06-theme.md` | **The theme.** Who this is for, the three blockers it removes, what success means, the voice, and what it forbids. Read before adding a feature or writing copy. |
 
@@ -199,10 +200,12 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 
 ## 10. Current state
 
-Green as of 2026-09-10: 700 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end: 328 passing, 28 skipped, 0 failed on 2026-09-10 across mobile, desktop, iPhone Pro and Pro Max.
+Green as of 2026-09-11: 700 unit, typecheck, both lints, rules:check (30 rules, 111 cases), build, axe clean in both themes at four viewports. End-to-end on the 11 committed specs: 348 passed, 28 skipped, 0 failed, 0 flaky across mobile, desktop, iPhone Pro and Pro Max. The db suite (93) was last run 2026-09-10; cycle 3 did not touch `api/` or `db/`.
+
+The e2e figures reported for `0ab8031`, `352d618` and `01a134b` ("0 failed") were wrong: four committed specs were failing and the reports were read from the end of the log. See gotcha 9. The four specs were fixed in `563fbb1`.
 
 **Known open items:**
-- The tester's cycle 3 pass (2026-09-10) verified V2-1 to V2-8 and filed V2-9 to V2-19. Fixes for all eleven landed on 2026-09-10 and need a tester re-verification pass. Two of its tests encode assumptions the fixes change on purpose; see the plan's Cycle 3 fixes log.
+- The tester's cycle 3 pass (2026-09-10) verified V2-1 to V2-8 and filed V2-9 to V2-19. Fixes for all eleven landed on 2026-09-10 and need a tester re-verification pass. Four of its tests (still uncommitted, `tester-v3-*`) encode assumptions the fixes change on purpose; see the plan's Cycle 3 fixes log. They are the tester's to reconcile, not the coder's to edit.
 - Four tests in `tests/unit/tester-v2-import-impact.test.ts` were inverted on 2026-09-09: they originally asserted the import validator wrongly ACCEPTED four bad shapes, in order to demonstrate the damage. The validator now rejects all four, so they assert rejection instead. Coverage preserved, intent unchanged.
 - Never tested: a real iPhone, real Safari, WebKit, Firefox, screen readers, and an actual push notification arriving on a physical phone.
 - The cron has never been observed firing on its real daily schedule in production.

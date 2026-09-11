@@ -3195,6 +3195,21 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
   every template interpolation as a number. The R18 "Read more" links are 44 px tall.
 - Because: tester cycle 3, V2-9 to V2-19, and the owner's four decisions on 2026-09-10 (R10.4
   formula, store the entry type, rewrite L4, owner does the R15.7 layer 3 read).
-- Impact on downstream: the tester re-runs cycle 3. Two of its tests encode assumptions the
-  fixes change on purpose: the R10.4 DEFECT cases compute the old formula inline, and e2e case
-  "600 months at 50%" assumes the old rate ceiling.
+- Impact on downstream: the tester re-runs cycle 3. Four of its tests encode assumptions the
+  fixes change on purpose, and are the tester's to reconcile:
+  1. `tests/unit/tester-v3-cycle3.test.ts`, the two R10.4 DEFECT cases, compute the old
+     formula inline rather than calling the selector.
+  2. `tests/e2e/tester-v3-cycle3.spec.ts` capture case `term 600, rate 50` expects 5000 bps
+     stored; 50% is now over the 2500 bps ceiling, so the capture refuses it.
+  3. The same spec's 320 px test captures a bond at 50%, so its save stays disabled and the
+     test times out before it checks any layout.
+  4. The same spec's import case puts a term and rate on an Individual stocks row. The import
+     validator now rejects that file outright (R16.5), so the flow waits for a screen that
+     never comes. The defect is fixed; the test needs to assert the rejection instead.
+- Also on 2026-09-11: four committed e2e specs had gone stale in earlier commits and were
+  fixed. `learn.spec.ts` hardcoded a library of 16 (it is 20, now read from `learn.json`);
+  `v2-loop.spec.ts` criterion 10 funded the jar by letting days pass, which stopped working
+  when round-ups went; `pwa.spec.ts` 8.10 and criterion 25 still expected the "three things
+  stored" card and the server-row message when no row exists, which V2-1 made honest. Earlier
+  reports of "0 failed" for `0ab8031`, `352d618` and `01a134b` were wrong: they were read
+  from the log's last lines, not its failure count.
