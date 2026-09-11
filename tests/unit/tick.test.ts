@@ -64,8 +64,7 @@ describe('R12.2 onboarding', () => {
   });
 
   it('R12.4: a lesson unlocks once and keeps its first day', () => {
-    // L1 used to unlock on the first round-up. With those gone it unlocks on the first skip,
-    // which is the first thing the user actually does.
+    // L1 unlocks on the first habit the app spots, which withSkippedJar creates on the way.
     let s = withSkippedJar();
     const day = s.lessons.L1.unlockedDay;
     expect(day).not.toBeNull();

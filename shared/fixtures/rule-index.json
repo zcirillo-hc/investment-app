@@ -97,6 +97,9 @@
     "R17.4": "A prohibition on streaks and shortfalls. Enforced by the absence of any such value and by copy.test.ts.",
     "R18.1": "Neutral per type explainer text. Content, checked by the R15 human review gate and by lint-advice.",
     "R18.2": "A prohibition: the reference card never varies with the ledger. Enforced by the absence of any state read where it renders.",
-    "R18.3": "Library composition and the counts that follow it. Covered by content-tooltips.test.ts."
+    "R18.3": "Library composition and the counts that follow it. Covered by content-tooltips.test.ts.",
+    "R16.5": "Bond-only term and rate. Covered by ledger and validate tests and the tester V2-12 case.",
+    "R16.6": "Edit keeps unshown fields. Covered by the tester V2-10 unit and e2e cases.",
+    "R16.7": "Capture parsing and refusal. Covered by maturity.test.ts and the tester V2-11 e2e case."
   }
 }

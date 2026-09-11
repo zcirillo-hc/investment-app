@@ -4,9 +4,9 @@
   "lessons": [
     {
       "id": "L1",
-      "title": "The coffee you did not buy",
-      "body": "You skipped one stop, and the money you were about to spend went into the [[jar]] instead. Nothing came out of your account, because it never left it. That is the whole trick: the easiest money to keep is money you have not spent yet.",
-      "unlockHint": "Unlocks with your first [[roundUp|round-up]]."
+      "title": "How it spotted your usual stop",
+      "body": "The app noticed you buying at the same place, around the same time, three times in two weeks. That is all a [[habit]] means here: a pattern in what you already spend, not a judgement about it. It works from your purchases rather than following you around, and any [[place]] it has noticed can be deleted.",
+      "unlockHint": "Unlocks when the app spots your first [[habit]]."
     },
     {
       "id": "L2",
@@ -22,14 +22,14 @@
     },
     {
       "id": "L4",
-      "title": "Why a dip isn't a loss",
-      "body": "Prices go up and down every single day, and today they went down. A [[dip]] only becomes a loss if you sell during it. If you keep adding while things are cheaper, you end up buying more for the same money. You will notice this app never shows you a number going down. That is on purpose. It does not watch prices at all, so it cannot panic you with one bad week, and it cannot pretend to know what your money is doing today.",
+      "title": "What a dip is, and what it is not",
+      "body": "Prices go up and down every day, and a [[dip]] is a stretch where they are lower than they were. For a fund holding hundreds of companies, past dips have come back, though nobody can promise the next one will, and selling in a panic is the surest way to turn one into a real loss. A single company is different: it can fall and never recover, which is one reason spreading money around matters. You will notice this app never shows you a number going down. It does not watch prices at all, so it cannot panic you with one bad week.",
       "unlockHint": "Unlocks with your first [[ledgerEntry|ledger entry]]."
     },
     {
       "id": "L5",
       "title": "One month in",
-      "body": "Thirty days in. You did not have to remember anything, and the [[jar]] kept working anyway. Look at the total kept, then imagine it running through every semester and every summer job.",
+      "body": "Thirty days in. Every dollar in the [[jar]] is one you chose to keep, one skip at a time. Look at the total, then imagine that running through every semester and every summer job.",
       "unlockHint": "Unlocks after 30 days."
     },
     {

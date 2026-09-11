@@ -452,3 +452,345 @@ Three things need a decision rather than a fix:
 
 And one that is not a decision: **R15.7 layer 3 is a required gate and has not run.** V2-7 is
 one lesson title. Nobody has read the other 23 pieces against R15 with intent in mind.
+
+---
+
+## Cycle 3, 2026-09-10: re-verification and new work
+
+Machine: darwin 25.6, Node 24, 8 GB under heavy memory pressure (load average 8, a few
+thousand free pages; one e2e test died on a cold `page.goto` and was re-run), Playwright
+Chromium on `mobile` (375x812) and `desktop` (1280x800), Neon via the isolated-schema harness,
+and read-only requests to the live site. Scope: everything in `580b222..HEAD`. Everything
+below was run unless it says otherwise. **Production is serving HEAD** (the live bundle
+contains "What these actually are", "How long is it for", "You have kept" and "Your jar kept
+working"), so every defect below is live.
+
+### Verdict
+
+**DO NOT SHIP** the next deploy as is. The new "Your money" card overstates what the user has
+put in: after a jar move it shows twice the real figure. And editing a bond row on Invest
+silently deletes the rate and term the user typed. Separately, R15.7 layer 3, which the plan
+makes a precondition of the next deploy, has still not been run by its owner.
+
+**New defects: 2 Critical, 1 Major, 8 Minor (V2-9 to V2-19).** All eight V2 defects verified
+fixed; D7 has returned for a fourth time on a new control.
+
+### V2-1 to V2-8, re-verified
+
+| id | ruling | evidence, this pass |
+|---|---|---|
+| V2-1 | **VERIFIED FIXED** (non-`ready` states) | `tester-v2-nudges-honesty.spec.ts` green on mobile and desktop: `PUSH-STATE denied: nudges-stored=0 endpoint-line=0 apiCalls=[]`, same for `needs-ios-install`. The `ready` path (a real subscription) is still unreachable in headless Chromium, so the `hasServerRow` ordering fix is unverified by me. |
+| V2-2 | **VERIFIED FIXED** for every control it named | Measured `jar-move 311x44`, `jar-spent 311x44`; `places-enable-nudges` passes the full rendered audit on mobile and desktop; ledger row actions, capture remove and delete-confirm buttons all 44 tall. **The D7 class has returned on a new control, filed as V2-13.** |
+| V2-3 | **VERIFIED FIXED** | Two overlapping runs send once. New cases, `tests/db/tester-v3-backend.test.ts`: **five** overlapping runs send once; a sender that throws after the claim leaves `fail_count 1, last_sent null, minute kept` and the next run sends; a 429 inside a concurrent pair leaves the row untouched with one call. |
+| V2-4 | **VERIFIED FIXED** | `serial-send: 20 rows in 559 ms`, projecting 14 s for 500 against 60; `send-budget.test.ts` 4/4. Not tested: 8 concurrent sends provoking a real push service's 429. |
+| V2-5 | **VERIFIED FIXED** | The oracle case passes: wrong auth gets the same answer for a subscribed and an unknown endpoint. |
+| V2-6 | **VERIFIED FIXED** | All 54 cases in `tester-v2-import.test.ts` and the 4 inverted impact cases pass; each rejection is for the right reason (below). |
+| V2-7 | **VERIFIED FIXED** | L7 now reads "Why early money has more time to grow", no figures; the original text in `tests/fixtures/original-l7.json` still fails the lint. The lint can be walked around with one word or one interpolation (V2-14). |
+| V2-8 | **VERIFIED FIXED** | Settings file input `{"tabindex":"-1","hidden":"true","label":null}`; exactly one button named Import. |
+| D7 | **RETURNED (fourth time)** | V2-13. |
+| D11 | **STILL FIXED** | 18 taps (mobile) and 20 (desktop) across six screens at four offsets, zero self-closures; the new Your money card's 7% term tapped at y=702 of 812 holds its bubble. |
+| D12 | **STILL FIXED** | Green in the regression spec. |
+
+### Rulings on the tests someone else edited
+
+- **`tests/unit/tester-v2-import-impact.test.ts`, four cases inverted: SOUND, and I accept it.**
+  I re-ran all four and proved the reason, not just the rejection. The orphan-visit file fails
+  with exactly one problem, `visits[14].placeId: expected to name a place in this file`. The
+  two-nudge file fails with exactly one, `nudges[1].dayIndex: expected at most one nudge per
+  day`. The unmodified base file is accepted, and the same two nudges on two different days are
+  accepted. So neither case passes on an unrelated shape error. What the inversion lost is the
+  measurement of the damage (the $149 to $0 delete), which is moot once the shape is refused.
+  The one weakness, that two cases did not pin their reason, is covered by
+  `tester-v3-cycle3.test.ts`. The protocol point stands: this was my file to invert.
+- **`tests/e2e/tester-v2-product.spec.ts`, unused `openTray` import removed: ACCEPTED, partly
+  unverifiable.** My cycle 2 files were uncommitted at `580b222` and first entered git in
+  `f9e5db8` already edited, so git holds no pre-edit copy to diff against. The current file is
+  what I wrote, `npm run typecheck` is clean, and the spec passes 11/11.
+- **`tick.test.ts` `withSkippedJar`: NOT WEAKENED.** The R13 case now asserts the stronger
+  inverse, no RoundUp and `jarCents === 0` after a tick. The R6 and R12.4 cases earn their jar
+  through a real skip.
+- **`store.test.ts` `fundJar`: NOT WEAKENED.** The goal-crossing case still asserts exactly one
+  crossing. The ledger date moved to `currentDate` because a future date is now correctly refused.
+- **`simulator.test.ts` 60-day case: WEAKENED, but tolerably.** `60 < purchases < 600` over 60
+  days allows 1 to 10 a day and never asserts that a habit can form, which is what its comment
+  says it protects. Criterion 4 (a habit within 14 days at seed 42) is still proven in
+  `tester-v2-loop.test.ts`, which passes.
+- **`contrast.test.ts` D20 repointed to `nudges-toggle`: SOUND.** Same switch, same guard.
+- **`parity.test.ts` R2.1 floor removed: SOUND** for a retired rule. The legacy RoundUp read
+  paths now have no fixture coverage at all, apart from my legacy cases below.
+- **`validate.test.ts` `roundUpsPaused` case removed: consistent, but the validator now has no
+  opinion on any unknown key.** The stray key passes through import into state and into every
+  later export, and so does anything else (V2-17).
+- All seven edited non-tester unit files pass: 289/289.
+
+### New defects
+
+#### V2-9. Critical. "Your money" double counts a jar move and grows money the user spent
+
+- **Violates:** R10.4's own definition ("the money the user really has set aside"), theme
+  3.3 (an honest rehearsal), CLAUDE.md section 1 ("shows what it knows"). **The coder built
+  exactly the formula R10.4 prescribes, `keptSinceStartCents + ledgerTotal`. The plan is wrong,
+  not only the code.**
+- **Repro:** `npx playwright test tests/e2e/tester-v3-cycle3.spec.ts --project=mobile -g "doubles"`
+  and `npx vitest run tests/unit/tester-v3-cycle3.test.ts -t "R10.4"`. By hand: onboard, demo
+  make-habit, force-nudge, Skip ($4.35), open Summer Money, then Home > "I moved this into an
+  investment" > Save, then Summer Money again.
+- **Observed:** before the move "You have kept $4.35 so far."; after it, Home reads kept $4.35,
+  moved $4.35, jar $0.00, and Summer reads **"You have kept $8.70 so far."**, grown to $196 at
+  65. After "I spent it" instead, Summer still says "You have kept $4.35 so far." with jar $0
+  and nothing moved.
+- **Expected:** $4.35 after the move and $0.00 after spending it. `jarCents + ledgerTotal`
+  gives both, and is still exactly "money set aside".
+- **Why Critical:** a money figure on screen is silently wrong and contradicts two figures on
+  Home computed from the same state. It gets worse with every jar move, which is the product's
+  core action.
+
+#### V2-10. Critical. Editing a bond or CD row erases its term and rate
+
+- **Violates:** R16.1 and R16.2 ("rejected rather than dropped"); the ledger's own comment,
+  "silently discarding what someone typed is how a ledger stops matching what they believe is
+  in it". Data loss.
+- **Cause:** `LedgerForm.submit` builds `{ date, amountCents, what, note, source }` with no term
+  or rate, and 90bd963 changed `replaceEntry` to write `termMonths: draft.termMonths,
+  yieldBps: draft.yieldBps` over the stored values. That commit's "fix" is what turned a
+  harmless omission into a delete.
+- **Repro:** `-g "note edit"` in the e2e file above, or `-t "note edit"` in the unit file. By
+  hand: Invest > capture > Bonds or CDs, $1,000, 12 months, 4.5 > Save; the row shows "pays
+  $45.00, so you would have $1,045.00". Tap Edit, change only the note, Save.
+- **Observed:** `edit form fields=ledger-edit-amount,ledger-edit-date,ledger-edit-what,ledger-edit-note;
+  before term=12 rate=450; after a note-only edit term=undefined rate=undefined ... maturity lines=0`.
+  The edit form has no field to put them back; the only recovery is delete and re-capture.
+- **Expected:** a note edit leaves term and rate untouched. The edit form offers both fields
+  for a bond row, so an edit can change or clear them deliberately.
+
+#### V2-11. Major. The capture silently drops or alters a term or rate it cannot use
+
+- **Violates:** R16.2 ("a value that is present and out of range is rejected rather than
+  dropped, on save"), R1.2 (rounding).
+- **Repro:** `-g "R16.2"` in the e2e file.
+- **Observed** (every row: Save enabled, saved, **no error shown**):
+  ```
+  term="12"   rate="4.5%"  -> stored termMonths=undefined yieldBps=undefined
+  term="12"   rate="4,5"   -> stored undefined / undefined
+  term="12"   rate="60"    -> stored undefined / undefined   (6000 bps, over the ceiling)
+  term="700"  rate="4.5"   -> stored undefined / undefined   (over 600 months)
+  term="12"   rate=""      -> stored undefined / undefined   (a valid term, thrown away)
+  term="12.5" rate="4.5"   -> stored 13 / 450                (silently rounded; import refuses 12.5)
+  term="12"   rate="1.005" -> stored 12 / 100, shown "1.00%" (1.005*100 = 100.49999999999999; R1.2 gives 101)
+  term="600"  rate="50"    -> stored 600 / 5000              (correct)
+  ```
+  `rowMaturity` returns null for anything it cannot parse and `save` then spreads nothing, so
+  the row saves as a bare amount. "4.5%" is how people type a rate.
+- **Expected:** an unusable value blocks Save with `errTerm`/`errYield` (the strings exist), or
+  is parsed ("4.5%" as 450). A valid term alone is kept, and the conversion to bps rounds per
+  R1.2.
+
+#### V2-12. Minor. An import puts a 30 year projection on an Individual stocks row
+
+- **Violates:** R16.1 (only bonds or CDs carry a term and rate), R16.3 and R15.2 (a stock
+  projection is exactly what R16 says it is not). Minor only because it needs a hand-edited file.
+- **Repro:** `-g "Individual stocks"` in the e2e file (it imports through Settings).
+- **Observed:** the Invest row "Individual stocks" reads "At 10.00% for 30 years, holding it to
+  the end pays $16,449.40, so you would have $17,449.40." `Invest.tsx` renders the line for any
+  entry carrying both keys, and the validator accepts both on any row. A ledger entry has no
+  type field, so neither side can tell.
+
+#### V2-13. Minor. The six R18 "Read more" links are 74x20 px (D7, fourth occurrence)
+
+- **Violates:** plan 6.13 / 11.2, 44 point tap targets.
+- **Repro:** `npx playwright test tests/e2e/tester-v2-regression.spec.ts -g "44 px"` (fails on
+  mobile and desktop) or `-g "44 px tap targets"` in the v3 file.
+- **Observed:** `/invest: invest-type-link-{indexFund,bondsCds,stocks,crypto,cash,other} "Read
+  more" 74x20`, and nothing else on any screen fails.
+- **Why it keeps coming back:** `tests/unit/tap-targets.test.ts` passes, because it scans for
+  `min-h-[Npx]` classes and Button sizes, and an inline link has neither. Only a rendered audit
+  catches this class, and none runs in the default suite.
+
+#### V2-14. Minor. `lint:advice` layer 1 can be walked around, four ways
+
+- **Violates:** R15.7 layer 1 ("must still fail on the original banned phrase list"; a number
+  plus a comparison word "fails"). Minor because the probe below finds no shipped copy that
+  exploits any of these today.
+- **Repro:** `npx vitest run tests/unit/tester-v3-cycle3.test.ts -t "R15.7 layer 1"`
+  (plants in `tests/fixtures/tester-v3-lint-plants.ts`, plus inline strings).
+- **Observed, all pass the lint:**
+  1. **Interpolations are invisible.** `stringLiteralsOf` skips `${...}` and everything inside
+     it, so `` `Why ${formatDollars(a)} a week beats ${formatDollars(b)} later` `` (the
+     original L7, written the way `strings.ts` writes every figure) and
+     `` `Tip: ${on ? 'you should buy NVDA now, it will grow' : ''}` `` both pass. The controls
+     on adjacent lines of the same file fail, so the harness is seeing the file.
+  2. **The impersonal framing list switches rule 4 off for the whole sentence**, not only the
+     imperative check the plan names: "Twenty dollars a week usually beats five hundred dollars
+     later.", "Generally $20 a week beats $500 later." and "Most people your age put $50 a month
+     into an index fund rather than a savings account." all pass.
+  3. **Spelling variants of banned phrases:** "risk-free", "can’t lose" with a typographic
+     apostrophe, "beats the market".
+  4. Recorded, not filed, because the plan leaves them to layer 3: brand names ("Robinhood",
+     "Apple") and a return written in words ("about seven percent a year") pass.
+- **Held:** with every interpolation in `strings.ts` replaced by a number, no template other
+  than the two exempted Summer lines trips rule 4. `COMPARISON_EXEMPT` is exact-sentence, so
+  it fails loud, not open. Side note, errs safe: the bare token "CD" trips the ticker rule, so
+  copy for the new Bonds or CDs type cannot say "a CD".
+
+#### V2-15. Minor. Copy still says round-ups exist and that the jar fills by itself
+
+- **Violates:** R6.1 ("A day passing no longer moves money at all"), R2.1 retired.
+- **Repro:** `-t "round-up removal"` in the unit file.
+- **Observed:** the auto-advance toast reads "3 days went by. Your jar kept working."; L5
+  opens "You did not have to remember anything, and the jar kept working anyway."; the `jar`
+  tooltip says "Where your round-ups, catches and skips collect."; L1's unlock hint reads
+  "Unlocks with your first round-up." For a new user that last one names a trigger that can
+  never happen, while L1 actually unlocks on the first skip.
+
+#### V2-16. Minor. L1 and L3 are the same lesson, and the first skip unlocks both
+
+- **Violates:** the confidence path's eight distinct lessons (8.8), R12.1 as retriggered.
+- **Observed:** L1 "The coffee you did not buy" and L3 "The coffee you didn't buy", 72% body
+  word overlap, both `unlockedDay=0` from one skip. The Lessons ring counts eight, and two of
+  them are one lesson.
+
+#### V2-17. Minor. An import carries coordinates and an address straight into the next export
+
+- **Violates:** criterion 13 (no `/lat|lon|lng|coord|geo/` key in an export), R11.1, R11.5.
+  Minor because it needs a hand-edited file.
+- **Repro:** `-t "coordinate and an address"` in the unit file.
+- **Observed:** `keys carried into the export: homeAddress,coords,lat,lng,lat,lon`. Only places
+  and visits are rebuilt field by field; `profile`, `settings`, `clock`, events, ledger entries,
+  nudges, `milestones` and `demo` are passed through whole. The stray `roundUpsPaused` survives
+  by the same route (harmless on its own).
+
+#### V2-18. Minor. The R16 ceilings allow a figure past 2^53, where cents stop being exact
+
+- **Violates:** R1.1. **Repro:** `-t "2^53"` in the unit file, and the 320 px e2e case.
+- **Observed:** $1,000,000 at 50.00% for 50 years is 63762150021404960 cents, which renders as
+  "$637,621,500,214,049.60". The cents are float noise. Every input is inside the app's own
+  ceilings. Negligible exposure; it is a statement about the ceilings, not the arithmetic.
+
+#### V2-19. Minor (R15.7 layer 3 ruling). L4 and the `dip` tooltip promise that holding cannot lose
+
+- **Violates:** R15.2 in spirit (a guarantee attached to a principle), and it contradicts E19's
+  "including the day its warehouse burns down".
+- **Text:** L4 "A dip only becomes a loss if you sell during it", repeated in the `dip` tooltip.
+- **Why now, when I passed it in cycle 2:** this cycle added an "Individual stocks" holding type
+  and three stock-depth pieces (E07, E17, E18). For a reader who holds one company, the sentence
+  is false: a price that never comes back is a loss whether or not you sell. I am revising my
+  own earlier ruling, and this is a human judgement for the layer 3 gate to confirm.
+
+### Plan-vs-build gaps
+
+**Deviated and documented** (in commit messages or code comments; none of the six commits
+after `f9e5db8` added a section to `03-build-notes.md`, so no assumptions or weak points were
+recorded for R10.4, R16, R17, R18 or the round-up removal):
+- R10.1 now starts at the user's age (1b88ec0, `summer.ts`). The plan text still says "from 19".
+- L1 retriggered from the first RoundUp to the first Skip (0ab8031). The plan's R12.1 still says RoundUp.
+- The impersonal framing list exempts rule 4 rather than "the imperative check", and gained
+  two phrases (build notes, f9e5db8). V2-14 is what that costs.
+- The Summer Money comparison exemption: still flagged to the architect and still undecided.
+
+**Deviated silently** (the plan says one thing, the build another, and nothing records it):
+- R16.1 "only the bonds or CDs holding type offers them": after saving, nothing offers them at
+  all, including to bonds (V2-10).
+- R2.1's own text is not marked retired in place; R2.3 still says subscriptions "produce a
+  purchase and a round-up"; R13 step 5 still applies round-ups.
+- R12.5, R15.6, R15.7, 8.9, 9.8 and 11.5 still say sixteen Learn pieces; there are twenty.
+- `rule-index.json` says R18.2 is "enforced by the absence of any state read". Nothing tested
+  it until `tester-v3-cycle3.spec.ts` (it holds).
+- CLAUDE.md calls habit detection "R4"; it is R3.2.
+
+**The plan itself is wrong:**
+- **R10.4's formula** double counts every jar-sourced ledger entry and counts money the user
+  spent (V2-9). `jarCents + ledgerTotal` matches its own stated intent.
+- **R16.2's ceilings** admit a result past exact integer range (V2-18).
+- **R15.5 against the Summer screen:** still unresolved from cycle 2.
+- **The theme says 18 to 25; `MAX_AGE` is 24**, so a 25 year old cannot give their age.
+
+### R15.7 layer 3: my content verdict
+
+I read all 20 Learn pieces, all 8 lessons, all 6 holding-type explainers and all 29 tooltips
+against R15's two lists. **This is a tester read, not the gate.** The gate belongs to the
+manager and has still not run.
+
+- **No named security, brand, fund or brokerage; no return figure** other than `sevenPercent`,
+  R15.2's own exception; **no second-person instruction** about the reader's money; no copy
+  varies with the ledger. The Invest types card is byte-identical for an empty and a
+  six-type ledger.
+- **Filed:** V2-19 (L4 and `dip`); V2-15 and V2-16 (stale and duplicate lessons).
+- **Passed, closest to the line, for the gate to look at first:** E06 ("set it and forget it",
+  an endorsement framed as observation); E12 ("Plenty of people invest for forty years and
+  never touch any of them", which gently steers away from crypto and commodities); the `cash`
+  explainer ("where most people keep what they need soon").
+- **Voice, not R15:** L8 ends "The main way people lose here is by stopping." That is a failure
+  frame in a lesson meant to remove fear; theme 3.2 and section 5 lean against it.
+
+### What held up
+
+- **R10.1 at every age 18 to 24**, in the domain and on screen. The title reads "from N", both
+  polylines have 65-N+1 points, and the headline reads "Starting at N means putting in $(30-N)x300
+  more". Endpoints match an independent recomputation. Tampered ages (NaN, ±Infinity, -5, 17.4,
+  25, 99, 1e9) clamp to 18 to 24 with no NaN. $1e13 inputs stay finite. The R10.4 empty state
+  shows, with no chart, at zero.
+- **Legacy round-up profiles.** A file built exactly as R2.1 used to write it imports; 12 old
+  Activity lines render ("Pizza by the Slice, $9.66. Kept $0.34."); Home, the week figure, the
+  habit card, the jar and Summer agree to the cent (910/910/435/910); every "kept" selector
+  equals the KEPT_KINDS sum over its window; a legacy profile keeps ticking and creates no new
+  round-up. **The author's "totals stay stable" claim is true.**
+- **R17.** Best week equals a brute-force maximum over 500 random histories with duplicates, and
+  never falls over 2,000 days of growth. The 1-and-7 / 1-and-8 edge holds. 10,000 skips take 0.4 ms.
+  On screen, a quiet fortnight leaves "3 / 3 / $13.05" untouched. No shipped string and no
+  rendered screen (Home, Activity, Places, Invest, Settings, Lessons, Learn, Summer) contains a
+  streak, a miss, a shortfall, urgency, or "only $".
+- **R18.** The card is identical for an empty and a full ledger, the six types render in fixed
+  order, and all six links resolve to /learn/E11, E09, E07, E12, E15 and E01 with matching titles.
+- **R15.6.** The disclosure is visible, unexpanded, on 32 of 32 surfaces: Learn, E01 to E20,
+  Lessons, L1 to L8 (locked and unlocked), Invest and Settings.
+- **R16 arithmetic and the import validator.** $1,000 at 4.50% for 12 months is exactly
+  $1,045.00; the ceilings are inclusive; the validator rejects 601, 0, -12, 12.5, "12", null,
+  5001, 4.5 and "450" by name. An export after a wipe has no null or undefined keys and still
+  round-trips.
+- No overflow at 320 px on Home with the habit card, Invest with the largest maturity line, the
+  capture with a bond row, Summer with money, or E17 to E20.
+- Typecheck is clean, both lints pass, and `rules:check` passes (30 rules, 111 cases).
+
+### What I could not test
+
+- **A real push subscription.** The V2-1 `ready` path, `hasServerRow` across a reload, and
+  "turning off deletes the row" from the client.
+- **iphone-pro and iphone-pro-max this cycle.** The machine could not carry four projects; I
+  ran mobile and desktop only.
+- **The full suites.** Not re-run: `npm test` (I ran 12 files), `npm run test:db` (3 files),
+  the full e2e suite, `tooltip.spec.ts`'s 116-tap sweep, and axe in both themes. Gotcha 4 says
+  any Tooltip or colour change needs those. None happened this cycle, but I did not confirm it.
+- **Tampered persisted storage.** Rehydrate does not validate, so a hand-edited `profile.age:
+  99` would reach the Summer select (reading 18 while the chart clamps to 24) and Home's "by 30"
+  (raw age). That is from reading the code, not from a run. Unverified.
+- A real iPhone, Safari, WebKit, Firefox, screen readers, the live cron firing, and eight
+  concurrent sends against a real push service.
+
+### Tester files added this cycle (uncommitted)
+
+| file | cases | covers |
+|---|---|---|
+| `tests/unit/tester-v3-cycle3.test.ts` | 42 | Impact-file rulings, R16, R10.4, R10.1 all ages, R17, legacy round-ups, stale copy, the lint plants. **14 fail on purpose** (V2-9, V2-10, V2-12, V2-14 to V2-18). |
+| `tests/fixtures/tester-v3-lint-plants.ts` | n/a | Plants the lint CLI is pointed at. Outside both lints' walk. |
+| `tests/e2e/tester-v3-cycle3.spec.ts` | 13 | The same attacks through the UI. **5 fail on purpose** on mobile (V2-9, V2-10, V2-11, V2-12, V2-13). |
+| `tests/db/tester-v3-backend.test.ts` | 3 | Five-way concurrency, throw after claim, 429 in a concurrent pair. All pass. |
+
+```bash
+npx vitest run tests/unit/tester-v3-cycle3.test.ts                          # 14 fail = defects above
+npx vitest run --config vitest.db.config.ts tests/db/tester-v3-backend.test.ts
+npx playwright test tests/e2e/tester-v3-cycle3.spec.ts --project=mobile     # 5 fail = defects above
+npx playwright test tests/e2e/tester-v2-regression.spec.ts -g "44 px" --project=mobile --project=desktop  # fails = V2-13
+```
+
+Every intended failure names its finding in its assertion message and prints `AUDIT-RESULT` or
+a labelled log line. When a defect is fixed its case goes green with no edit to the test.
+
+### For the architect and the owner
+
+1. **R10.4's formula (V2-9).** Decide what "put in" means, then fix the plan before the code.
+   I recommend `jarCents + ledgerTotal`.
+2. **Should a ledger entry carry a type?** Without one, no layer can keep a CD rate off a stock
+   row (V2-12), and the edit form cannot know to offer term and rate (V2-10).
+3. **R15.5 against the Summer screen**, open since cycle 2.
+4. **R15.7 layer 3 still has not run.** The plan makes it a condition of the next deploy, and
+   the site is already serving this content.

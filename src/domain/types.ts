@@ -60,6 +60,11 @@ export interface LedgerEntry {
   // are optional rather than defaulted: a zero here would render as a real 0.00% rate.
   termMonths?: number;
   yieldBps?: number;
+  /**
+   * R16.5. Which of the six holding types this row was captured as. Absent on jar moves, on
+   * free text entries, and on everything saved before the type was stored.
+   */
+  holdingType?: string;
 }
 
 interface EventBase {

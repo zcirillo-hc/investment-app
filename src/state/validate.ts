@@ -6,7 +6,9 @@
 // holdings, history and allocation have no v2 meaning (plan section 3, "Explicitly out of
 // scope").
 import type { AppState, FearOption, LedgerKind, LedgerSource, LessonId, Place, PlaceVisit, Theme } from '../domain/types';
-import { MAX_TERM_MONTHS, MAX_YIELD_BPS, isUsableTerm, isUsableYield } from '../domain/maturity';
+import { MAX_TERM_MONTHS, MAX_YIELD_BPS, isBondRow, isUsableTerm, isUsableYield } from '../domain/maturity';
+import { HOLDING_TYPES } from '../content/holdingTypes';
+import { initialAppState } from '../domain/types';
 import { LESSON_IDS, emptyLearn, emptyLearnSurfaces, initialPushState } from '../domain/types';
 import { LEARN_IDS, LEARN_SURFACES } from '../content/learn';
 import { compareDates, isValidDate, safeSimDate } from '../domain/dates';
@@ -239,6 +241,12 @@ function validateLedgerEntry(c: Checker, v: unknown, path: string): void {
   if (v.yieldBps !== undefined && !isUsableYield(v.yieldBps as number)) {
     c.fail(`${path}.yieldBps`, `expected whole basis points, 1 to ${MAX_YIELD_BPS}`);
   }
+  if (v.holdingType !== undefined) c.oneOf(v.holdingType, `${path}.holdingType`, HOLDING_TYPES.map((h) => h.key));
+  // R16.5, V2-12: a CD rate on an Individual stocks row renders a 30 year "contract" that is not one.
+  if ((v.termMonths !== undefined || v.yieldBps !== undefined) && typeof v.what === 'string'
+    && !isBondRow({ holdingType: typeof v.holdingType === 'string' ? v.holdingType : undefined, what: v.what })) {
+    c.fail(`${path}.${v.termMonths !== undefined ? 'termMonths' : 'yieldBps'}`, 'only a bonds or CDs row may carry a term or a rate');
+  }
 }
 
 function validateEvent(c: Checker, v: unknown, path: string): void {
@@ -397,7 +405,7 @@ function validateOrdering(c: Checker, input: Obj): void {
     arr.forEach((el, i) => {
       const id = (el as { id: unknown }).id;
       if (typeof id !== 'string') return;
-      if (seen.has(id)) c.fail(`${path}[${i}].id`, `expected a unique id (${JSON.stringify(id)} appears more than once)`);
+      if (seen.has(id)) c.fail(`${path}[${i}].id`, `expected a unique id (${JSON.stringify(id)} is repeated)`);
       seen.add(id);
     });
   };
@@ -422,7 +430,7 @@ function validateOrdering(c: Checker, input: Obj): void {
   (input.nudges as unknown[]).forEach((n, i) => {
     const d = (n as { dayIndex: number }).dayIndex;
     if (d > dayIndex) c.fail(`nudges[${i}].dayIndex`, `expected at most clock.dayIndex (${dayIndex})`);
-    if (nudgeDays.has(d)) c.fail(`nudges[${i}].dayIndex`, `expected at most one nudge per day (day ${d} appears more than once)`);
+    if (nudgeDays.has(d)) c.fail(`nudges[${i}].dayIndex`, `expected at most one nudge per day (day ${d} is repeated)`);
     nudgeDays.add(d);
   });
 
@@ -535,6 +543,34 @@ function cleanVisit(v: PlaceVisit): PlaceVisit {
  * Full shape and range check. Anything that would let bad data reach the store or the UI is
  * rejected, so a malformed file always leaves state untouched.
  */
+/**
+ * V2-17. Every object the file supplies is rebuilt from the fields this schema defines, and any
+ * other key is dropped. Before this only places and visits were rebuilt, so a hand edited file
+ * could carry a coordinate or a street address on a ledger entry, an event or the profile
+ * straight into the next export, which R11.1 and R11.5 forbid. Stale keys such as the retired
+ * settings.roundUpsPaused go the same way.
+ */
+function pick<T>(obj: T, keys: readonly string[]): T {
+  const from = obj as unknown as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of keys) if (Object.prototype.hasOwnProperty.call(from, k)) out[k] = from[k];
+  return out as unknown as T;
+}
+const EVENT_BASE = ['id', 'dayIndex', 'date', 'kind'];
+const EVENT_FIELDS: Record<string, readonly string[]> = {
+  Purchase: [...EVENT_BASE, 'purchaseId', 'merchant', 'category', 'cents'],
+  RoundUp: [...EVENT_BASE, 'purchaseId', 'merchant', 'purchaseCents', 'cents'],
+  Catch: [...EVENT_BASE, 'paycheckId', 'paycheckCents', 'pct', 'cents'],
+  Skip: [...EVENT_BASE, 'nudgeId', 'placeId', 'displayName', 'cents'],
+  JarMove: [...EVENT_BASE, 'ledgerEntryId', 'cents'],
+  JarEmptied: [...EVENT_BASE, 'cents'],
+  Paycheck: [...EVENT_BASE, 'paycheckId', 'cents', 'source'],
+};
+const LEDGER_FIELDS = ['id', 'date', 'amountCents', 'what', 'note', 'source', 'createdAt', 'termMonths', 'yieldBps', 'holdingType'];
+const NUDGE_FIELDS = ['id', 'placeId', 'displayName', 'dayIndex', 'nudgeMinute', 'estimateCents', 'status'];
+const PAYCHECK_FIELDS = ['id', 'dayIndex', 'amountCents', 'source'];
+const LESSON_FIELDS = ['unlockedDay', 'readAt'];
+
 export function validateImportedState(input: unknown): ValidationResult {
   const c = new Checker();
   if (!c.obj(input, 'root')) return { ok: false, problems: c.problems };
@@ -583,22 +619,22 @@ export function validateImportedState(input: unknown): ValidationResult {
   const visits = src.visits.map(cleanVisit);
   const state: AppState = {
     schemaVersion: SCHEMA_VERSION,
-    profile: src.profile,
-    settings: src.settings,
-    clock: src.clock,
+    profile: pick(src.profile, Object.keys(initialAppState().profile)),
+    settings: pick(src.settings, Object.keys(initialAppState().settings)),
+    clock: pick(src.clock, Object.keys(initialAppState().clock)),
     jarCents: src.jarCents,
     places,
     visits,
     // R3.5: recomputed from the visits, never trusted from the file.
     habits: recomputeHabits(places, visits, src.clock.dayIndex),
-    nudges: src.nudges,
-    ledger: src.ledger,
-    events: src.events,
-    pendingPaychecks: src.pendingPaychecks,
-    lessons: src.lessons,
+    nudges: src.nudges.map((n) => pick(n, NUDGE_FIELDS)),
+    ledger: src.ledger.map((e) => pick(e, LEDGER_FIELDS)),
+    events: src.events.map((e) => pick(e, EVENT_FIELDS[e.kind] ?? EVENT_BASE)),
+    pendingPaychecks: src.pendingPaychecks.map((p) => pick(p, PAYCHECK_FIELDS)),
+    lessons: Object.fromEntries(Object.entries(src.lessons).map(([k, l]) => [k, pick(l, LESSON_FIELDS)])) as AppState['lessons'],
     learn: cleanLearn((input as Record<string, unknown>).learn),
     learnSurfaces: cleanLearnSurfaces((input as Record<string, unknown>).learnSurfaces),
-    milestones: src.milestones,
+    milestones: pick(src.milestones, Object.keys(initialAppState().milestones)),
     flags: {
       nudgeExplainerSeen: src.flags.nudgeExplainerSeen === true,
       privacyExplainerSeen: src.flags.privacyExplainerSeen === true,
@@ -611,7 +647,7 @@ export function validateImportedState(input: unknown): ValidationResult {
     // Without this, a forged file could point a browser at someone else's endpoint hash in the
     // Nudges card.
     push: initialPushState(),
-    demo: src.demo,
+    demo: pick(src.demo, Object.keys(initialAppState().demo)),
   };
   return { ok: true, state };
 }

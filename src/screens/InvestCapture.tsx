@@ -8,7 +8,7 @@ import { Button } from '../components/Button';
 import { useAppNavigate } from '../lib/hooks';
 import { HOLDING_TYPES } from '../content/holdingTypes';
 import { formatCents, parseDollarInput } from '../domain/money';
-import { formatTerm, formatYield, maturityOf } from '../domain/maturity';
+import { BONDS_CDS_KEY, formatTerm, formatYield, maturityOf, parseRateBps, parseTermMonths } from '../domain/maturity';
 import { currentDate } from '../domain/selectors';
 import { LEDGER_WHAT_MAX_LENGTH } from '../config';
 
@@ -79,19 +79,28 @@ export function InvestCapture() {
   // R16. Only a bond or CD row offers a term and a rate, and only a complete, sane pair
   // produces a figure. A term with no rate, or either one out of range, shows nothing rather
   // than a wrong number.
+  // R16.2, V2-11. The term and the rate are parsed separately and each is optional. Anything
+  // typed that cannot be used shows an error and blocks the save, instead of being dropped or
+  // quietly changed: "4.5%" and "4,5" read as 4.50%, 1.005 rounds half away from zero to
+  // 1.01%, and 12.5 months or a rate past the ceiling is refused.
+  const rowCd = (r: Row) => {
+    if (r.key !== BONDS_CDS_KEY) return { term: null as number | null, rate: null as number | null, invalid: false };
+    const t = parseTermMonths(r.term);
+    const y = parseRateBps(r.rate);
+    return { term: t.kind === 'ok' ? t.value : null, rate: y.kind === 'ok' ? y.value : null, invalid: t.kind === 'invalid' || y.kind === 'invalid' };
+  };
+
   const rowMaturity = (r: Row) => {
-    if (r.key !== 'bondsCds') return null;
+    const cd = rowCd(r);
     const cents = parseDollarInput(r.amount);
-    const months = Number(r.term.trim());
-    const pct = Number(r.rate.trim());
-    if (cents === null || r.term.trim() === '' || r.rate.trim() === '') return null;
-    if (!Number.isFinite(months) || !Number.isFinite(pct)) return null;
-    return maturityOf(cents, Math.round(pct * 100), Math.round(months));
+    if (cents === null || cd.term === null || cd.rate === null) return null;
+    return maturityOf(cents, cd.rate, cd.term);
   };
 
   const rowReady = (r: Row): boolean => {
     const cents = parseDollarInput(r.amount);
     if (cents === null || cents <= 0) return false;
+    if (rowCd(r).invalid) return false;
     if (!r.requiresLabel) return true;
     const label = r.typedLabel.trim();
     return label.length >= 1 && label.length <= LEDGER_WHAT_MAX_LENGTH;
@@ -108,14 +117,18 @@ export function InvestCapture() {
     for (const r of rows) {
       const cents = parseDollarInput(r.amount) ?? 0;
       const what = r.requiresLabel ? r.typedLabel.trim() : r.label;
-      const m = rowMaturity(r);
+      const cd = rowCd(r);
       const result = addLedgerEntry({
         date,
         amountCents: cents,
         what,
         note: '',
         source: 'manual',
-        ...(m ? { termMonths: m.termMonths, yieldBps: m.yieldBps } : {}),
+        // R16.5: stored so the edit form knows to offer a length and a rate, and so no layer
+        // can put a rate on a row that is not a bond or a CD.
+        holdingType: r.key,
+        ...(cd.term !== null ? { termMonths: cd.term } : {}),
+        ...(cd.rate !== null ? { yieldBps: cd.rate } : {}),
       });
       if (!result.ok) {
         setError(r.requiresLabel && what.length > LEDGER_WHAT_MAX_LENGTH ? S.capture.errLabelTooLong : S.invest.errAmount);
@@ -246,6 +259,11 @@ export function InvestCapture() {
                         </div>
                       </label>
                     </div>
+                    {rowCd(r).invalid && (
+                      <p role="alert" data-testid="invest-capture-cd-error" className="mt-2 text-sm font-semibold text-coral-ink">
+                        {S.invest.cdInvalid}
+                      </p>
+                    )}
                     {(() => {
                       const m = rowMaturity(r);
                       if (!m) return null;

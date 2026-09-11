@@ -12,7 +12,7 @@
     },
     "jar": {
       "label": "jar",
-      "definition": "Where your round-ups, catches and skips collect. It is a running total of money you kept, and nothing moves it out unless you say so."
+      "definition": "Where your skips and paycheck catches collect. It is a running total of money you kept, and nothing moves it out unless you say so."
     },
     "place": {
       "label": "place",
@@ -44,7 +44,7 @@
     },
     "dip": {
       "label": "dip",
-      "definition": "A stretch where prices are lower than they were. It only becomes a loss if you sell during it."
+      "definition": "A stretch where prices are lower than they were. Some come back and some do not, and selling in a panic is how a temporary drop becomes a real loss."
     },
     "sevenPercent": {
       "label": "7%",

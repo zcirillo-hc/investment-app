@@ -9,7 +9,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { SummerCurves } from '../components/SummerCurves';
 import { GrowthCurve } from '../components/GrowthCurve';
-import { keptSinceStartCents, ledgerTotal } from '../domain/selectors';
+import { putAsideCents } from '../domain/selectors';
 import { RichText } from '../components/Term';
 import { parseDollarInput } from '../domain/money';
 import { keepOfLeftCents, summerCurves, yourMoneyCurve } from '../domain/summer';
@@ -38,7 +38,7 @@ export function SummerMoney() {
   const data = useMemo(() => curves.ages.map((a, i) => ({ age: a, now: Math.round(curves.startNow[i]), later: Math.round(curves.startAt30[i]) })), [curves]);
   // R10.4. What the user actually put in: kept in the jar plus what they recorded moving into
   // investments. Both are money they set aside, which is what "put in" means to them.
-  const putInCents = keptSinceStartCents(state) + ledgerTotal(state);
+  const putInCents = putAsideCents(state);
   const mine = useMemo(() => yourMoneyCurve(putInCents, age), [putInCents, age]);
   const ages: number[] = [];
   for (let a = MIN_AGE; a <= MAX_AGE; a++) ages.push(a);

@@ -256,3 +256,13 @@ export function habitPlaceCount(state: AppState): number {
 export function visitsForPlace(state: AppState, placeId: string): PlaceVisit[] {
   return state.visits.filter((v) => v.placeId === placeId);
 }
+
+/**
+ * R10.4, revised after V2-9. What the user has put aside and still has: money in the jar plus
+ * money they recorded moving into an investment. Each dollar is counted once. This used to be
+ * keptSinceStart plus the ledger, which counted a jar move twice and went on growing money the
+ * user had told the app they spent.
+ */
+export function putAsideCents(state: AppState): Cents {
+  return state.jarCents + ledgerTotal(state);
+}

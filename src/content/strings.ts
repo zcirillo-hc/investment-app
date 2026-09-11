@@ -159,7 +159,8 @@ export const S = {
     noLesson: 'Nothing new yet. Keep going.',
     activityLink: 'See all activity',
     milestonesLink: 'Your milestones',
-    autoAdvance: (n: number) => `${n} ${n === 1 ? 'day' : 'days'} went by. Your jar kept working.`,
+    // R6.1: nothing moves on its own, so the toast must not say the jar was busy.
+    autoAdvance: (n: number) => `${n} ${n === 1 ? 'day' : 'days'} went by while you were away. Your jar is exactly where you left it.`,
     demoHint: 'Tip: long-press the logo for demo controls.',
   },
 
@@ -264,7 +265,9 @@ export const S = {
     errWhatTooLong: 'Keep that under 60 characters.',
     // R16. Bond and CD term and rate.
     errTerm: 'Give the length in whole months, up to 50 years.',
-    errYield: 'Give the rate as a number, up to 50%.',
+    errYield: 'Give the rate as a number, up to 25%.',
+    errNotBond: 'Only a Bonds or CDs entry can carry a length and a rate.',
+    cdInvalid: 'Check the length and the rate. The length is whole months, up to 600, and the rate is a number up to 25%.',
     // R18. The reference card. Static, identical for every user, and it explains what the
     // six things ARE. It never says which to pick, which is the line R15 draws.
     typesTitle: 'What these actually are',

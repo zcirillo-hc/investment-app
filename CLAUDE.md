@@ -104,7 +104,7 @@ Key ones to know:
 - **R4** habit detection: a place becomes a habit at 3+ visits in 14 days at a similar time.
 - **R10.1 / R10.4** the two charts on Summer Money. R10.1 is the hypothetical summer-job
   comparison and never moves. R10.4 is the grounded one: real money put in
-  (`keptSinceStartCents + ledgerTotal`) grown at 7% to 65. They have separate cards and
+  (`jarCents + ledgerTotal`, each dollar counted once) grown at 7% to 65. They have separate cards and
   separate scales on purpose, because real money is tens of dollars against tens of thousands
   and a shared axis flattens the real one to nothing.
 - **R4.4** one nudge per day, maximum.
@@ -119,7 +119,9 @@ Key ones to know:
   holds, because R15.4 bans educational content that varies with the ledger.
 - **R16** bond and CD term and rate on a ledger entry, and what it pays held to maturity.
   Allowed where a stock projection is not, because a CD rate is a contract and this is
-  arithmetic on the user's own two numbers rather than a guess about markets.
+  arithmetic on the user's own two numbers rather than a guess about markets. Only a bonds or
+  CDs row may carry them (R16.5); entries store `holdingType`, and an edit keeps any field its
+  form did not show (R16.6).
 
 Money is **integer cents** everywhere. Never floats.
 
@@ -146,7 +148,7 @@ Why the second list stays banned even with a disclaimer: the owner is not a regi
 
 > This is general information, not personal advice. We are not licensed financial advisors, and nothing here is tailored to you or your money.
 
-`npm run lint:advice` enforces what it can. It cannot catch everything, so **a human must read all 20 Learn pieces and 8 lessons against the list above before a content change ships.** That gate is R15.7 layer 3.
+`npm run lint:advice` enforces what it can. It cannot catch everything, so **a human must read all 20 Learn pieces and 8 lessons against the list above before a content change ships.** That gate is R15.7 layer 3. The owner does that read on a private review page, "Spare Change Copy Desk", generated from `shared/content/*.json`; each mark is stored in the page's database collection `reviews` and read back with the Artifact tool's `read_db`. Ask the owner for the link, and after a content change rebuild and republish it to the same URL.
 
 ---
 
@@ -200,7 +202,7 @@ v1 shipped as a round-up investing prototype and was pivoted in v2 to spend-habi
 Green as of 2026-09-10: 700 unit, 93 db, typecheck, both lints, build, axe clean in both themes at four viewports. End-to-end: 328 passing, 28 skipped, 0 failed on 2026-09-10 across mobile, desktop, iPhone Pro and Pro Max.
 
 **Known open items:**
-- The v2 tester found 8 defects. Fixes for all of them plus the advice policy landed on 2026-09-09 and need a tester re-verification pass that has not run.
+- The tester's cycle 3 pass (2026-09-10) verified V2-1 to V2-8 and filed V2-9 to V2-19. Fixes for all eleven landed on 2026-09-10 and need a tester re-verification pass. Two of its tests encode assumptions the fixes change on purpose; see the plan's Cycle 3 fixes log.
 - Four tests in `tests/unit/tester-v2-import-impact.test.ts` were inverted on 2026-09-09: they originally asserted the import validator wrongly ACCEPTED four bad shapes, in order to demonstrate the damage. The validator now rejects all four, so they assert rejection instead. Coverage preserved, intent unchanged.
 - Never tested: a real iPhone, real Safari, WebKit, Firefox, screen readers, and an actual push notification arriving on a physical phone.
 - The cron has never been observed firing on its real daily schedule in production.

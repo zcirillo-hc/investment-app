@@ -33,6 +33,7 @@ export const BANNED_PHRASES = [
   'risk free',
   "can't lose",
   'beat the market',
+  'beats the market',
   'outperform',
   'our pick',
   'top pick',
@@ -130,16 +131,13 @@ const WRITTEN_NUMBERS = [
 ];
 const NUMBER_RE = new RegExp(`\\$\\s*\\d|\\b\\d+(?:[.,]\\d+)?\\b|\\b(?:${WRITTEN_NUMBERS.join('|')})\\b`, 'i');
 
-/**
- * R15.7's impersonal framing allowlist. A sentence that frames itself as what people in
- * general do is the shape R15's first list exists to permit, so it is exempt from the
- * comparison rule ("most people start with a broad fund rather than picking companies" is the
- * plan's own example of an allowed sentence). It is NOT exempt from anything else: the banned
- * phrase list, the ticker rule and the percentage rule all still apply to it, and R15.7 layer
- * 3 exists precisely because a human still has to judge whether an impersonally framed
- * sentence reads as a recommendation anyway.
+/*
+ * V2-14. There used to be an impersonal framing allowlist here ("most people", "usually",
+ * "generally") that switched the number and comparison rule off for any sentence containing one
+ * of those words, so "Twenty dollars a week usually beats five hundred dollars later" passed.
+ * A ranking with a number in it is banned however it is framed (R15.5), so the allowlist is
+ * gone. Unquantified principles framed that way never had a number and still pass.
  */
-const IMPERSONAL_FRAMING = ['most people', 'generally', 'usually', 'in general', 'on average', 'plenty of people', 'a lot of people'];
 
 /**
  * The one place in the app where a specific number and a comparison word legitimately share a
@@ -160,16 +158,13 @@ const IMPERSONAL_FRAMING = ['most people', 'generally', 'usually', 'in general',
  * feature on my own authority.
  */
 const COMPARISON_EXEMPT = new Set([
-  // The chart title, now interpolating the user's own age (R10.1). The literal scanner strips
-  // `${startAge}`, which is why the exempt form leaves a gap after "from".
-  'Keeping 10% of every summer paycheck from , next to waiting until 30',
-  'Keeping 10% of every summer paycheck from, next to waiting until 30',
-  // The same title with no age to interpolate, used as the SVG's accessible name.
+  // The chart title with the user's age interpolated (R10.1). Interpolations are read as "$9".
+  'Keeping 10% of every summer paycheck from $9, next to waiting until 30',
+  // The same title with no age, used as the SVG's accessible name.
   'Keeping 10% of every summer paycheck, next to waiting until 30',
-  // The headline after the plain language pass, interpolations stripped. `next to` and
-  // `more than` were added to COMPARISON_WORDS above specifically so this rewording is
-  // exempted in the open rather than slipping past a lint that never knew the phrasing.
-  'Starting at means putting in more than someone who waits until 30.',
+  // The plain language headline (R10.1). `next to` and `more than` are comparison words on
+  // purpose, so this line is exempted in the open rather than slipping past the lint.
+  'Starting at $9 means putting in $9 more than someone who waits until 30.',
 ]);
 
 /** Sentence splitting good enough for prose: a terminator followed by a space or the end. */
@@ -254,15 +249,23 @@ function stringLiteralsOf(source: string): { text: string; line: number }[] {
         }
         if (quote === '`' && d === '$' && source[i + 1] === '{') {
           // Skip the interpolated expression, tracking nesting so a nested object literal
-          // does not close it early.
+          // does not close it early. V2-14: it is read as "$9", a number, not as nothing, so
+          // "Why ${a} a week beats ${b} later" is caught the way the literal sentence would be.
+          text += '$9';
           depth = 1;
           i += 2;
+          const exprStart = i;
+          const exprLine = line;
           while (i < n && depth > 0) {
             if (source[i] === '{') depth += 1;
             else if (source[i] === '}') depth -= 1;
             else if (source[i] === '\n') line += 1;
             i += 1;
           }
+          // V2-14: a literal written inside the interpolation, as in
+          // `Tip: ${on ? 'you should buy NVDA now' : ''}`, is prose too and used to go unread.
+          // Scan the expression's own literals, on the lines they sit on.
+          for (const inner of stringLiteralsOf(source.slice(exprStart, i - 1))) push(inner.text, exprLine + inner.line - 1);
           continue;
         }
         if (d === quote) {
@@ -293,7 +296,8 @@ function jsonStringsOf(source: string): { text: string; line: number }[] {
 
 export function checkText(text: string): { rule: string; detail: string }[] {
   const found: { rule: string; detail: string }[] = [];
-  const lower = text.toLowerCase();
+  // V2-14: "risk-free" and a typographic apostrophe in "can’t lose" used to slip past the list.
+  const lower = text.toLowerCase().replace(/[\u2018\u2019\u02bc]/g, "'").replace(/[-\u2010\u2011]/g, ' ');
   for (const phrase of BANNED_PHRASES) {
     if (lower.includes(phrase)) found.push({ rule: 'R15.3 banned phrase', detail: phrase });
   }
@@ -305,8 +309,6 @@ export function checkText(text: string): { rule: string; detail: string }[] {
   for (const sentence of sentencesOf(text)) {
     const trimmed = sentence.trim().replace(/\s+/g, ' ');
     if (COMPARISON_EXEMPT.has(trimmed)) continue;
-    const lowered = trimmed.toLowerCase();
-    if (IMPERSONAL_FRAMING.some((f) => lowered.includes(f))) continue;
     const cmp = COMPARISON_RE.exec(sentence);
     if (!cmp) continue;
     const num = NUMBER_RE.exec(sentence);

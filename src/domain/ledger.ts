@@ -7,7 +7,7 @@
 // asserts that by name over this module's exports, so adding one is a test failure.
 import type { Cents, LedgerEntry, LedgerSource } from './types';
 import { compareOrdinal } from './money';
-import { isUsableTerm, isUsableYield } from './maturity';
+import { BONDS_CDS_KEY, isBondRow, isUsableTerm, isUsableYield } from './maturity';
 import { isValidDate } from './dates';
 import { LEDGER_MAX_AMOUNT_CENTS, LEDGER_NOTE_MAX_LENGTH, LEDGER_WHAT_MAX_LENGTH } from '../config';
 
@@ -17,11 +17,14 @@ export interface LedgerDraft {
   what: string;
   note: string;
   source: LedgerSource;
-  termMonths?: number;
-  yieldBps?: number;
+  /** R16.2. On an edit, `undefined` keeps the stored value and `null` clears it (V2-10). */
+  termMonths?: number | null;
+  yieldBps?: number | null;
+  /** R16.5. */
+  holdingType?: string;
 }
 
-export type LedgerProblem = 'date' | 'dateFuture' | 'amount' | 'amountTooLarge' | 'what' | 'whatTooLong' | 'noteTooLong' | 'term' | 'yield';
+export type LedgerProblem = 'date' | 'dateFuture' | 'amount' | 'amountTooLarge' | 'what' | 'whatTooLong' | 'noteTooLong' | 'term' | 'yield' | 'notBond';
 
 export type LedgerValidation = { ok: true; draft: LedgerDraft } | { ok: false; problems: LedgerProblem[] };
 
@@ -44,8 +47,12 @@ export function validateDraft(draft: LedgerDraft, currentDate: string): LedgerVa
   // R16. Both are optional, but a value that is present and unusable is rejected rather than
   // quietly dropped: a term with no rate renders nothing, and silently discarding what someone
   // typed is how a ledger stops matching what they believe is in it.
-  if (draft.termMonths !== undefined && !isUsableTerm(draft.termMonths)) problems.push('term');
-  if (draft.yieldBps !== undefined && !isUsableYield(draft.yieldBps)) problems.push('yield');
+  const hasTerm = draft.termMonths !== undefined && draft.termMonths !== null;
+  const hasYield = draft.yieldBps !== undefined && draft.yieldBps !== null;
+  if (hasTerm && !isUsableTerm(draft.termMonths as number)) problems.push('term');
+  if (hasYield && !isUsableYield(draft.yieldBps as number)) problems.push('yield');
+  // R16.5, V2-12: a rate on a stock row would be quoted as if it were a contract.
+  if ((hasTerm || hasYield) && !isBondRow({ holdingType: draft.holdingType, what })) problems.push('notBond');
   if (problems.length > 0) return { ok: false, problems };
   return { ok: true, draft: { ...draft, what, note } };
 }
@@ -71,8 +78,9 @@ export function makeEntry(ledger: LedgerEntry[], draft: LedgerDraft, createdAt: 
     createdAt,
     // R16. Only spread when present, so a non bond entry never carries the keys at all and
     // `e.termMonths !== undefined` stays an honest test of whether this is a rate bearing row.
-    ...(draft.termMonths !== undefined ? { termMonths: draft.termMonths } : {}),
-    ...(draft.yieldBps !== undefined ? { yieldBps: draft.yieldBps } : {}),
+    ...(typeof draft.termMonths === 'number' ? { termMonths: draft.termMonths } : {}),
+    ...(typeof draft.yieldBps === 'number' ? { yieldBps: draft.yieldBps } : {}),
+    ...(draft.holdingType !== undefined ? { holdingType: draft.holdingType } : {}),
   };
 }
 
@@ -141,20 +149,26 @@ export function removeEntry(ledger: LedgerEntry[], id: string): LedgerEntry[] {
   return ledger.filter((e) => e.id !== id);
 }
 
+/**
+ * R16.2, V2-10. An edit only changes what the draft actually carries. `undefined` means the form
+ * never showed that field, so the stored value is kept: before this, a note-only edit through a
+ * form with no rate field erased a bond's term and rate. `null` means the user cleared it, so the
+ * key is removed rather than left quoting a rate they deleted. A pre-R16.5 bond row is stamped
+ * with its type on the first edit, so later changing its label cannot strand a rate on it.
+ */
+function applyEdit(e: LedgerEntry, draft: LedgerDraft): LedgerEntry {
+  const next: LedgerEntry = { ...e, date: draft.date, amountCents: draft.amountCents, what: draft.what.trim(), note: draft.note.trim() };
+  if (draft.holdingType !== undefined) next.holdingType = draft.holdingType;
+  else if (next.holdingType === undefined && (e.termMonths !== undefined || e.yieldBps !== undefined) && isBondRow(e)) next.holdingType = BONDS_CDS_KEY;
+  if (draft.termMonths === null) delete next.termMonths;
+  else if (draft.termMonths !== undefined) next.termMonths = draft.termMonths;
+  if (draft.yieldBps === null) delete next.yieldBps;
+  else if (draft.yieldBps !== undefined) next.yieldBps = draft.yieldBps;
+  return next;
+}
+
 export function replaceEntry(ledger: LedgerEntry[], id: string, draft: LedgerDraft): LedgerEntry[] {
   return ledger.map((e) =>
-    e.id === id
-      ? {
-          ...e,
-          date: draft.date,
-          amountCents: draft.amountCents,
-          what: draft.what.trim(),
-          note: draft.note.trim(),
-          // R16. An edit that clears the term or the rate must remove the key, not leave the
-          // old one behind, or the row would keep quoting a rate the user just deleted.
-          termMonths: draft.termMonths,
-          yieldBps: draft.yieldBps,
-        }
-      : e,
+    e.id === id ? applyEdit(e, draft) : e,
   );
 }

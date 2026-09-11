@@ -7,6 +7,7 @@ import { LEDGER_WHAT_SUGGESTIONS } from '../content/holdingTypes';
 import { S } from '../content/strings';
 import { Button } from './Button';
 import { Card } from './Card';
+import { BONDS_CDS_KEY, isBondRow, parseRateBps, parseTermMonths } from '../domain/maturity';
 
 const MESSAGES: Record<LedgerProblem, string> = {
   amount: S.invest.errAmount,
@@ -18,6 +19,7 @@ const MESSAGES: Record<LedgerProblem, string> = {
   noteTooLong: S.invest.errNoteTooLong,
   term: S.invest.errTerm,
   yield: S.invest.errYield,
+  notBond: S.invest.errNotBond,
 };
 
 export function messageFor(problems: string[]): string {
@@ -49,11 +51,24 @@ export function LedgerForm({ initial, currentDate, source, lockAmount = false, t
   const [date, setDate] = useState(initial?.date ?? currentDate);
   const [what, setWhat] = useState(initial?.what ?? '');
   const [note, setNote] = useState(initial?.note ?? '');
+  // R16.2, V2-10. A bond or CD row's edit form shows its length and rate, prefilled, so saving
+  // a note no longer erases them and emptying a field is a real way to clear it.
+  const bond = initial?.what !== undefined && isBondRow({ holdingType: initial.holdingType, what: initial.what });
+  const [term, setTerm] = useState(initial?.termMonths !== undefined ? String(initial.termMonths) : '');
+  const [rate, setRate] = useState(initial?.yieldBps !== undefined ? (initial.yieldBps / 100).toFixed(2) : '');
   const [error, setError] = useState<string | null>(null);
 
   const submit = () => {
     const cents = lockAmount ? (initial?.amountCents ?? 0) : (parseDollarInput(amount) ?? 0);
-    const r = onSave({ date, amountCents: cents, what, note, source });
+    let cd: Pick<LedgerDraft, 'termMonths' | 'yieldBps' | 'holdingType'> = {};
+    if (bond) {
+      const t = parseTermMonths(term);
+      const y = parseRateBps(rate);
+      if (t.kind === 'invalid') return setError(S.invest.errTerm);
+      if (y.kind === 'invalid') return setError(S.invest.errYield);
+      cd = { holdingType: initial?.holdingType ?? BONDS_CDS_KEY, termMonths: t.kind === 'ok' ? t.value : null, yieldBps: y.kind === 'ok' ? y.value : null };
+    }
+    const r = onSave({ date, amountCents: cents, what, note, source, ...cd });
     if (!r.ok) {
       setError(messageFor(r.problems));
       return;
@@ -123,6 +138,30 @@ export function LedgerForm({ initial, currentDate, source, lockAmount = false, t
           onChange={(e) => setNote(e.target.value)}
         />
       </label>
+      {bond && (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2" data-testid={`${testIdPrefix}-cd`}>
+          <label className="block text-sm">
+            <span className="font-semibold">{S.invest.termLabel}</span> <span className="text-muted">({S.invest.termUnit})</span>
+            <input
+              data-testid={`${testIdPrefix}-term`}
+              inputMode="numeric"
+              className="mt-1 min-h-[44px] w-full rounded-2xl bg-ground px-3 py-2 ring-1 ring-line transition num focus:outline-none focus:ring-2 focus:ring-leaf"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="font-semibold">{S.invest.yieldLabel}</span> <span className="text-muted">({S.invest.yieldUnit})</span>
+            <input
+              data-testid={`${testIdPrefix}-rate`}
+              inputMode="decimal"
+              className="mt-1 min-h-[44px] w-full rounded-2xl bg-ground px-3 py-2 ring-1 ring-line transition num focus:outline-none focus:ring-2 focus:ring-leaf"
+              value={rate}
+              onChange={(e) => setRate(e.target.value)}
+            />
+          </label>
+        </div>
+      )}
       <p className="mt-2 text-xs text-muted" data-testid={`${testIdPrefix}-disclaimer`}>
         {S.invest.disclaimer}
       </p>

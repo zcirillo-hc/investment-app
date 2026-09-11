@@ -744,7 +744,7 @@ non negative integers unless stated.
   affects.
 - **R10.4** Your money curve. R10.1 is a story about a hypothetical summer job and never
   moves once onboarding is done. R10.4 is its grounded companion: take the money the user
-  really has set aside, `keptSinceStartCents + ledgerTotal`, and grow it from
+  really has set aside, `jarCents + ledgerTotal` (`putAsideCents`), and grow it from
   `clampAge(profile.age)` to `CURVE_END_AGE` at `ASSUMED_ANNUAL_RETURN`, one step per year,
   `v = v * (1 + rate)`. It is a lump sum growing, NOT an assumed future contribution rate,
   because the app does not know whether the user will keep going and inventing a rate would
@@ -755,6 +755,10 @@ non negative integers unless stated.
   - With nothing put in yet the card shows a warm empty line and no chart, never a flat zero.
   - Carries the R10.3 disclosure, plus a line stating the app does not know what the user's
     investments are actually worth, so the number is never mistaken for a valuation.
+  - **Revised 2026-09-10 (V2-9).** The formula was `keptSinceStartCents + ledgerTotal`. That
+    counted a jar move twice (a $4.35 skip moved into an investment read $8.70) and kept
+    growing money the user had said they spent. Each dollar now counts once: still in the jar,
+    or recorded as invested.
 
 ### R18 What these are, on Invest
 
@@ -793,7 +797,7 @@ without ever showing a gap.
   `round(principal * (1 + yieldBps / 10000) ^ (termMonths / 12))`. An APY already accounts
   for the bank's compounding, so raising it to the term in years is the whole calculation.
 - **R16.2** Both are optional, but a value that is present and out of range is rejected rather
-  than dropped, on save and on import. Ceilings: 5000 basis points and 600 months, which are
+  than dropped, on save and on import. Ceilings: 2500 basis points and 600 months (the rate ceiling was 5000 until V2-18, where 50% for 50 years on a $1,000,000 entry matured past 2^53 cents, the point where cents stop being exact), which are
   sanity bounds against a typo, not opinions about what a good rate is.
 - **R16.3** This is allowed where a stock projection is not, and the distinction is the point.
   A stock number is a guess about markets. A CD's rate is a contract, and this is arithmetic
@@ -801,6 +805,15 @@ without ever showing a gap.
   the two things it does not model: selling before the end, and an issuer that does not pay.
 - **R16.4** Nothing here ranks, recommends, or compares products. It reports what the user's
   own stated rate pays, and nothing else. R15's second list still applies in full.
+- **R16.5** Only a bonds or CDs row may carry a term and a rate. Entries store `holdingType`
+  (the capture's key) from 2026-09-10; an entry without one counts as a bond row only when its
+  `what` is the Bonds or CDs label. Enforced in `validateDraft` (`notBond`), on import, and on
+  Invest before a maturity line renders. (V2-12)
+- **R16.6** An edit keeps what its form did not show. In a draft, `undefined` keeps the stored
+  term or rate and `null` clears it. The edit form shows both fields on a bond row. (V2-10)
+- **R16.7** The capture reads "4.5", "4.5%" and "4,5" alike, rounds to a whole basis point half
+  away from zero from the exact decimal string, and refuses rather than drops a value it cannot
+  use, fractional months included. A term with no rate is saved on its own. (V2-11)
 
 ### R11 Privacy and deletion
 
@@ -3168,3 +3181,20 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
   that boundary is exactly where the human review gate exists to catch what the lint cannot.
   The manager's status report must state plainly whether the R15.7 layer 3 read-through has
   now actually happened, since the plan no longer treats R15 as satisfied without it.
+
+### Cycle 3 fixes, 2026-09-10: V2-9 to V2-19
+
+- Changed: R10.4 counts `jarCents + ledgerTotal`. R16.2's rate ceiling drops to 2500 bps.
+  New R16.5 (bond-only rates, `holdingType` stored), R16.6 (edits keep unshown fields), R16.7
+  (capture parsing). L1 now unlocks on the first habit spotted and is its own lesson ("How it
+  spotted your usual stop"). L4 and the `dip` tooltip no longer say a dip is only a loss if you
+  sell. L5, the `jar` tooltip and the auto-advance toast no longer say the jar works by itself.
+  5.4's import validator now rebuilds every section from its known fields and drops any other
+  key. `lint-advice` normalises hyphens and curly apostrophes, adds "beats the market", no
+  longer lets "usually" or "most people" switch off the number and comparison rule, and reads
+  every template interpolation as a number. The R18 "Read more" links are 44 px tall.
+- Because: tester cycle 3, V2-9 to V2-19, and the owner's four decisions on 2026-09-10 (R10.4
+  formula, store the entry type, rewrite L4, owner does the R15.7 layer 3 read).
+- Impact on downstream: the tester re-runs cycle 3. Two of its tests encode assumptions the
+  fixes change on purpose: the R10.4 DEFECT cases compute the old formula inline, and e2e case
+  "600 months at 50%" assumes the old rate ceiling.
