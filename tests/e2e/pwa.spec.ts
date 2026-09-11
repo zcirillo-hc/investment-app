@@ -172,14 +172,16 @@ test.describe('8.10 the Nudges card, per platform state', () => {
     await expect(page.getByTestId('jar-amount')).not.toHaveText(before ?? '');
   });
 
-  test('8.10: the on state names exactly the three things stored, and offers a way off', async ({ page }) => {
+  test('8.10: the on state says truthfully what is stored, and offers a way off', async ({ page }) => {
+    // `&nudge=1` turns nudges on at boot without subscribing, so no row exists on the server.
+    // Since V2-1 the card must say so rather than list three things that were never sent.
     await onboardWithNudgesOn(page);
     await dismissCapturePrompt(page);
     await page.getByTestId('nav-settings').click();
     await expect(page.getByTestId('nudges-state')).toHaveAttribute('data-on', 'true');
-    await expect(page.getByTestId('nudges-stored')).toContainText('an address your browser hands out');
-    await expect(page.getByTestId('nudges-stored')).toContainText('your time zone');
-    await expect(page.getByTestId('nudges-stored')).toContainText('the minute to wake you');
+    await expect(page.getByTestId('nudges-stored')).toHaveCount(0);
+    await expect(page.getByTestId('nudges-not-stored')).toContainText('Nothing is on the server');
+    await expect(page.getByTestId('nudges-not-stored')).toContainText('there is no row to delete');
     await expect(page.getByTestId('nudges-turn-off')).toBeVisible();
     // A10: quiet hours are stated and the UI does not appear to offer editing.
     await expect(page.getByTestId('nudges-quiet-hours')).toContainText('6:00 am');
@@ -189,7 +191,8 @@ test.describe('8.10 the Nudges card, per platform state', () => {
   });
 
   test('criterion 25: turning nudges off works locally and says honestly what the server did', async ({ page }) => {
-    // The API is unreachable this pass, which is exactly the failure path 9.5 has copy for.
+    // No subscription was ever made, so there is no server row and the only honest message is
+    // the local one. What it must never do is claim a row was deleted when none existed.
     await onboardWithNudgesOn(page);
     await dismissCapturePrompt(page);
     await page.getByTestId('nav-settings').click();
@@ -197,9 +200,7 @@ test.describe('8.10 the Nudges card, per platform state', () => {
     await expect(page.getByTestId('nudges-state')).toHaveAttribute('data-on', 'false');
     const message = page.getByTestId('nudges-turn-off-message');
     await expect(message).toBeVisible();
-    // Either outcome is honest; what it must never do is claim a row was deleted when it was not.
-    const text = await message.innerText();
-    expect(text === 'Nudges are off and the server row is gone.' || text.includes('could not reach the server')).toBe(true);
+    await expect(message).toHaveText('Nudges are off. There was nothing on the server to delete.');
     // It survives a reload. Deliberately WITHOUT `&nudge=1`, which is the demo control that
     // turns nudges back on at boot (plan 5.4); reloading the same URL would re-enable them and
     // test the tray rather than the setting.

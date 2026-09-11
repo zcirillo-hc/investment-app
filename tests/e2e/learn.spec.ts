@@ -60,17 +60,19 @@ test.describe('the Learn library', () => {
     await page.getByTestId('nav-lessons').click();
     await clickClear(page, 'learn-link');
     await expect(page.getByTestId('learn-progress')).toHaveAttribute('data-read', '0');
-    await expect(page.getByTestId('learn-progress')).toHaveAttribute('data-total', '16');
-    await expect(page.getByTestId('learn-progress')).toContainText('0 of 16 read');
+    // The total comes from the library itself, so adding a piece does not break this test.
+    const total = String(IDS.length);
+    await expect(page.getByTestId('learn-progress')).toHaveAttribute('data-total', total);
+    await expect(page.getByTestId('learn-progress')).toContainText(`0 of ${total} read`);
 
     await clickClear(page, 'learn-item-E01');
     await page.getByTestId('header-back').click();
     await clickClear(page, 'learn-item-E07');
     await page.getByTestId('header-back').click();
-    await expect(page.getByTestId('learn-progress')).toContainText('2 of 16 read');
+    await expect(page.getByTestId('learn-progress')).toContainText(`2 of ${total} read`);
 
     await page.reload();
-    await expect(page.getByTestId('learn-progress')).toContainText('2 of 16 read');
+    await expect(page.getByTestId('learn-progress')).toContainText(`2 of ${total} read`);
 
     // 8.9: a plain count, not a ring and not a percentage.
     const header = await page.getByTestId('screen-learn').innerText();

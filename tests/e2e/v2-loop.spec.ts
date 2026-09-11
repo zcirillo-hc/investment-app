@@ -191,7 +191,11 @@ test.describe('the v2 loop', () => {
   test('criterion 10: "I spent it" empties the jar with no ledger entry and no disapproval', async ({ page }) => {
     await onboard(page);
     await dismissCapturePrompt(page);
-    await nextDays(page, 3);
+    // Days passing no longer fill the jar (round-ups are gone), so fund it the only way left:
+    // skip a nudge.
+    await demoClick(page, 'demo-make-habit');
+    await demoClick(page, 'demo-force-nudge');
+    await clickClear(page, 'nudge-skip');
     await expect(page.getByTestId('jar-amount')).not.toHaveText('$0.00');
     await clickClear(page, 'jar-spent');
     await clickClear(page, 'jar-spent-yes');
