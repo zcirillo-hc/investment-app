@@ -29,12 +29,10 @@ import {
   keptThisSummer,
   bestSkipWeek,
   keptFromSkipsCents,
-  keptThisWeekCents,
   skipCount,
   ledgerTotal,
   nextLessonId,
   pendingNudge,
-  skipsThisWeek,
   summerActive,
   todayStats,
   tree,
@@ -89,8 +87,6 @@ export function Home() {
   const summer = summerActive(state);
   const summerKept = keptThisSummer(state);
   const keptAll = keptSinceStartCents(state);
-  const week = keptThisWeekCents(state);
-  const skips = skipsThisWeek(state);
   // R17. The habit block: what the user chose to do, counted, never what they missed.
   const totalSkips = skipCount(state);
   const skipKept = keptFromSkipsCents(state);
@@ -356,18 +352,9 @@ export function Home() {
         </Card>
       )}
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <StatTile label={S.home.weekKept}>
-          <Money cents={week} testId="stat-week-kept" />
-        </StatTile>
-        <StatTile label={S.home.skipsThisWeek}>
-          <span data-testid="stat-skips-week">{skips}</span>
-        </StatTile>
-        <StatTile label={S.home.daysIn}>
-          <span data-testid="stat-days-in">{state.clock.dayIndex}</span>
-        </StatTile>
-      </div>
-
+      {/* Owner decision, 2026-09-11: the weekly row that sat here (kept this week, skips this
+          week, days in) is gone. It repeated this card, "days in" counted time passing rather
+          than a choice, and a quiet week read as a shortfall. */}
       {/* R17. The habit block. Theme section 2 makes the repeated choice the measure of
           success, and section 5 forbids anything that can display a miss, so every number
           here only ever rises. */}

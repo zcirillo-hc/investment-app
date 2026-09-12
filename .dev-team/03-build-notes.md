@@ -2799,3 +2799,24 @@ Run on darwin 25.6 on 2026-09-11. Counts read from each tool's summary lines.
 | e2e, the 11 previously committed specs, while the machine was loaded | **364 passed, 1 failed, 3 flaky** in 45 min (13 to 17 min is normal). Every failure was a 10 s render wait or a test timeout, not a wrong value. The unit, db and a tester vitest run were going at the same time. Not accepted as a gate. |
 | e2e re-run, no retries, idle machine: the four affected tests plus all four tester specs, 4 projects | **168 passed, 0 failed** (12.4 min) |
 | e2e, all 15 committed specs (the tester specs now included), 4 projects, idle machine | **519 passed, 28 skipped, 0 failed, 1 flaky** (32.8 min). The flaky one is the dark theme axe scan on mobile, which passed on retry. This is the gate for 7f8daaa. |
+
+## Home's weekly row removed, 2026-09-11 (owner decision)
+
+The last open product item in CLAUDE.md. The owner chose to remove the whole row of three tiles
+above the R17 habit card rather than only "Days in".
+
+- **Removed** from `Home.tsx`: the row (`stat-week-kept`, `stat-skips-week`, `stat-days-in`), the
+  two values only it used, and their imports (`keptThisWeekCents`, `skipsThisWeek`). The three
+  labels left `strings.ts`. The domain selectors stay, since the domain layer is not trimmed to
+  match one screen, and their unit tests still cover them.
+- **Tests.** `v2-loop.spec.ts` criterion 7 ("Not today" moves no counter) now reads the lifetime
+  skip count on the habit card. The tester's legacy round-up case cross-checked the weekly
+  figure; the tester updated its own file.
+- **Why the whole row.** It repeated the card; "days in" counted time passing, not a choice; and
+  a quiet week would read "0 skips this week", which is the shortfall R17.4 forbids.
+
+| gate | result |
+|---|---|
+| lints, rules:check, typecheck, build | **all clean** |
+| `npm test` | **868 passed / 868** |
+| e2e, all 15 committed specs, 4 projects | **517 passed, 28 skipped, 0 failed, 7 flaky**, every flaky test passing on retry. The run took 1.2 hours instead of about 33 minutes because the machine was busy, and the seven were spread across push, axe, tap targets, the capture, the error boundary, the offline API and bond edits; none was on Home. The tester's updated legacy case and its new "weekly row is removed" case passed. |

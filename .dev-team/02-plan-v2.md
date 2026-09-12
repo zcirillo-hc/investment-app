@@ -3276,3 +3276,16 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
   try/catch wrapped the whole ledger, so one unreadable row cancelled the tidy for all of them).
 - Because: tester cycle 6, which otherwise found V2-26 to V2-29 fixed and called the build SHIP.
 - Impact on downstream: a committed unit case in `cycle3-fixes.test.ts`; nothing else changes.
+
+### Owner decision, 2026-09-11: the weekly row on Home is removed
+
+- Changed: Home no longer shows the row of three tiles above the R17 habit card (kept this
+  week, skips this week, days in, test ids `stat-week-kept`, `stat-skips-week`,
+  `stat-days-in`). The habit card is the only place Home counts skips.
+- Because: the row repeated the card; "days in" counted time passing rather than a choice,
+  which theme section 2 says is not the measure; and "0 skips this week" in a quiet week read
+  as the kind of shortfall R17.4 forbids.
+- Impact on downstream: `v2-loop.spec.ts` criterion 7 checks the lifetime skip count instead;
+  the tester's legacy round-up case in `tester-v3-cycle3.spec.ts` cross-checked the weekly
+  figure and is the tester's to update. The domain selectors `keptThisWeekCents` and
+  `skipsThisWeek` stay; nothing on screen uses them now.

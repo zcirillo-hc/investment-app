@@ -125,14 +125,14 @@ test.describe('the v2 loop', () => {
 
     const before = {
       kept: await page.getByTestId('stat-kept').textContent(),
-      skips: await page.getByTestId('stat-skips-week').textContent(),
+      skips: await page.getByTestId('stat-habit-skips').textContent(),
       jar: await page.getByTestId('jar-amount').textContent(),
     };
     await clickClear(page, 'nudge-not-today');
     await expect(page.getByTestId('nudge-card')).toHaveCount(0);
 
     // No event, no counter movement, no toast, and nothing anywhere refers to it.
-    expect(await page.getByTestId('stat-skips-week').textContent()).toBe(before.skips);
+    expect(await page.getByTestId('stat-habit-skips').textContent()).toBe(before.skips);
     expect(await page.getByTestId('stat-kept').textContent()).toBe(before.kept);
     expect(await page.getByTestId('jar-amount').textContent()).toBe(before.jar);
     await expect(page.getByTestId('auto-advance-toast')).toHaveCount(0);

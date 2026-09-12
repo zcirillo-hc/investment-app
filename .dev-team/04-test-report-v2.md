@@ -1448,3 +1448,16 @@ object, no throw. The old case ("AUDIT: one unreadable row blocks tidying of eve
 is retitled "V2-30 regression guard" with the assertions flipped to the fixed behavior; no other
 case in the file was touched. `npx vitest run tests/unit/tester-v6-cycle6.test.ts`: 19 passed, 19
 total, 0 failed.
+
+### Reconciliation, 2026-09-11: owner decision removes the weekly row from Home
+
+`tester-v3-cycle3.spec.ts`'s legacy round-up case cross-checked `stat-week-kept`, now deleted
+along with `stat-skips-week` and `stat-days-in`. Dropped that dead cross-check (kept the `week`
+figure in the console line for diagnostics only) and added, in its place, an assertion that the
+same legacy-import scenario renders zero of all three removed ids; the rest of that case (Activity
+row count, `stat-kept`, `stat-habit-kept`, jar amount) is untouched. Added a second, standalone
+case in the same file asserting Home, in a habit-heavy state (not just the legacy-import shape),
+shows none of the three ids and none of their exact copy strings ("This week", "Skips this week",
+"Days in"), plus a 320 px screenshot and horizontal-scroll check confirming nothing else on the
+screen shifted. `npx playwright test tests/e2e/tester-v3-cycle3.spec.ts --project=mobile
+--retries=0` and `--project=desktop`: **14 passed, 0 failed, 0 flaky** on each.

@@ -114,6 +114,9 @@ Key ones to know:
 - **R17** habit metrics on Home: lifetime skips, kept by skipping, and best week. Best week is
   a maximum over history, not a current run, so a quiet stretch never lowers it. Nothing may
   render a streak, a broken run, a missed day, or a shortfall. See `.dev-team/06-theme.md`.
+  The weekly row that sat above the card (kept this week, skips this week, days in) was
+  removed on 2026-09-11 at the owner's decision: it repeated the card, and "days in" counted
+  time rather than a choice.
 - **R18** the Invest page's "what these actually are" card, plus the Learn library's stock
   depth. The card is STATIC: all six holding types, same order, same words, whatever the user
   holds, because R15.4 bans educational content that varies with the ledger.
@@ -206,7 +209,7 @@ Tester files (`tests/**/tester-*`) are the tester's to write and edit, never the
 
 ## 10. Current state
 
-Green as of 2026-09-11, after the cycle 6 fix and with the tester files committed: 868 unit, 96 db, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build, axe clean in both themes at four viewports. End-to-end on all 15 committed specs, on an idle machine: 519 passed, 28 skipped, 0 failed, 1 flaky (the dark theme axe scan on mobile, which passed on retry) across mobile, desktop, iPhone Pro and Pro Max. No cycle since 3 has touched `api/` or `db/`.
+Green as of 2026-09-12, after the Home weekly row was removed: 868 unit, 96 db, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build. End-to-end on all 15 committed specs: 517 passed, 28 skipped, 0 failed, 7 flaky, every flaky test passing on retry, across mobile, desktop, iPhone Pro and Pro Max. That run took 1.2 hours instead of about 33 because the machine was busy; the flaky tests were spread across unrelated areas and none was on Home. The last idle run (after the cycle 6 fix) was 519 passed, 0 failed, 1 flaky. No cycle since 3 has touched `api/` or `db/`.
 
 The e2e figures reported for `0ab8031`, `352d618` and `01a134b` ("0 failed") were wrong: four committed specs were failing and the reports were read from the end of the log. See gotcha 9. The four specs were fixed in `563fbb1`.
 
@@ -216,7 +219,6 @@ The e2e figures reported for `0ab8031`, `352d618` and `01a134b` ("0 failed") wer
 - Four tests in `tests/unit/tester-v2-import-impact.test.ts` were inverted on 2026-09-09: they originally asserted the import validator wrongly ACCEPTED four bad shapes, in order to demonstrate the damage. The validator now rejects all four, so they assert rejection instead. Coverage preserved, intent unchanged.
 - Never tested: a real iPhone, real Safari, WebKit, Firefox, screen readers, and an actual push notification arriving on a physical phone.
 - The cron has never been observed firing on its real daily schedule in production.
-- Home still shows "skips this week" and "days in" directly above the R17 habit card. Days in measures time passing rather than a choice, and the row duplicates the card. Flagged, not yet cleaned up.
 
 ---
 

@@ -209,19 +209,29 @@ test.describe('what an import can put on screen', () => {
     const shown = {
       label: ((await page.getByTestId('kept-headline-label').textContent()) ?? '').trim(),
       kept: centsOf((await page.getByTestId('stat-kept').textContent()) ?? ''),
-      week: centsOf((await page.getByTestId('stat-week-kept').textContent()) ?? ''),
       habitKept: centsOf((await page.getByTestId('stat-habit-kept').textContent()) ?? ''),
       jar: centsOf((await page.getByTestId('jar-amount').textContent()) ?? ''),
+    };
+    // Owner decision 2026-09-11: the weekly row (stat-week-kept, stat-skips-week,
+    // stat-days-in) is gone from Home, and `week` above is no longer rendered anywhere to
+    // cross-check against. Rather than silently drop the cross-check, assert adversarially
+    // that a legacy round-up import specifically (the shape most likely to have resurrected
+    // a "this week" style tile, since it is the one profile with a RoundUp-shaped weekly
+    // total) still renders none of the three removed ids.
+    const weeklyRow = {
+      weekKept: await page.getByTestId('stat-week-kept').count(),
+      skipsWeek: await page.getByTestId('stat-skips-week').count(),
+      daysIn: await page.getByTestId('stat-days-in').count(),
     };
     await go(page, '/summer', 'screen-summer');
     const putIn = ((await page.getByTestId('your-money-putin').textContent()) ?? '').trim();
     // eslint-disable-next-line no-console
-    console.log(`LEGACY: roundUps=${n} (${money(ru)}) msg="${msg}" activityRoundUpRows=${ruRows} first="${ruText.trim()}" home=${JSON.stringify(shown)} expected kept=${kept} week=${week} skipKept=${skipKept} summer="${putIn}" roundUpsPaused persisted=${'roundUpsPaused' in after.settings}`);
+    console.log(`LEGACY: roundUps=${n} (${money(ru)}) msg="${msg}" activityRoundUpRows=${ruRows} first="${ruText.trim()}" home=${JSON.stringify(shown)} weeklyRow=${JSON.stringify(weeklyRow)} expected kept=${kept} week(unrendered)=${week} skipKept=${skipKept} summer="${putIn}" roundUpsPaused persisted=${'roundUpsPaused' in after.settings}`);
     expect(ruRows).toBe(n);
     expect(shown.kept).toBe(kept);
-    expect(shown.week).toBe(week);
     expect(shown.habitKept).toBe(skipKept);
     expect(shown.jar).toBe(file.jarCents);
+    expect(weeklyRow, 'owner decision 2026-09-11: no legacy round-up profile may resurrect the removed weekly row').toEqual({ weekKept: 0, skipsWeek: 0, daysIn: 0 });
   });
 
   // Cycle 4 reconciliation. This used to import the stock row and then wait for /invest to
@@ -418,6 +428,44 @@ test.describe('R17 on screen', () => {
       if (m) hits.push(`${p}: "${text.slice(Math.max(0, m.index - 50), m.index + 50).replace(/\s+/g, ' ')}"`);
     }
     expect(hits, hits.join('\n')).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Owner decision, 2026-09-11 (.dev-team/02-plan-v2.md, "the weekly row on Home is removed").
+// The three tiles above the habit card are gone. Checked in a habit-heavy state (make-habit +
+// a skip), which is exactly the state that used to populate all three tiles with non-zero
+// numbers, so a regression that resurrects the row has real data to render and cannot hide
+// behind an all-zero coincidence.
+test.describe('Owner decision 2026-09-11: the weekly row is removed from Home', () => {
+  test('none of the three removed test ids or their labels render on Home, and nothing else on Home breaks at 320 px', async ({ page }, info) => {
+    await onboard(page);
+    await dismissCapturePrompt(page);
+    await demoClick(page, 'demo-make-habit');
+    await skipOnce(page);
+    await go(page, '/', 'screen-home');
+    const ids = {
+      weekKept: await page.getByTestId('stat-week-kept').count(),
+      skipsWeek: await page.getByTestId('stat-skips-week').count(),
+      daysIn: await page.getByTestId('stat-days-in').count(),
+    };
+    const bodyText = await page.locator('body').innerText();
+    // Exact, case-sensitive copy strings that used to label the row (src/content/strings.ts:
+    // weekKept, skipsThisWeek, daysIn, all deleted in this change). "This week" is checked as
+    // a whole label, not a fragment, since other screens legitimately say "this week" in a
+    // sentence; the habit card's own copy is asserted not to collide in the same pass.
+    const labelHits = ['This week', 'Skips this week', 'Days in'].filter((l) => bodyText.includes(l));
+    // eslint-disable-next-line no-console
+    console.log(`WEEKLY-ROW-GONE: ids=${JSON.stringify(ids)} labelHits=${JSON.stringify(labelHits)} bodyIncludesHabitLine=${bodyText.includes(((await page.getByTestId('habit-line').textContent()) ?? '').trim())}`);
+    expect(ids, 'owner decision 2026-09-11: none of the removed tiles may render').toEqual({ weekKept: 0, skipsWeek: 0, daysIn: 0 });
+    expect(labelHits, `these deleted copy strings must not reappear on Home: ${labelHits.join(', ')}`).toEqual([]);
+    await expect(page.getByTestId('habit-card')).toBeVisible();
+
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.waitForTimeout(200);
+    await assertNoHorizontalScroll(page);
+    await expect(page.getByTestId('habit-card')).toBeVisible();
+    await page.screenshot({ path: info.outputPath('home-320-weekly-row-removed.png'), fullPage: true });
   });
 });
 

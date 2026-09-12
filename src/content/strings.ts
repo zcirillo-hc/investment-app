@@ -153,9 +153,6 @@ export const S = {
     keptThisSummer: 'Kept this summer',
     byThirty: (dollars: number) => `By 30 that is about ${formatDollars(dollars)}`,
     byThirtyTip: 'at [[sevenPercent]] a year',
-    weekKept: 'This week',
-    skipsThisWeek: 'Skips this week',
-    daysIn: 'Days in',
     // R17. The habit block. Success in the theme is "a habit and I saved $X", so this counts
     // choices the user made. Never a streak, never a gap, never a target they are short of.
     habitTitle: 'Your habit',
