@@ -719,10 +719,14 @@ non negative integers unless stated.
 
 ### R8 The tree
 
-- **R8.1** Stage is a function of simulated days since the first kept event of any kind
-  (RoundUp, Catch or Skip), using the v1 table `[0, 0, 7, 21, 45, 90, 180]` where the
-  index is the stage. Before the first kept event the stage is 0, a seed.
-- **R8.2** Stage never depends on any amount, so a small jar still visibly grows.
+- **R8.1** Stage is a function of the lifetime Skip count (R17.1), using the table
+  `[0, 1, 3, 7, 14, 30, 60]` (`TREE_STAGE_MIN_SKIPS`) where the index is the stage: a seed
+  before the first skip, a sprout at 1, a seedling at 3, a sapling at 7, a young tree at 14, a
+  tree at 30 and a full canopy at 60. Catches and legacy round-ups do not grow it. The skip
+  count only rises, so the tree never shrinks. (Changed 2026-09-12, owner decision: it grew
+  with simulated days since the first kept event, which rewarded time passing, not a choice.)
+- **R8.2** Stage never depends on any amount or on the date, so a small jar still visibly
+  grows and a quiet stretch changes nothing.
 
 ### R9 Counters, and no streaks
 
@@ -3289,3 +3293,29 @@ binary. Real device testing has not disappeared, though, it has changed shape: s
   the tester's legacy round-up case in `tester-v3-cycle3.spec.ts` cross-checked the weekly
   figure and is the tester's to update. The domain selectors `keptThisWeekCents` and
   `skipsThisWeek` stay; nothing on screen uses them now.
+
+### Owner decision, 2026-09-12: the tree caption no longer counts days
+
+- Changed: the caption under the tree on Home shows the stage name only ("Sprout") instead of
+  "sprout, 3 days of keeping". Before anything is kept it still reads "A seed. It sprouts the
+  first time you keep something."
+- Because: like "days in", a count of days measures time passing rather than a choice, and it
+  read "0 days of keeping" right after a first skip.
+- Impact on downstream: no test pinned the caption text. `daysSinceFirstKept` stays in the
+  domain layer. Not changed, and raised with the owner: the tree's stage itself still advances
+  with days since the first keep (`treeStage`), so the tree grows with time, not with skips.
+
+### Owner decision, 2026-09-12: the tree grows with skips
+
+- Changed: R8.1 and R8.2. The stage comes from the lifetime Skip count through
+  `[0, 1, 3, 7, 14, 30, 60]` instead of from days since the first kept event. Catches and
+  legacy round-ups no longer grow it. The seed caption says it sprouts the first time you skip.
+- Because: the same objection that removed "days in" and "days of keeping". A tree that grew
+  while nothing happened rewarded time passing, and the theme makes the repeated choice the
+  measure.
+- Thresholds: a judgement call, not the owner's words. At most one skip a day is possible
+  (R4.4), so 60 skips for a full canopy is about four months of skipping most days; a sapling
+  (7) is reachable in the first weeks. They live in `TREE_STAGE_MIN_SKIPS` in `config.ts`.
+- Impact on downstream: `treeStage(skips)` replaces `treeStage(dayIndex, firstKeptDay)`; the
+  R8 fixture cases, `ruleFns.ts` and `tree.test.ts` change with it. No e2e or tester test
+  pinned a stage.

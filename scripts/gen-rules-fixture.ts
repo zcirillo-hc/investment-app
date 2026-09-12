@@ -270,14 +270,16 @@ spec(
 );
 
 // ---------------------------------------------------------------------------------------
-// R8 tree. Floor: 6. Table [0, 0, 7, 21, 45, 90, 180].
-spec('R8.1-a', 'R8.1', 'treeStage', { dayIndex: 0, firstKeptDay: null }, { stage: 0 });
-spec('R8.1-b', 'R8.1', 'treeStage', { dayIndex: 0, firstKeptDay: 0 }, { stage: 1 });
-spec('R8.1-c', 'R8.1', 'treeStage', { dayIndex: 7, firstKeptDay: 0 }, { stage: 2 });
-spec('R8.1-d', 'R8.1', 'treeStage', { dayIndex: 20, firstKeptDay: 0 }, { stage: 2 });
-spec('R8.1-e', 'R8.1', 'treeStage', { dayIndex: 21, firstKeptDay: 0 }, { stage: 3 });
-// 190 days since the first kept event, which is past the 180 in the table's last slot.
-spec('R8.2-a', 'R8.2', 'treeStage', { dayIndex: 200, firstKeptDay: 10 }, { stage: 6 });
+// R8 tree, by lifetime skip count (owner decision 2026-09-12). Floor: 6.
+// Table [0, 1, 3, 7, 14, 30, 60], index = stage.
+spec('R8.1-a', 'R8.1', 'treeStage', { skips: 0 }, { stage: 0 });
+spec('R8.1-b', 'R8.1', 'treeStage', { skips: 1 }, { stage: 1 });
+spec('R8.1-c', 'R8.1', 'treeStage', { skips: 3 }, { stage: 2 });
+spec('R8.1-d', 'R8.1', 'treeStage', { skips: 6 }, { stage: 2 });
+spec('R8.1-e', 'R8.1', 'treeStage', { skips: 7 }, { stage: 3 });
+spec('R8.1-f', 'R8.1', 'treeStage', { skips: 60 }, { stage: 6 });
+// Past the last slot it stays a full canopy; no amount or date is an input at all.
+spec('R8.2-a', 'R8.2', 'treeStage', { skips: 200 }, { stage: 6 });
 
 // ---------------------------------------------------------------------------------------
 // R9 counters.

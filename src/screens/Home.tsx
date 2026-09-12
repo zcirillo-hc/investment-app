@@ -36,10 +36,8 @@ import {
   summerActive,
   todayStats,
   tree,
-  firstKeptDay,
   learnSurfaceCards,
 } from '../domain/selectors';
-import { daysSinceFirstKept } from '../domain/tree';
 import type { MilestoneKey } from '../domain/triggers';
 
 /** The corner mark on the hero card. Sits in its own absolutely positioned box, and the copy
@@ -93,7 +91,6 @@ export function Home() {
   const bestWeek = bestSkipWeek(state);
   const today = todayStats(state);
   const stage = tree(state);
-  const days = daysSinceFirstKept(state.clock.dayIndex, firstKeptDay(state));
   const next = nextLessonId(state);
   const pending = state.pendingPaychecks[0];
   const nudge = pendingNudge(state);
@@ -298,7 +295,7 @@ export function Home() {
             <Tree stage={stage} />
           </div>
           <p className="pt-2 text-center text-sm font-semibold text-muted" data-testid="tree-caption">
-            {S.home.treeCaption(S.tree.stages[stage], days)}
+            {S.home.treeCaption(S.tree.stages[stage], totalSkips > 0)}
           </p>
         </Card>
       </div>

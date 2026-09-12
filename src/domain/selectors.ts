@@ -137,7 +137,8 @@ export function firstKeptDay(state: AppState): number | null {
 }
 
 export function tree(state: AppState) {
-  return treeStage(state.clock.dayIndex, firstKeptDay(state));
+  // R8.1: the lifetime skip count, the same number the habit card shows (R17.1).
+  return treeStage(skipCount(state));
 }
 
 export function readCount(state: AppState): number {

@@ -2902,3 +2902,46 @@ serving this worktree on port 5188, because another session's full run was using
 | whole `push-delivery.spec.ts`, mobile and desktop ×5, `--retries=0`, final fix | **50 passed**, 0 failed |
 | `npm run typecheck` / `lint:copy` | **clean** / **ok**, 104 files |
 | e2e, the 15 committed specs, 4 projects, retries 1, final fix | **519 passed, 1 flaky, 28 skipped**, no `failed` line (32.3 min). Every push-delivery case passed first time on mobile and desktop. The flaky one is `cycle4.spec.ts:172` (C4-5, the milestone PNG download) on iphone-pro: a 240 s timeout on `catch-decline` reporting "element is not stable", passed on retry. It touches no notification code; not investigated here. |
+
+## The tree caption no longer counts days, 2026-09-12 (owner decision)
+
+A follow-on to removing "days in". The caption under the tree on Home read "sprout, 3 days of
+keeping", which counted time passing rather than a choice, and read "0 days of keeping" right
+after a first skip.
+
+- **Changed.** `S.home.treeCaption(stageName, hasKept)` shows the stage name only, capitalised
+  ("Sprout"). Before anything is kept it still reads "A seed. It sprouts the first time you keep
+  something." Home passes `firstKeptDay(state) !== null` instead of a day count, and no longer
+  imports `daysSinceFirstKept`, which stays in the domain layer with its tests.
+- **Tests.** No committed test pinned the caption text. The production check asserts "Sprout"
+  after the first skip.
+- **Raised, not changed.** The tree's stage itself still advances with days since the first keep
+  (`treeStage` in `src/domain/tree.ts`), so the tree grows with time, not with skips. The owner
+  decided the same day that it should grow with skips; see the next section.
+
+## The tree grows with skips, 2026-09-12 (owner decision)
+
+- **Rule R8 changed.** `treeStage(skips)` replaces `treeStage(dayIndex, firstKeptDay)`: the stage
+  comes from the lifetime Skip count through `TREE_STAGE_MIN_SKIPS = [0, 1, 3, 7, 14, 30, 60]`,
+  and `tree(state)` passes `skipCount(state)`. A count that is negative, fractional or not a
+  number is floored to a safe value. `daysSinceFirstKept` and `TREE_STAGE_MIN_DAYS` are gone.
+- **The thresholds are my judgement, not the owner's words.** At most one skip a day is possible,
+  so the old table's 180 days for a full canopy is not comparable. Sixty skips is about four
+  months of skipping most days, and a sapling (7) comes inside the first few weeks, which suits
+  a summer. They are one line in `config.ts`, pinned by the unit and fixture cases.
+- **Copy.** The seed caption says it sprouts "the first time you skip", because a paycheck catch
+  no longer grows it.
+- **Tests.** `tree.test.ts` is rewritten for skip counts, with a selector case showing time
+  passing and catches do not grow it. The R8 fixture cases take `skips` and were regenerated into
+  `rules-v2.json`, and `ruleFns.ts` maps the new input.
+- **The caption change's own gate did not count.** Its full e2e run lost its repo partway through,
+  when the owner moved the folder off the Desktop (Playwright's workers exited once the files were
+  gone). It ships under this section's gate instead, which covers both changes.
+
+| gate | result |
+|---|---|
+| fixture regenerated | **112 cases**, every hand-written case agreeing with the new `treeStage` |
+| lints, rules:check, typecheck, build | **all clean**; 30 arithmetic rules, 112 cases |
+| `npm test` | **871 passed / 871** |
+| e2e, all 15 committed specs, 4 projects | **523 passed, 28 skipped, 0 failed, 1 flaky** (44.7 min, with iCloud still syncing the folder move; load between 20 and 55). The flaky one is `pwa.spec.ts:58` on iphone-pro, the service worker reaching activated: it failed in 4 s and passed on retry, and nothing in this change touches the worker. |
+| `pwa.spec.ts:58` re-run alone, retries off, 4 projects | **4 passed, 0 failed** (8.4 s, at load 42) |

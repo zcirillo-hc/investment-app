@@ -174,8 +174,11 @@ export const S = {
     spentIt: 'I spent it',
     jarEmpty: 'Nothing in the jar right now. Skips and paycheck catches land here.',
     treeTitle: 'Your tree',
-    treeCaption: (stageName: string, days: number | null) =>
-      days === null ? 'A seed. It sprouts the first time you keep something.' : `${stageName}, ${days} ${days === 1 ? 'day' : 'days'} of keeping`,
+    // Owner decision, 2026-09-12: the stage name only. "N days of keeping" counted time passing
+    // rather than a choice, and read "0 days of keeping" right after a first skip.
+    // R8.1: the tree grows with skips only, so the seed sprouts on the first skip.
+    treeCaption: (stageName: string, hasSkipped: boolean) =>
+      hasSkipped ? `${stageName.charAt(0).toUpperCase()}${stageName.slice(1)}` : 'A seed. It sprouts the first time you skip.',
     todayNothing: 'Today: nothing yet.',
     today: (roundUps: number, catches: number, skips: number, cents: number) => {
       const parts: string[] = [];

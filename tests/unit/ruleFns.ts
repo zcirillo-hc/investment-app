@@ -120,8 +120,8 @@ export const RULE_FNS: Record<string, (input: Json) => Json> = {
     return nudgeSchedulePayload(n, i.date as string, i.quietStartMinute as number, i.quietEndMinute as number) as unknown as Json;
   },
 
-  // R8.1
-  treeStage: (i) => ({ stage: treeStage(i.dayIndex as number, i.firstKeptDay as number | null) }),
+  // R8.1, R8.2: the lifetime skip count in, the stage out (changed 2026-09-12).
+  treeStage: (i) => ({ stage: treeStage(i.skips as number) }),
 
   // R9.1, R9.2, R9.3
   keptCounters: (i) => {

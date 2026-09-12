@@ -64,8 +64,10 @@ export const AUTO_ADVANCE_CAP_DAYS = 30;
 export const MAX_MONEY_CENTS = 1e13;
 export const MAX_NAME_LENGTH = 40;
 
-// The tree (R8.1). Index = stage; stage 0 is a seed, before the first kept event of any kind.
-export const TREE_STAGE_MIN_DAYS = [0, 0, 7, 21, 45, 90, 180];
+// The tree (R8.1, changed 2026-09-12). Index = stage; stage 0 is a seed, before the first skip.
+// Each entry is the lifetime Skip count that reaches that stage. It grew with days until the
+// owner decided it should reward the choice, not time passing.
+export const TREE_STAGE_MIN_SKIPS = [0, 1, 3, 7, 14, 30, 60];
 
 // Lessons (R12).
 export const FEAR_LESSON_DAY_10 = 10;

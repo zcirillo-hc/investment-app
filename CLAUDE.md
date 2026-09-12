@@ -109,6 +109,9 @@ Key ones to know:
   and a shared axis flattens the real one to nothing.
 - **R4.4** one nudge per day, maximum.
 - **R5.5** skipping credits the jar with an estimate drawn from the user's own history at that merchant.
+- **R8** the tree on Home grows with the lifetime skip count (stages at 1, 3, 7, 14, 30 and 60
+  skips, `TREE_STAGE_MIN_SKIPS`), never with time, amounts, catches or round-ups. It grew with
+  days since the first kept event until the owner changed it on 2026-09-12.
 - **R14** nudge scheduling and delivery, including timezone and the daily cron.
 - **R15** education, not advice. See section 6.
 - **R17** habit metrics on Home: lifetime skips, kept by skipping, and best week. Best week is
@@ -116,7 +119,8 @@ Key ones to know:
   render a streak, a broken run, a missed day, or a shortfall. See `.dev-team/06-theme.md`.
   The weekly row that sat above the card (kept this week, skips this week, days in) was
   removed on 2026-09-11 at the owner's decision: it repeated the card, and "days in" counted
-  time rather than a choice.
+  time rather than a choice. For the same reason the tree caption stopped saying "N days of
+  keeping" on 2026-09-12 and shows the stage name only.
 - **R18** the Invest page's "what these actually are" card, plus the Learn library's stock
   depth. The card is STATIC: all six holding types, same order, same words, whatever the user
   holds, because R15.4 bans educational content that varies with the ledger.
@@ -179,7 +183,7 @@ Read these before touching the build or the API.
 4. **`Tooltip.tsx` and the color tokens are this codebase's fragile spots.** Two separate fixes to them caused their own regressions. Any change to either needs the full tap sweep in `tests/e2e/tooltip.spec.ts` and the axe run in both themes.
 5. **iOS needs `viewport-fit=cover`** or every `env(safe-area-inset-*)` resolves to zero and the standalone layout silently breaks.
 6. **`apple-touch-icon` must have no alpha channel.** iOS composites transparency onto black.
-7. **Never kill port 5173 while `npm run e2e` is running.** That is the suite's own dev server. Ad-hoc Playwright specs started alongside it fight for the port and killing it corrupts the run. Wait for the suite, or check against the live site. Heavy work alongside it is also a problem, even off the port: on 2026-09-11 the unit and db suites and a tester agent running at the same time stretched a 13 minute run to 45 and produced render timeouts that were not real failures. Run the gate on an idle machine, and re-run any timeout alone before believing it.
+7. **Never kill port 5173 while `npm run e2e` is running.** That is the suite's own dev server. Ad-hoc Playwright specs started alongside it fight for the port and killing it corrupts the run. Wait for the suite, or check against the live site. Heavy work alongside it is also a problem, even off the port: on 2026-09-11 the unit and db suites and a tester agent running at the same time stretched a 13 minute run to 45 and produced render timeouts that were not real failures. Run the gate on an idle machine, and re-run any timeout alone before believing it. The biggest source of that load turned out to be iCloud: the repo lived in `~/Desktop`, which is synced to iCloud Drive, so every file a test run, build or `npm install` wrote under it was uploaded while the tests ran. On 2026-09-12 the owner moved it to `~/Downloads/WORD/investing app- roundup`, which is not synced; iCloud then spent hours syncing the move itself, so the first runs after it were still slow. On 2026-09-12 `fileproviderd` and `bird` were at about 110% CPU working through a leftover worktree's `node_modules`. Delete worktrees once their work is merged, and check `ps -axo pcpu,comm -r | head` before trusting a slow run.
 8. **After onboarding, an invest-capture prompt overlays Home and swallows clicks, and nudges are off by default.** Use `dismissCapturePrompt` and `clickClear` from `tests/e2e/fixtures.ts`, and run demo `make-habit` before `force-nudge`, or a skip click silently does nothing.
 9. **Read Playwright's `N failed` and `N flaky` lines, not the last lines of the log.** With the list reporter the tail is the last test to finish, and a run can end on a pass while tests failed earlier. That is how three pushes in September went out reported as "0 failed" while four committed specs had been failing since `0ab8031`. Grep the log for `^\s+[0-9]+ (passed|failed|flaky)` before calling a run green.
 10. **Never center a framer-motion element with a Tailwind `translate` class.** Animating `x`, `y` or `scale` makes framer-motion write an inline `transform`, which silently replaces `-translate-x-1/2` and friends. The toast shipped half off every phone screen for two days that way. Center with `inset-x-*` plus `mx-auto`, or animate `x: '-50%'` yourself. The horizontal scroll check does not catch it, because a fixed element off-screen does not scroll the page.
@@ -210,7 +214,9 @@ Tester files (`tests/**/tester-*`) are the tester's to write and edit, never the
 
 ## 10. Current state
 
-Green as of 2026-09-12, after the Home weekly row was removed: 868 unit, 96 db, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build. End-to-end on all 15 committed specs: 517 passed, 28 skipped, 0 failed, 7 flaky, every flaky test passing on retry, across mobile, desktop, iPhone Pro and Pro Max. That run took 1.2 hours instead of about 33 because the machine was busy; the flaky tests were spread across unrelated areas and none was on Home. Re-run alone with retries off, all seven passed on all four viewports (30 passed, 0 failed). The last idle run (after the cycle 6 fix) was 519 passed, 0 failed, 1 flaky. No cycle since 3 has touched `api/` or `db/`.
+Green as of 2026-09-12, after the tree changes (the caption shows the stage name only, and R8 makes the tree grow with skips): 871 unit, 96 db, typecheck, both lints, rules:check (30 arithmetic rules, 112 cases), build. End-to-end on all 15 committed specs: 523 passed, 28 skipped, 0 failed, 1 flaky (`pwa.spec.ts:58` on iphone-pro, which passed on retry and again alone with retries off on all four viewports), in 44.7 minutes while iCloud was still syncing the repo's move off the Desktop.
+
+Earlier the same day, after the Home weekly row was removed: 868 unit, 96 db, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build. End-to-end on all 15 committed specs: 517 passed, 28 skipped, 0 failed, 7 flaky, every flaky test passing on retry, across mobile, desktop, iPhone Pro and Pro Max. That run took 1.2 hours instead of about 33 because the machine was busy; the flaky tests were spread across unrelated areas and none was on Home. Re-run alone with retries off, all seven passed on all four viewports (30 passed, 0 failed). The last idle run (after the cycle 6 fix) was 519 passed, 0 failed, 1 flaky. No cycle since 3 has touched `api/` or `db/`.
 
 The push-delivery flake fix was gated separately, on `7f8daaa` plus the fix, before the weekly row removal: end-to-end on the 15 committed specs, 519 passed, 1 flaky, 28 skipped, 0 failed. The flaky one was `cycle4.spec.ts:172` (C4-5) on iphone-pro, a 240 s timeout waiting for `catch-decline` to be stable, unrelated to push. Unit, lints, rules and build were not re-run for that change, which touched only `push-delivery.spec.ts` and docs.
 
