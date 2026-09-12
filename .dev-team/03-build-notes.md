@@ -2820,3 +2820,84 @@ above the R17 habit card rather than only "Days in".
 | lints, rules:check, typecheck, build | **all clean** |
 | `npm test` | **868 passed / 868** |
 | e2e, all 15 committed specs, 4 projects | **517 passed, 28 skipped, 0 failed, 7 flaky**, every flaky test passing on retry. The run took 1.2 hours instead of about 33 minutes because the machine was busy, and the seven were spread across push, axe, tap targets, the capture, the error boundary, the offline API and bond edits; none was on Home. The tester's updated legacy case and its new "weekly row is removed" case passed. |
+
+## Push delivery flake, 2026-09-11
+
+`push-delivery.spec.ts`, "an unparseable payload, a wrong version and a wrong type each show one
+fallback", failed its first attempt on mobile in two full tester runs (about 16 s, then passed
+on retry). The race is in the spec's helpers, not in `public/sw.js`, which is unchanged.
+
+### The race
+
+- **`getNotifications()` is not a passive read in Chromium.**
+  `PlatformNotificationContextImpl::ReadAllNotificationDataForServiceWorkerRegistration` takes a
+  start time, asks the platform which notifications are displayed, then deletes every stored
+  notification that is not displayed and was created before that start time. A notification's
+  creation time is stamped when the browser receives `showNotification`, and it is displayed
+  only after its database write, so a read that starts in between deletes it for good.
+- **The helpers read in that window.** `ServiceWorker.deliverPushMessage` returns before the
+  worker has parsed the payload, and `waitForOne` started polling `getNotifications()` straight
+  after it. Under load the first poll overlapped the worker's `showNotification`.
+- **Evidence.** An instrumented copy of the case logged the worker's push events and when its
+  `showNotification` resolved. In every failing iteration the worker got the push, called
+  `showNotification` once, and it resolved; the test's first read was in flight at that moment
+  (finishing up to 3 ms either side of the resolve); the count then read 0 for the whole 15 s.
+  Two of the failures were on the first payload, where nothing had been closed, so the previous
+  iteration's `close()` is not the cause.
+- **Control.** 150 pushes where reading started only after `showNotification` resolved, 20 reads
+  back to back each: none lost.
+- **Why this case and not its four siblings:** it delivers five pushes per run, they deliver one.
+
+### A second effect, found on the way
+
+Headless Chromium on macOS displays through Notification Center (Chromium's
+`NativeNotifications` feature), and during a run some notifications leave the displayed set on
+their own; the next `getNotifications()` deletes those the same way. Measured by showing one,
+waiting D ms without reading, then reading once, 16 samples per delay:
+
+| delay after settle | 0 ms | 50 | 100 | 200 | 400 | 800 | 1500 | 3000 |
+|---|---|---|---|---|---|---|---|---|
+| still readable, Notification Center | 16 | 14 | 15 | 12 | 12 | 14 | 8 | 6 |
+| still readable, Chromium message center | 16 | 16 | 16 | 16 | 16 | 16 | 16 | 16 |
+
+The losses grew as the run went on (repeat 8 lost 10 of 16), which fits macOS throttling a flood
+from one app. The message center row was measured with `--disable-features=NativeNotifications`,
+which is **not** adopted: Playwright passes its own `--disable-features` list without merging a
+user one (`chromiumSwitches.ts`), and Chromium's `base::CommandLine` keeps the last value of a
+repeated switch, so the flag would risk silently dropping Playwright's list.
+
+### What changed
+
+- **`deliver`** wraps the worker's `registration.showNotification` (calling straight through,
+  same arguments, same result), waits inside the worker for it to settle, and starts
+  `getNotifications()` in the worker at the instant it resolves. **`shownBy(push)`** asserts on
+  that read. `waitForOne` and the page-side `notifications` helper are gone.
+- **Assertions are unchanged, plus one stronger.** Each payload must still leave exactly one
+  notification with the fallback title and body. Each push must now also make exactly one
+  `showNotification` call, and it must not reject: R14.7 at the source. Before, two calls with
+  the same tag would have collapsed into one notification and passed.
+- **The click-path case** dispatches with the `Notification` object from that read instead of
+  reading again later, which was exposed to the second effect.
+- **Gotcha 11** in `CLAUDE.md`.
+
+### What the tester should re-check
+
+- The five-payload case with `--repeat-each=30 --retries=0` on mobile while the machine is busy.
+- Whether a different machine shows the second effect at all, and whether a real device does:
+  the table above is this Mac only.
+
+### Real test results, this pass
+
+Run on darwin 25.6 on 2026-09-11, Chrome for Testing 153.0.8010.12 (`channel: 'chromium'`).
+Counts read from each tool's summary lines. The repeat runs used a temporary Playwright config
+serving this worktree on port 5188, because another session's full run was using 5173 (gotcha
+7); it is not committed. Every repeat run below had another e2e run going at the same time.
+
+| run | result |
+|---|---|
+| five-payload case, mobile ×30, `--retries=0`, original helpers, three separate rounds | **6, 6 and 7 failed** of 30; every failure `Expected: 1, Received: 0` |
+| same, first fix (wait for the settle, then read from the page), alongside an original round | **30 passed**, 0 failed |
+| same, final fix (read in the worker at the settle), alongside an original round | **30 passed**, 0 failed |
+| whole `push-delivery.spec.ts`, mobile and desktop ×5, `--retries=0`, final fix | **50 passed**, 0 failed |
+| `npm run typecheck` / `lint:copy` | **clean** / **ok**, 104 files |
+| e2e, the 15 committed specs, 4 projects, retries 1, final fix | **519 passed, 1 flaky, 28 skipped**, no `failed` line (32.3 min). Every push-delivery case passed first time on mobile and desktop. The flaky one is `cycle4.spec.ts:172` (C4-5, the milestone PNG download) on iphone-pro: a 240 s timeout on `catch-decline` reporting "element is not stable", passed on retry. It touches no notification code; not investigated here. |
