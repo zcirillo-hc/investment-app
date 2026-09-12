@@ -2,7 +2,7 @@
 
 **Read this file first. It is the single entry point for this repo. You should not need to search the folder to get oriented.**
 
-Last updated 2026-09-11. Keep it that way: when you change how this project works, update this file in the same commit.
+Last updated 2026-09-12. Keep it that way: when you change how this project works, update this file in the same commit.
 
 ---
 
@@ -210,7 +210,7 @@ Tester files (`tests/**/tester-*`) are the tester's to write and edit, never the
 
 ## 10. Current state
 
-Green as of 2026-09-12, after the Home weekly row was removed: 868 unit, 96 db, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build. End-to-end on all 15 committed specs: 517 passed, 28 skipped, 0 failed, 7 flaky, every flaky test passing on retry, across mobile, desktop, iPhone Pro and Pro Max. That run took 1.2 hours instead of about 33 because the machine was busy; the flaky tests were spread across unrelated areas and none was on Home. The last idle run (after the cycle 6 fix) was 519 passed, 0 failed, 1 flaky. No cycle since 3 has touched `api/` or `db/`.
+Green as of 2026-09-12, after the Home weekly row was removed: 868 unit, 96 db, typecheck, both lints, rules:check (30 arithmetic rules, 111 cases), build. End-to-end on all 15 committed specs: 517 passed, 28 skipped, 0 failed, 7 flaky, every flaky test passing on retry, across mobile, desktop, iPhone Pro and Pro Max. That run took 1.2 hours instead of about 33 because the machine was busy; the flaky tests were spread across unrelated areas and none was on Home. Re-run alone with retries off, all seven passed on all four viewports (30 passed, 0 failed). The last idle run (after the cycle 6 fix) was 519 passed, 0 failed, 1 flaky. No cycle since 3 has touched `api/` or `db/`.
 
 The push-delivery flake fix was gated separately, on `7f8daaa` plus the fix, before the weekly row removal: end-to-end on the 15 committed specs, 519 passed, 1 flaky, 28 skipped, 0 failed. The flaky one was `cycle4.spec.ts:172` (C4-5) on iphone-pro, a 240 s timeout waiting for `catch-decline` to be stable, unrelated to push. Unit, lints, rules and build were not re-run for that change, which touched only `push-delivery.spec.ts` and docs.
 

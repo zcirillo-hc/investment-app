@@ -2820,6 +2820,7 @@ above the R17 habit card rather than only "Days in".
 | lints, rules:check, typecheck, build | **all clean** |
 | `npm test` | **868 passed / 868** |
 | e2e, all 15 committed specs, 4 projects | **517 passed, 28 skipped, 0 failed, 7 flaky**, every flaky test passing on retry. The run took 1.2 hours instead of about 33 minutes because the machine was busy, and the seven were spread across push, axe, tap targets, the capture, the error boundary, the offline API and bond edits; none was on Home. The tester's updated legacy case and its new "weekly row is removed" case passed. |
+| e2e re-run, retries off: the seven flaky tests alone, 4 projects | **30 passed, 2 skipped, 0 failed** (5.7 min), confirming the seven were load, not defects |
 
 ## Push delivery flake, 2026-09-11
 
